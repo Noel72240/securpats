@@ -8,28 +8,6 @@ type ReferentPayload = {
   phone: string
 }
 
-async function sendSms(to: string, body: string) {
-  const sid = process.env.TWILIO_ACCOUNT_SID
-  const token = process.env.TWILIO_AUTH_TOKEN
-  const from = process.env.TWILIO_FROM_NUMBER
-  if (!sid || !token || !from) return { sent: false, error: 'Twilio non configuré' }
-
-  const auth = Buffer.from(`${sid}:${token}`).toString('base64')
-  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${auth}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({ To: to, From: from, Body: body }).toString(),
-  })
-
-  if (!res.ok) {
-    const errBody = await res.text()
-    return { sent: false, error: errBody || res.statusText }
-  }
-  return { sent: true, error: null }
-}
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM_EMAIL || 'contact@securpats.fr'
@@ -92,17 +70,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     </div>
   `
 
-  const smsBody = `URGENCE SécurPats — ${petName} : ${description.slice(0, 140)}. Contactez le propriétaire rapidement.`
-
-  const results: { email: string; sent: boolean; error?: string; smsSent?: boolean; smsError?: string }[] = []
+  const results: { email: string; sent: boolean; error?: string }[] = []
   let emailsSent = 0
-  let smsSent = 0
 
   for (const ref of referents) {
     let emailSent = false
     let emailError: string | undefined
-    if (ref.email) {
-      const { sent, error } = await sendEmail(ref.email, subject, html.replace('Bonjour,', `Bonjour ${ref.firstName},`))
+    const email = ref.email?.trim()
+    if (email) {
+      const { sent, error } = await sendEmail(email, subject, html.replace('Bonjour,', `Bonjour ${ref.firstName},`))
       emailSent = sent
       emailError = error ?? undefined
       if (sent) emailsSent++
@@ -110,30 +86,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       emailError = 'Email manquant'
     }
 
-    let refSmsSent = false
-    let smsError: string | undefined
-    if (ref.phone) {
-      const { sent, error } = await sendSms(ref.phone, `${ref.firstName}, ${smsBody}`)
-      refSmsSent = sent
-      smsError = error ?? undefined
-      if (sent) smsSent++
-    }
-
     results.push({
-      email: ref.email,
+      email: email || ref.email,
       sent: emailSent,
       error: emailError,
-      smsSent: refSmsSent,
-      smsError,
     })
   }
 
   return res.status(200).json({
     emailsSent,
-    smsSent,
     results,
     emailConfigured: Boolean(process.env.RESEND_API_KEY),
-    smsConfigured: Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER),
     error: emailsSent === 0
       ? results.map(r => r.error ? `${r.email || 'référent'} : ${r.error}` : null).filter(Boolean).join(' | ')
         || 'Aucun email envoyé'

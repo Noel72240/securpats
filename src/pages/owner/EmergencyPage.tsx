@@ -9,10 +9,8 @@ import { useOwnerPets, useOwnerReferents, useApp } from '@/contexts/AppContext'
 type NotifyResult = {
   ok: boolean
   emailsSent: number
-  smsSent?: number
   error?: string
   emailConfigured?: boolean
-  smsConfigured?: boolean
 }
 
 export default function EmergencyPage() {
@@ -27,6 +25,13 @@ export default function EmergencyPage() {
 
   const handleDeclare = async () => {
     if (!petId || !description.trim()) return
+
+    const referentsSansEmail = referents.filter(r => !r.email?.trim())
+    if (referentsSansEmail.length > 0) {
+      alert(`Ajoutez une adresse email pour : ${referentsSansEmail.map(r => r.firstName).join(', ')} (menu Référents).`)
+      return
+    }
+
     setLoading(true)
     const result = await declareEmergency(petId, description.trim())
     setNotifyResult(result)
@@ -64,17 +69,6 @@ export default function EmergencyPage() {
               {notifyResult?.error && !notifyResult.emailsSent && (
                 <p className="text-xs text-red-600 mt-2 ml-8 break-words">{notifyResult.error}</p>
               )}
-            </div>
-
-            <div className={`flex items-center gap-3 p-3 rounded-xl ${notifyResult?.smsSent ? 'bg-brand-50' : 'bg-slate-50'}`}>
-              <Phone className={`w-5 h-5 ${notifyResult?.smsSent ? 'text-brand-600' : 'text-slate-400'}`} />
-              <span className="text-sm">
-                {notifyResult?.smsConfigured === false
-                  ? 'SMS non configurés (Twilio) — appelez vos référents directement.'
-                  : notifyResult?.smsSent
-                    ? `${notifyResult.smsSent} SMS envoyé(s)`
-                    : 'Aucun SMS envoyé'}
-              </span>
             </div>
 
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">

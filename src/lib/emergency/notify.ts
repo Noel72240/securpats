@@ -35,16 +35,25 @@ export async function notifyReferentsEmergency(data: {
       body: JSON.stringify(data),
     })
 
-    const body = await response.json()
+    const text = await response.text()
+    let body: Record<string, unknown>
+    try {
+      body = JSON.parse(text)
+    } catch {
+      return {
+        emailsSent: 0,
+        error: `Réponse serveur invalide (${response.status}). Redéployez le projet Vercel.`,
+        emailConfigured: false,
+      }
+    }
     if (!response.ok) {
-      return { emailsSent: 0, error: body.error || 'Échec envoi notifications', emailConfigured: false }
+      return { emailsSent: 0, error: (body.error as string) || 'Échec envoi notifications', emailConfigured: false }
     }
 
     return {
       emailsSent: body.emailsSent as number,
-      smsSent: (body.smsSent as number) ?? 0,
       error: (body.error as string) || (
-        (body.emailsSent as number) === 0 && body.results?.length
+        (body.emailsSent as number) === 0 && Array.isArray(body.results) && body.results.length
           ? (body.results as { email: string; error?: string }[])
               .map(r => r.error ? `${r.email || 'référent'} : ${r.error}` : null)
               .filter(Boolean)
@@ -52,8 +61,7 @@ export async function notifyReferentsEmergency(data: {
           : null
       ),
       emailConfigured: body.emailConfigured as boolean,
-      smsConfigured: body.smsConfigured as boolean,
-      results: body.results as { email: string; sent: boolean; error?: string; smsSent?: boolean }[],
+      results: body.results as { email: string; sent: boolean; error?: string }[],
     }
   } catch {
     return { emailsSent: 0, error: 'Impossible de contacter le serveur de notification', emailConfigured: false }

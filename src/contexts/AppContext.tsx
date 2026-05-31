@@ -53,7 +53,7 @@ interface AppContextType extends AppState {
   reorderReferents: (ids: string[]) => void
   addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => Promise<string | null>
   deleteDocument: (id: string) => void
-  declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; smsSent?: number; error?: string; emailConfigured?: boolean; smsConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
+  declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
   updateMissionStatus: (id: string, status: Mission['status']) => void
   updateSubscription: (plan: SubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
@@ -500,25 +500,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return {
           ok: true,
           emailsSent: 0,
-          smsSent: notify.smsSent ?? 0,
           emailConfigured: false,
-          smsConfigured: notify.smsConfigured,
-          error: 'Emails non configurés (ajoutez RESEND_API_KEY sur Vercel). Les référents doivent être contactés par téléphone.',
+          error: notify.error || 'Emails non configurés (ajoutez RESEND_API_KEY sur Vercel). Les référents doivent être contactés par téléphone.',
         }
       }
 
       return {
         ok: true,
         emailsSent: notify.emailsSent,
-        smsSent: notify.smsSent ?? 0,
         emailConfigured: true,
-        smsConfigured: notify.smsConfigured,
         error: notify.emailsSent === 0 ? (notify.error || 'Aucun email envoyé — vérifiez les adresses de vos référents') : undefined,
         results: notify.results,
       }
     }
 
-    return { ok: true, emailsSent: 0, smsSent: 0, emailConfigured: false, smsConfigured: false }
+    return { ok: true, emailsSent: 0, emailConfigured: false }
   }, [currentUser, pets, referents, addActivity])
 
   const updateMissionStatus = useCallback((id: string, status: Mission['status']) => {

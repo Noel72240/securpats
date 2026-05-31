@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 export async function verifyRequestUser(
   authHeader: string | undefined,
   expectedUserId: string,
-  expectedEmail: string
+  _expectedEmail: string
 ): Promise<{ valid: true; userId: string } | { valid: false; error: string }> {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
@@ -30,9 +30,6 @@ export async function verifyRequestUser(
     return { valid: false, error: 'Identifiant utilisateur non autorisé' }
   }
 
-  if (user.email?.toLowerCase() !== expectedEmail.toLowerCase()) {
-    return { valid: false, error: 'Email non autorisé' }
-  }
-
+  // L'email du profil peut différer légèrement de auth.users — on valide l'ID uniquement
   return { valid: true, userId: user.id }
 }
