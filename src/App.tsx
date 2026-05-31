@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AppProvider, useApp } from '@/contexts/AppContext'
+import { AppProvider, useApp, useHasActiveSubscription } from '@/contexts/AppContext'
 
 import HomePage from '@/pages/public/HomePage'
 import HowItWorksPage from '@/pages/public/HowItWorksPage'
@@ -53,6 +53,21 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+/** Espace propriétaire réservé aux abonnés actifs (Stripe payé). */
+function OwnerSubscribedRoute({ children }: { children: React.ReactNode }) {
+  const hasSubscription = useHasActiveSubscription()
+  if (!hasSubscription) return <Navigate to="/app/abonnement" replace />
+  return <>{children}</>
+}
+
+function OwnerRoute({ children, requireSubscription = true }: { children: React.ReactNode; requireSubscription?: boolean }) {
+  return (
+    <ProtectedRoute roles={['owner']}>
+      {requireSubscription ? <OwnerSubscribedRoute>{children}</OwnerSubscribedRoute> : children}
+    </ProtectedRoute>
+  )
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -72,18 +87,18 @@ function AppRoutes() {
       <Route path="/cookies" element={<CookiesPage />} />
       <Route path="/developpeur" element={<DeveloppeurPage />} />
 
-      {/* Owner */}
-      <Route path="/app" element={<ProtectedRoute roles={['owner']}><OwnerDashboard /></ProtectedRoute>} />
-      <Route path="/app/animaux" element={<ProtectedRoute roles={['owner']}><PetsPage /></ProtectedRoute>} />
-      <Route path="/app/animaux/:id" element={<ProtectedRoute roles={['owner']}><PetDetailPage /></ProtectedRoute>} />
-      <Route path="/app/referents" element={<ProtectedRoute roles={['owner']}><ReferentsPage /></ProtectedRoute>} />
-      <Route path="/app/documents" element={<ProtectedRoute roles={['owner']}><DocumentsPage /></ProtectedRoute>} />
-      <Route path="/app/qr-code" element={<ProtectedRoute roles={['owner']}><QRCodePage /></ProtectedRoute>} />
-      <Route path="/app/carte-urgence" element={<ProtectedRoute roles={['owner']}><EmergencyCardPage /></ProtectedRoute>} />
-      <Route path="/app/urgence" element={<ProtectedRoute roles={['owner']}><EmergencyPage /></ProtectedRoute>} />
-      <Route path="/app/abonnement" element={<ProtectedRoute roles={['owner']}><SubscriptionPage /></ProtectedRoute>} />
-      <Route path="/app/abonnement/succes" element={<ProtectedRoute roles={['owner']}><SubscriptionSuccessPage /></ProtectedRoute>} />
-      <Route path="/app/donnees-personnelles" element={<ProtectedRoute roles={['owner']}><PrivacyDataPage /></ProtectedRoute>} />
+      {/* Owner — abonnement actif requis (sauf pages abonnement / RGPD) */}
+      <Route path="/app" element={<OwnerRoute><OwnerDashboard /></OwnerRoute>} />
+      <Route path="/app/animaux" element={<OwnerRoute><PetsPage /></OwnerRoute>} />
+      <Route path="/app/animaux/:id" element={<OwnerRoute><PetDetailPage /></OwnerRoute>} />
+      <Route path="/app/referents" element={<OwnerRoute><ReferentsPage /></OwnerRoute>} />
+      <Route path="/app/documents" element={<OwnerRoute><DocumentsPage /></OwnerRoute>} />
+      <Route path="/app/qr-code" element={<OwnerRoute><QRCodePage /></OwnerRoute>} />
+      <Route path="/app/carte-urgence" element={<OwnerRoute><EmergencyCardPage /></OwnerRoute>} />
+      <Route path="/app/urgence" element={<OwnerRoute><EmergencyPage /></OwnerRoute>} />
+      <Route path="/app/abonnement" element={<OwnerRoute requireSubscription={false}><SubscriptionPage /></OwnerRoute>} />
+      <Route path="/app/abonnement/succes" element={<OwnerRoute requireSubscription={false}><SubscriptionSuccessPage /></OwnerRoute>} />
+      <Route path="/app/donnees-personnelles" element={<OwnerRoute requireSubscription={false}><PrivacyDataPage /></OwnerRoute>} />
 
       {/* Pet-Sitter */}
       <Route path="/pet-sitter/inscription" element={<PetSitterRegisterPage />} />

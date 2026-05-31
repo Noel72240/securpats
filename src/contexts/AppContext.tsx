@@ -13,6 +13,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { signIn, signUp, signOut, getSessionUser, onAuthStateChange } from '@/lib/supabase/auth'
 import * as db from '@/lib/supabase/services'
 import { hydrateUserData, hydratePublicSite, clearUserData } from '@/lib/supabase/hydrate'
+import { isOwnerSubscriptionActive } from '@/lib/subscription/access'
 
 interface AppState {
   currentUser: User | null
@@ -134,7 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         if (user) {
           setCurrentUser(user)
-          void hydrateUserData(user, dataSetters)
+          await hydrateUserData(user, dataSetters)
         }
       } catch (err) {
         console.error('[Supabase] Init session:', err)
@@ -143,10 +144,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (!cancelled) {
-        unsubscribe = onAuthStateChange((user) => {
+        unsubscribe = onAuthStateChange(async (user) => {
           if (user) {
             setCurrentUser(user)
-            void hydrateUserData(user, dataSetters)
+            await hydrateUserData(user, dataSetters)
           } else {
             setCurrentUser(null)
             clearUserData(dataSetters)
@@ -682,6 +683,11 @@ export function useOwnerActivities() {
 export function usePetByToken(token: string) {
   const { pets } = useApp()
   return pets.find(p => p.qrToken === token)
+}
+
+export function useHasActiveSubscription() {
+  const { subscription, currentUser } = useApp()
+  return isOwnerSubscriptionActive(subscription, currentUser?.id)
 }
 
 export function usePetSitterMissions() {

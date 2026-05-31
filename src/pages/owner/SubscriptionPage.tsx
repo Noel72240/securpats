@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, CardHeader, EmptyState } from '@/components/ui/Card'
-import { useApp } from '@/contexts/AppContext'
+import { useApp, useHasActiveSubscription } from '@/contexts/AppContext'
 import { SUBSCRIPTION_PLANS } from '@/lib/stripe/plans'
 import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured } from '@/lib/stripe/client'
 import { formatDate } from '@/lib/utils'
@@ -18,6 +18,8 @@ export default function SubscriptionPage() {
   const [error, setError] = useState('')
 
   const stripeReady = isStripeConfigured()
+  const hasAccess = useHasActiveSubscription()
+  const needsPayment = stripeReady && !hasAccess
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!currentUser) return
@@ -50,6 +52,15 @@ export default function SubscriptionPage() {
   return (
     <DashboardLayout variant="owner" title="Abonnement">
       <div className="space-y-8 max-w-4xl">
+        {needsPayment && (
+          <Card className="bg-brand-50 border-brand-200 !p-4">
+            <p className="font-semibold text-slate-900">Activez votre abonnement pour accéder à SécurPats</p>
+            <p className="text-sm text-slate-600 mt-1">
+              Choisissez une formule ci-dessous pour débloquer vos animaux, QR codes, documents et alertes urgence.
+            </p>
+          </Card>
+        )}
+
         {canceled && (
           <Card className="bg-amber-50 border-amber-200 !p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
