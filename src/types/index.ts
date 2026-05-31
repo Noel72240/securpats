@@ -92,6 +92,7 @@ export interface Invoice {
   date: string
   status: 'paid' | 'pending' | 'failed'
   plan: SubscriptionPlan
+  stripeInvoiceId?: string
 }
 
 export type MissionStatus = 'pending' | 'accepted' | 'declined' | 'completed'

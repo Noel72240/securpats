@@ -561,15 +561,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error('[Subscription]', error)
         setSubscription({ id: '', ...payload })
       }
+      const { invoices: refreshed } = await db.fetchInvoicesByOwner(ownerId)
+      setInvoices(refreshed)
     } else {
       setSubscription({ id: generateId('sub'), ...payload })
     }
 
-    setInvoices(prev => {
-      const exists = prev.some(i => i.date === data.startDate && i.amount === data.price && i.status === 'paid')
-      if (exists) return prev
-      return [{ id: generateId('inv'), ownerId, amount: data.price, date: data.startDate, status: 'paid' as const, plan: data.plan }, ...prev]
-    })
     addActivity('subscription', `Abonnement ${data.plan === 'monthly' ? 'mensuel' : 'annuel'} activé via Stripe`)
   }, [currentUser, addActivity])
 

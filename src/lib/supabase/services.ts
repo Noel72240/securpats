@@ -4,7 +4,7 @@ import {
   petFromRow, petToInsert, petToUpdate,
   referentFromRow, referentToInsert,
   documentFromRow,
-  subscriptionFromRow, invoiceFromRow,
+  subscriptionFromRow, invoiceFromRow, dedupeInvoices,
   missionFromRow,
   petsitterFromRow,
   activityFromRow,
@@ -199,16 +199,31 @@ export async function upsertSubscription(sub: Omit<Subscription, 'id'> & { id?: 
 export async function fetchInvoicesByOwner(ownerId: string) {
   const { data, error } = await getSupabase().from('invoices').select('*').eq('owner_id', ownerId).order('date', { ascending: false })
   if (error) return { invoices: [] as Invoice[], error: error.message }
-  return { invoices: data.map(invoiceFromRow), error: null }
+  return { invoices: dedupeInvoices(data.map(invoiceFromRow)), error: null }
 }
 
 export async function createInvoice(invoice: Omit<Invoice, 'id'>) {
+  const { data: existing } = await getSupabase()
+    .from('invoices')
+    .select('id')
+    .eq('owner_id', invoice.ownerId)
+    .eq('date', invoice.date)
+    .eq('amount', invoice.amount)
+    .eq('plan', invoice.plan)
+    .eq('status', invoice.status)
+    .maybeSingle()
+
+  if (existing) {
+    return { invoice: null as Invoice | null, error: null }
+  }
+
   const { data, error } = await getSupabase().from('invoices').insert({
     owner_id: invoice.ownerId,
     amount: invoice.amount,
     date: invoice.date,
     status: invoice.status,
     plan: invoice.plan,
+    stripe_invoice_id: invoice.stripeInvoiceId ?? null,
   }).select().single()
   if (error) return { invoice: null as Invoice | null, error: error.message }
   return { invoice: invoiceFromRow(data), error: null }

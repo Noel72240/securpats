@@ -186,7 +186,18 @@ export function invoiceFromRow(row: Tables<'invoices'>): Invoice {
     date: row.date,
     status: row.status as InvoiceStatus,
     plan: row.plan as SubscriptionPlan,
+    stripeInvoiceId: row.stripe_invoice_id ?? undefined,
   }
+}
+
+export function dedupeInvoices(invoices: Invoice[]): Invoice[] {
+  const seen = new Set<string>()
+  return invoices.filter(inv => {
+    const key = inv.stripeInvoiceId || `${inv.ownerId}|${inv.date}|${inv.amount}|${inv.plan}|${inv.status}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 // ─── Missions ───────────────────────────────────────────────

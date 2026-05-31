@@ -96,6 +96,17 @@ export async function insertOwnerInvoice(data: {
     if (existing) return
   }
 
+  const { data: duplicate } = await supabase
+    .from('invoices')
+    .select('id')
+    .eq('owner_id', data.ownerId)
+    .eq('date', data.date)
+    .eq('amount', data.amount)
+    .eq('plan', data.plan)
+    .eq('status', data.status)
+    .maybeSingle()
+  if (duplicate) return
+
   await supabase.from('invoices').insert({
     owner_id: data.ownerId,
     amount: data.amount,
