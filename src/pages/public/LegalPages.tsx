@@ -116,8 +116,8 @@ export function CGUPage() {
       <H2>4. Abonnements et paiement</H2>
       <p>Deux formules avec renouvellement automatique :</p>
       <Ul items={[
-        'Mensuel : 5,99 € TTC / mois',
-        'Annuel : 59,90 € TTC / an',
+        'Mensuel : 4,99 € TTC / mois',
+        'Annuel : 49,99 € TTC / an',
       ]} />
       <p>
         Le paiement est traité de manière sécurisée par Stripe (certifié PCI-DSS). Vous pouvez résilier à tout moment

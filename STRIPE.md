@@ -4,16 +4,16 @@
 
 | Formule | Montant | Intervalle | Renouvellement |
 |---------|---------|------------|----------------|
-| Mensuel | **5,99 €** | `month` | Automatique |
-| Annuel  | **59,90 €** | `year`  | Automatique |
+| Mensuel | **4,99 €** | `month` | Automatique |
+| Annuel  | **49,99 €** | `year`  | Automatique |
 
 ## Étapes
 
 ### 1. Créer les produits dans Stripe
 
 1. [Dashboard Stripe](https://dashboard.stripe.com) → **Produits** → **Ajouter un produit**
-2. **SécurPats Mensuel** — Prix récurrent : `5,99 EUR` / mois
-3. **SécurPats Annuel** — Prix récurrent : `59,90 EUR` / an
+2. **SécurPats Mensuel** — Prix récurrent : `4,99 EUR` / mois
+3. **SécurPats Annuel** — Prix récurrent : `49,99 EUR` / an
 4. Copier les **Price ID** (`price_xxx`) dans `.env`
 
 ### 2. Variables d'environnement
@@ -65,7 +65,7 @@ Webhook Stripe      →       webhook.ts                  → Sync Supabase (à 
 1. Inscription → redirection vers `/app/abonnement`
 2. Clic **S'abonner** → Stripe Checkout (CB sécurisée)
 3. Paiement OK → `/app/abonnement/succes` → abonnement activé
-4. Renouvellement automatique chaque mois (5,99 €) ou chaque année (59,90 €)
+4. Renouvellement automatique chaque mois (4,99 €) ou chaque année (49,99 €)
 5. Résiliation via le portail Stripe
 
 ## Test en local

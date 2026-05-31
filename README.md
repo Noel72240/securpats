@@ -28,8 +28,8 @@ Ouvrir [http://localhost:5173](http://localhost:5173)
 
 | Formule | Prix | Renouvellement |
 |---------|------|----------------|
-| Mensuel | **5,99 €/mois** | Automatique |
-| Annuel  | **59,90 €/an**  | Automatique |
+| Mensuel | **4,99 €/mois** | Automatique |
+| Annuel  | **49,99 €/an**  | Automatique |
 
 Configuration détaillée : **[STRIPE.md](STRIPE.md)**
 

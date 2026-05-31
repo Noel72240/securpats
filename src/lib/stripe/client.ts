@@ -1,6 +1,6 @@
 /**
  * Stripe Checkout — abonnements récurrents automatiques
- * Mensuel : 5,99 €/mois | Annuel : 59,90 €/an
+ * Mensuel : 4,99 €/mois | Annuel : 49,99 €/an
  *
  * Nécessite les routes API Vercel (/api/stripe/*) et les variables d'environnement.
  */

@@ -36,7 +36,7 @@ SET settings = '{
     "heroImage": "",
     "heroImageAlt": "Votre compagnon",
     "ctaTitle": "Protégez vos compagnons dès aujourd''hui",
-    "ctaSubtitle": "Abonnement à partir de 5,99 €/mois — renouvellement automatique."
+    "ctaSubtitle": "Abonnement à partir de 4,99 €/mois — renouvellement automatique."
   },
   "footer": {
     "description": "La plateforme qui garantit qu''aucun animal ne soit laissé sans prise en charge en cas d''urgence."
