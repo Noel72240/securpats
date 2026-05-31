@@ -25,7 +25,7 @@ export function PublicHeader() {
   return (
     <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-24 py-2">
+        <div className="flex items-center justify-between h-16 sm:h-20 lg:h-24 py-1 sm:py-2">
           <BrandLogo variant="icon" className="group" />
 
           <nav className="hidden lg:flex items-center gap-1">

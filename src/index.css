@@ -104,6 +104,13 @@ body {
 
 .hero-orbit-item {
   transform: rotate(var(--orbit-angle)) translateX(var(--orbit-radius)) rotate(calc(-1 * var(--orbit-angle)));
+  --orbit-radius: min(38vw, 210px);
+}
+
+@media (min-width: 640px) {
+  .hero-orbit-item-sm {
+    --orbit-radius: min(42vw, 210px);
+  }
 }
 
 .hero-orbit-counter {

@@ -45,32 +45,32 @@ export default function HomePage() {
           <div className="absolute top-20 left-10 w-72 h-72 bg-brand-200 rounded-full blur-3xl hero-aurora" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl hero-aurora" style={{ animationDelay: '2s' }} />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center">
             <div className="animate-fade-in-up">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-100 text-brand-700 text-sm font-semibold mb-6">
-                <Heart className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
+                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 {home.badge}
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight mb-6">
+              <h1 className="text-[1.65rem] leading-tight min-[400px]:text-3xl sm:text-4xl lg:text-6xl font-extrabold text-slate-900 mb-4 sm:mb-6">
                 {home.title}{' '}
                 <span className="text-brand-600">{home.titleHighlight}</span>, même en votre absence
               </h1>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-xl">
+              <p className="text-base sm:text-lg text-slate-600 mb-6 sm:mb-8 leading-relaxed max-w-xl">
                 {home.subtitle}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/inscription">
-                  <Button size="lg" icon={ArrowRight}>Commencer gratuitement</Button>
+              <div className="flex flex-col min-[400px]:flex-row gap-3 sm:gap-4">
+                <Link to="/inscription" className="w-full min-[400px]:w-auto">
+                  <Button size="lg" icon={ArrowRight} className="w-full min-[400px]:w-auto">Commencer gratuitement</Button>
                 </Link>
-                <Link to="/fonctionnement">
-                  <Button size="lg" variant="outline">Comment ça marche</Button>
+                <Link to="/fonctionnement" className="w-full min-[400px]:w-auto">
+                  <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">Comment ça marche</Button>
                 </Link>
               </div>
-              <div className="flex items-center gap-6 mt-10 text-sm text-slate-500">
-                <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-brand-500" /> Sans engagement</span>
-                <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-brand-500" /> Données sécurisées</span>
-                <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-brand-500" /> RGPD</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6 mt-6 sm:mt-10 text-xs sm:text-sm text-slate-500">
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> Sans engagement</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> Données sécurisées</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> RGPD</span>
               </div>
             </div>
             <div className="relative animate-fade-in-up animation-delay-200">
@@ -81,8 +81,8 @@ export default function HomePage() {
       </section>
 
       {/* Why */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-20 lg:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
               Pourquoi utiliser SécurPats ?
@@ -110,8 +110,8 @@ export default function HomePage() {
       </section>
 
       {/* How it works */}
-      <section className="py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-20 lg:py-28 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Comment ça fonctionne</h2>
             <p className="text-lg text-slate-600">Quatre étapes simples pour protéger vos compagnons.</p>
@@ -129,8 +129,8 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-20 lg:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Fonctionnalités</h2>
             <p className="text-lg text-slate-600">Tout ce dont vous avez besoin pour une protection complète.</p>
@@ -151,8 +151,8 @@ export default function HomePage() {
 
       {/* Testimonials */}
       {testimonials.length > 0 && (
-      <section className="py-20 lg:py-28 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-20 lg:py-28 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Ils nous font confiance</h2>
           </div>
@@ -180,8 +180,8 @@ export default function HomePage() {
       )}
 
       {/* Guides SEO — hospitalisation & urgence */}
-      <section className="py-16 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 bg-white border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-10">
             <h2 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-3">
               Hospitalisé(e) ? Qui s&apos;occupe de votre animal ?
@@ -205,13 +205,13 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-br from-brand-600 to-brand-800 overflow-hidden">
+      <section className="py-12 sm:py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-brand-600 to-brand-800 overflow-hidden">
             <div className="absolute inset-0 opacity-20">
               <div className="absolute -top-20 -right-20 w-80 h-80 bg-white rounded-full blur-3xl" />
             </div>
-            <div className="relative px-8 py-16 lg:px-16 lg:py-20 text-center">
+            <div className="relative px-5 py-10 sm:px-8 sm:py-16 lg:px-16 lg:py-20 text-center">
               <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
                 {home.ctaTitle}
               </h2>

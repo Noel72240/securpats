@@ -8,17 +8,17 @@ interface HeroVisualProps {
 }
 
 const ORBIT_PAWS = [
-  { angle: 0, delay: 0, variant: 'dog' as const, size: 28 },
-  { angle: 72, delay: 1.5, variant: 'cat' as const, size: 24 },
-  { angle: 144, delay: 0.8, variant: 'dog' as const, size: 22 },
-  { angle: 216, delay: 2.2, variant: 'cat' as const, size: 26 },
-  { angle: 288, delay: 1.1, variant: 'dog' as const, size: 20 },
+  { angle: 0, variant: 'dog' as const, size: 28 },
+  { angle: 72, variant: 'cat' as const, size: 24 },
+  { angle: 144, variant: 'dog' as const, size: 22 },
+  { angle: 216, variant: 'cat' as const, size: 26 },
+  { angle: 288, variant: 'dog' as const, size: 20 },
 ]
 
 const FLOAT_BADGES = [
-  { icon: Heart, label: 'Aimé', className: 'top-4 -left-3 sm:-left-6 hero-badge-delay-1', color: 'text-rose-500 bg-rose-50 border-rose-200' },
-  { icon: Shield, label: 'Protégé', className: '-top-2 -right-2 sm:-right-4 hero-badge-delay-2', color: 'text-brand-600 bg-brand-50 border-brand-200' },
-  { icon: PawPrint, label: 'En sécurité', className: 'bottom-24 -right-3 sm:-right-5 hero-badge-delay-3', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+  { icon: Heart, label: 'Aimé', className: 'top-2 left-2 sm:top-4 sm:-left-6 hero-badge-delay-1', color: 'text-rose-500 bg-rose-50 border-rose-200' },
+  { icon: Shield, label: 'Protégé', className: 'top-2 right-2 sm:-top-2 sm:-right-4 hero-badge-delay-2', color: 'text-brand-600 bg-brand-50 border-brand-200' },
+  { icon: PawPrint, label: 'Sécurisé', className: 'bottom-[4.5rem] right-2 sm:bottom-24 sm:-right-5 hero-badge-delay-3', color: 'text-amber-600 bg-amber-50 border-amber-200' },
 ]
 
 export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
@@ -33,7 +33,10 @@ export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
     const x = (e.clientX - rect.left) / rect.width - 0.5
     const y = (e.clientY - rect.top) / rect.height - 0.5
     setTilt({ x: -y * 8, y: x * 8 })
-    setGlow({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 })
+    setGlow({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    })
   }, [])
 
   const handleLeave = useCallback(() => {
@@ -44,35 +47,32 @@ export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
   return (
     <div
       ref={wrapRef}
-      className="relative mx-auto max-w-lg lg:max-w-none hero-visual"
+      className="relative mx-auto w-full max-w-lg lg:max-w-none hero-visual px-1 sm:px-0"
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
     >
-      {/* Halo lumineux qui suit la souris */}
+      {/* Halo — réduit sur mobile */}
       <div
-        className="absolute -inset-6 sm:-inset-10 rounded-[3rem] hero-aurora pointer-events-none"
+        className="absolute -inset-2 sm:-inset-6 lg:-inset-10 rounded-[2rem] hero-aurora pointer-events-none"
         style={{
-          background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(16,185,129,0.35) 0%, rgba(244,114,182,0.12) 40%, transparent 70%)`,
+          background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(16,185,129,0.3) 0%, rgba(244,114,182,0.1) 45%, transparent 70%)`,
         }}
       />
 
-      {/* Anneaux pulsants */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {/* Anneaux — desktop uniquement */}
+      <div className="absolute inset-0 hidden sm:flex items-center justify-center pointer-events-none">
         <div className="w-[92%] h-[92%] rounded-[2rem] border-2 border-brand-300/30 hero-pulse-ring" />
         <div className="absolute w-[105%] h-[105%] rounded-[2.2rem] border border-dashed border-brand-400/25 hero-spin-slow" />
       </div>
 
-      {/* Pattes en orbite */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {/* Orbite — tablette+ */}
+      <div className="absolute inset-0 hidden sm:flex items-center justify-center pointer-events-none">
         <div className="relative w-0 h-0 hero-orbit-spin">
           {ORBIT_PAWS.map((p, i) => (
             <div
               key={i}
-              className="absolute hero-orbit-item"
-              style={{
-                ['--orbit-angle' as string]: `${p.angle}deg`,
-                ['--orbit-radius' as string]: 'min(42vw, 210px)',
-              }}
+              className="absolute hero-orbit-item hero-orbit-item-sm"
+              style={{ ['--orbit-angle' as string]: `${p.angle}deg` }}
             >
               <PawPrint
                 className={cn(
@@ -89,25 +89,25 @@ export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
         </div>
       </div>
 
-      {/* Badges flottants */}
+      {/* Badges — compacts sur mobile, dans la carte */}
       {FLOAT_BADGES.map(({ icon: Icon, label, className, color }) => (
         <div
           key={label}
           className={cn(
-            'absolute z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-md text-xs font-semibold hero-badge-float pointer-events-none',
+            'absolute z-20 flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border shadow-md text-[10px] sm:text-xs font-semibold hero-badge-float pointer-events-none',
             color,
             className,
           )}
         >
-          <Icon className="w-3.5 h-3.5" />
-          {label}
+          <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+          <span className="hidden min-[380px]:inline">{label}</span>
         </div>
       ))}
 
-      {/* Carte principale — flottement externe + inclinaison interne */}
+      {/* Carte principale */}
       <div className="relative hero-card-float">
         <div
-          className="relative rounded-3xl overflow-hidden shadow-2xl shadow-brand-900/15 transition-transform duration-200 ease-out will-change-transform ring-2 ring-brand-300/50 ring-offset-2 ring-offset-transparent"
+          className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl shadow-brand-900/15 transition-transform duration-200 ease-out will-change-transform ring-2 ring-brand-300/40 sm:ring-brand-300/50"
           style={{
             transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(${tilt.x || tilt.y ? 1.02 : 1})`,
           }}
@@ -116,35 +116,33 @@ export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
             <img
               src={heroImage}
               alt={heroImageAlt}
-              className="relative w-full h-[380px] sm:h-[420px] lg:h-[500px] object-cover"
+              className="relative w-full h-[240px] min-[400px]:h-[260px] sm:h-[380px] lg:h-[500px] object-cover object-center"
             />
           ) : (
-            <div className="relative w-full h-[380px] sm:h-[420px] lg:h-[500px] bg-gradient-to-br from-brand-100 to-brand-200 flex flex-col items-center justify-center">
-              <PawPrint className="w-24 h-24 text-brand-400 mb-4 hero-paw-pulse" />
-              <p className="text-brand-600 font-medium text-sm">Ajoutez votre image depuis l&apos;admin</p>
+            <div className="relative w-full h-[240px] min-[400px]:h-[260px] sm:h-[380px] lg:h-[500px] bg-gradient-to-br from-brand-100 to-brand-200 flex flex-col items-center justify-center">
+              <PawPrint className="w-16 h-16 sm:w-24 sm:h-24 text-brand-400 mb-3 hero-paw-pulse" />
+              <p className="text-brand-600 font-medium text-xs sm:text-sm px-4 text-center">Ajoutez votre image depuis l&apos;admin</p>
             </div>
           )}
 
-          {/* Reflet lumineux */}
           <div className="absolute inset-0 hero-shine pointer-events-none z-10" />
 
-          {/* Overlay bas */}
-          <div className="absolute bottom-6 left-6 right-6 bg-white/92 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-white/80 z-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center hero-qr-icon">
-                <QrCode className="w-5 h-5 text-white" />
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 bg-white/95 backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg border border-white/80 z-20">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-brand-600 flex items-center justify-center flex-shrink-0 hero-qr-icon">
+                <QrCode className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <div>
-                <p className="font-semibold text-slate-900">QR Code d&apos;urgence</p>
-                <p className="text-sm text-slate-500">Accès instantané aux infos vitales</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 text-sm sm:text-base leading-tight">QR Code d&apos;urgence</p>
+                <p className="text-xs sm:text-sm text-slate-500 leading-snug">Accès instantané aux infos vitales</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Petites pattes qui montent */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
+      {/* Pattes montantes — desktop */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl hidden sm:block">
         {[0, 1, 2].map(i => (
           <PawPrint
             key={i}

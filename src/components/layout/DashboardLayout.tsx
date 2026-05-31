@@ -175,7 +175,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
           </div>
         </header>
         </div>
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-3 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   )
