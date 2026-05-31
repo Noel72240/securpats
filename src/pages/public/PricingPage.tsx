@@ -1,0 +1,83 @@
+import { Link } from 'react-router-dom'
+import { Check, Star, ArrowRight } from 'lucide-react'
+import { PublicLayout } from '@/components/layout/PublicLayout'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { PLAN_PRICES } from '@/types'
+
+const features = [
+  'Animaux illimités',
+  'Jusqu\'à 5 référents d\'urgence',
+  'QR Code et carte d\'urgence',
+  'Stockage de documents sécurisé',
+  'Alertes d\'urgence automatiques',
+  'Fiche de secours publique',
+  'Support client prioritaire',
+]
+
+export default function PricingPage() {
+  return (
+    <PublicLayout>
+      <section className="py-16 lg:py-24">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Tarifs simples et transparents</h1>
+            <p className="text-lg text-slate-600">Choisissez l'offre adaptée à vos besoins. Sans frais cachés.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Monthly */}
+            <Card padding="lg" className="relative">
+              <h3 className="text-xl font-bold text-slate-900 mb-1">Mensuel</h3>
+              <p className="text-sm text-slate-500 mb-6">Flexibilité maximale</p>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-slate-900">{PLAN_PRICES.monthly.toFixed(2).replace('.', ',')}</span>
+                <span className="text-slate-500 ml-1">€/mois</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {features.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                    <Check className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/inscription">
+                <Button variant="outline" className="w-full">Choisir mensuel</Button>
+              </Link>
+            </Card>
+
+            {/* Yearly - highlighted */}
+            <Card padding="lg" className="relative border-2 border-brand-500 shadow-lg shadow-brand-500/10">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-accent-500 text-white text-xs font-bold">
+                  <Star className="w-3 h-3" /> MEILLEURE OFFRE
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-1">Annuel</h3>
+              <p className="text-sm text-slate-500 mb-6">Économisez 2 mois</p>
+              <div className="mb-2">
+                <span className="text-4xl font-extrabold text-brand-600">{PLAN_PRICES.yearly.toFixed(2).replace('.', ',')}</span>
+                <span className="text-slate-500 ml-1">€/an</span>
+              </div>
+              <p className="text-sm text-brand-600 font-semibold mb-6">
+                Soit {(PLAN_PRICES.yearly / 12).toFixed(2).replace('.', ',')} €/mois — économie de {(PLAN_PRICES.monthly * 12 - PLAN_PRICES.yearly).toFixed(2).replace('.', ',')} €
+              </p>
+              <ul className="space-y-3 mb-8">
+                {features.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                    <Check className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/inscription">
+                <Button className="w-full" icon={ArrowRight}>Choisir annuel</Button>
+              </Link>
+            </Card>
+          </div>
+        </div>
+      </section>
+    </PublicLayout>
+  )
+}

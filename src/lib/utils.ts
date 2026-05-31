@@ -1,0 +1,55 @@
+import { clsx, type ClassValue } from 'clsx'
+
+export function cn(...inputs: ClassValue[]) {
+  return clsx(inputs)
+}
+
+export function calculateAge(birthDate: string): string {
+  const birth = new Date(birthDate)
+  const today = new Date()
+  let years = today.getFullYear() - birth.getFullYear()
+  let months = today.getMonth() - birth.getMonth()
+  if (months < 0 || (months === 0 && today.getDate() < birth.getDate())) {
+    years--
+    months += 12
+  }
+  if (years === 0) return `${months} mois`
+  if (months === 0) return `${years} an${years > 1 ? 's' : ''}`
+  return `${years} an${years > 1 ? 's' : ''} et ${months} mois`
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+}
+
+export function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+export function formatDateTime(date: string): string {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function generateId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+}
+
+export function generateQrToken(name: string): string {
+  return `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+export function getRescueUrl(token: string): string {
+  return `${window.location.origin}/secours/${token}`
+}
