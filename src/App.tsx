@@ -13,6 +13,7 @@ import DeveloppeurPage from '@/pages/public/DeveloppeurPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { SeoPageView } from '@/pages/public/SeoLandingPage'
 import { SEO_PAGES } from '@/lib/seo/content'
 
@@ -136,6 +137,7 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <AppRoutes />
         <CookieBanner />
       </BrowserRouter>
