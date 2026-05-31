@@ -27,6 +27,7 @@ export async function hydrateUserData(user: User, setters: Setters) {
     setters.setDocuments(data.documents)
     setters.setMissions(data.missions)
     setters.setSiteSettings(data.siteSettings)
+    setters.setInvoices(data.invoices)
     return
   }
 

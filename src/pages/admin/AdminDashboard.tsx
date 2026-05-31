@@ -3,13 +3,33 @@ import { Users, Dog, Briefcase, CreditCard, Globe, ArrowRight } from 'lucide-rea
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatCard, Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { adminStats } from '@/lib/mock/data'
 import { useApp } from '@/contexts/AppContext'
+import { buildMonthlyRevenue, totalPaidRevenue } from '@/lib/admin/analytics'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { useMemo } from 'react'
 
 export default function AdminDashboard() {
   const { allUsers, registeredUsers, pets, missions, invoices } = useApp()
-  const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0)
+  const totalRevenue = totalPaidRevenue(invoices)
+  const monthlyRevenue = useMemo(() => buildMonthlyRevenue(invoices), [invoices])
+
+  const monthlyUsers = useMemo(() => {
+    const now = new Date()
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+    const rows: Array<{ month: string; users: number }> = []
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
+      const users = registeredUsers.filter(u => {
+        const created = new Date(u.createdAt)
+        return created <= end
+      }).length
+      rows.push({ month: months[d.getMonth()], users })
+    }
+
+    return rows
+  }, [registeredUsers])
 
   return (
     <DashboardLayout variant="admin" title="Administration">
@@ -45,10 +65,10 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader title="Croissance utilisateurs" />
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={adminStats.monthlyGrowth}>
+              <LineChart data={monthlyUsers}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip />
                 <Line type="monotone" dataKey="users" stroke="#9333ea" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
@@ -56,13 +76,13 @@ export default function AdminDashboard() {
           </Card>
 
           <Card>
-            <CardHeader title="Revenus mensuels (simulés)" />
+            <CardHeader title="Revenus mensuels (Stripe)" />
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={adminStats.monthlyGrowth}>
+              <BarChart data={monthlyRevenue}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
+                <Tooltip formatter={(value) => [`${Number(value ?? 0).toFixed(2).replace('.', ',')} €`, 'Revenus']} />
                 <Bar dataKey="revenue" fill="#f59e0b" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

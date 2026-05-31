@@ -3,6 +3,8 @@ import { Card, Badge } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { formatDate } from '@/lib/utils'
 import { adminStats } from '@/lib/mock/data'
+import { buildMonthlyRevenue } from '@/lib/admin/analytics'
+import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 function AdminTablePage({ title, variant, children }: { title: string; variant: 'admin'; children: React.ReactNode }) {
@@ -193,14 +195,13 @@ export function AdminMissionsPage() {
 }
 
 export function AdminSubscriptionsPage() {
-  const { subscription, invoices } = useApp()
+  const { invoices } = useApp()
+  const paidCount = invoices.filter(i => i.status === 'paid').length
   return (
     <AdminTablePage title="Gestion abonnements" variant="admin">
       <div className="mb-6 p-4 bg-purple-50 rounded-xl">
-        <p className="font-semibold text-slate-900">Abonnement actif (démo)</p>
-        {subscription && (
-          <p className="text-sm text-slate-600">{subscription.plan} — {subscription.price}€ — {subscription.status}</p>
-        )}
+        <p className="font-semibold text-slate-900">Factures Stripe</p>
+        <p className="text-sm text-slate-600">{paidCount} paiement{paidCount > 1 ? 's' : ''} enregistré{paidCount > 1 ? 's' : ''}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -229,11 +230,13 @@ export function AdminSubscriptionsPage() {
 }
 
 export function AdminStatsPage() {
+  const { invoices } = useApp()
+  const monthlyRevenue = useMemo(() => buildMonthlyRevenue(invoices), [invoices])
   const charts = [
-    { title: 'Utilisateurs', key: 'users' as const, color: '#9333ea' },
-    { title: 'Animaux', key: 'pets' as const, color: '#059669' },
-    { title: 'Missions', key: 'missions' as const, color: '#2563eb' },
-    { title: 'Revenus (€)', key: 'revenue' as const, color: '#f59e0b' },
+    { title: 'Utilisateurs', key: 'users' as const, color: '#9333ea', data: adminStats.monthlyGrowth },
+    { title: 'Animaux', key: 'pets' as const, color: '#059669', data: adminStats.monthlyGrowth },
+    { title: 'Missions', key: 'missions' as const, color: '#2563eb', data: adminStats.monthlyGrowth },
+    { title: 'Revenus (€)', key: 'revenue' as const, color: '#f59e0b', data: monthlyRevenue },
   ]
 
   return (
@@ -243,7 +246,7 @@ export function AdminStatsPage() {
           <Card key={chart.key}>
             <h3 className="font-semibold text-slate-900 mb-4">{chart.title}</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={adminStats.monthlyGrowth}>
+              <BarChart data={chart.data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />

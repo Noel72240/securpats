@@ -196,6 +196,15 @@ export async function upsertSubscription(sub: Omit<Subscription, 'id'> & { id?: 
   return { subscription: subscriptionFromRow(data), error: null }
 }
 
+export async function fetchAllInvoices() {
+  const { data, error } = await getSupabase()
+    .from('invoices')
+    .select('*')
+    .order('date', { ascending: false })
+  if (error) return { invoices: [] as Invoice[], error: error.message }
+  return { invoices: dedupeInvoices(data.map(invoiceFromRow)), error: null }
+}
+
 export async function fetchInvoicesByOwner(ownerId: string) {
   const { data, error } = await getSupabase().from('invoices').select('*').eq('owner_id', ownerId).order('date', { ascending: false })
   if (error) return { invoices: [] as Invoice[], error: error.message }
@@ -366,13 +375,14 @@ export async function loadOwnerData(ownerId: string) {
 }
 
 export async function loadAdminData() {
-  const [profiles, pets, referents, documents, missions, siteSettings] = await Promise.all([
+  const [profiles, pets, referents, documents, missions, siteSettings, invoices] = await Promise.all([
     fetchAllProfiles(),
     fetchAllPets(),
     fetchAllReferents(),
     fetchAllDocuments(),
     fetchAllMissions(),
     fetchSiteSettings(),
+    fetchAllInvoices(),
   ])
   return {
     allUsers: profiles.users,
@@ -381,6 +391,7 @@ export async function loadAdminData() {
     documents: documents.documents,
     missions: missions.missions,
     siteSettings: siteSettings.settings,
+    invoices: invoices.invoices,
   }
 }
 
