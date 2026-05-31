@@ -32,7 +32,7 @@ async function sendSms(to: string, body: string) {
 }
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM_EMAIL || 'urgence@securpats.fr'
+  const from = process.env.RESEND_FROM_EMAIL || 'contact@securpats.fr'
   if (!apiKey) return { sent: false, error: 'RESEND_API_KEY non configurée' }
 
   const res = await fetch('https://api.resend.com/emails', {
@@ -134,5 +134,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     results,
     emailConfigured: Boolean(process.env.RESEND_API_KEY),
     smsConfigured: Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER),
+    error: emailsSent === 0
+      ? results.map(r => r.error ? `${r.email || 'référent'} : ${r.error}` : null).filter(Boolean).join(' | ')
+        || 'Aucun email envoyé'
+      : undefined,
   })
 }

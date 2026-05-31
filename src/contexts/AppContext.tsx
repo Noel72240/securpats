@@ -53,7 +53,7 @@ interface AppContextType extends AppState {
   reorderReferents: (ids: string[]) => void
   addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => Promise<string | null>
   deleteDocument: (id: string) => void
-  declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; smsSent?: number; error?: string; emailConfigured?: boolean; smsConfigured?: boolean }>
+  declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; smsSent?: number; error?: string; emailConfigured?: boolean; smsConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
   updateMissionStatus: (id: string, status: Mission['status']) => void
   updateSubscription: (plan: SubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
@@ -513,7 +513,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         smsSent: notify.smsSent ?? 0,
         emailConfigured: true,
         smsConfigured: notify.smsConfigured,
-        error: notify.error && notify.emailsSent === 0 && (notify.smsSent ?? 0) === 0 ? notify.error : undefined,
+        error: notify.emailsSent === 0 ? (notify.error || 'Aucun email envoyé — vérifiez les adresses de vos référents') : undefined,
+        results: notify.results,
       }
     }
 

@@ -6,7 +6,7 @@ export async function verifyRequestUser(
   expectedEmail: string
 ): Promise<{ valid: true; userId: string } | { valid: false; error: string }> {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
 
   if (!url || !anonKey) {
     return { valid: false, error: 'Authentification serveur non configurée (Supabase requis pour les paiements)' }

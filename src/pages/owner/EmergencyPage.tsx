@@ -50,15 +50,20 @@ export default function EmergencyPage() {
               <CheckCircle className="w-4 h-4 text-brand-500 ml-auto" />
             </div>
 
-            <div className={`flex items-center gap-3 p-3 rounded-xl ${notifyResult?.emailsSent ? 'bg-brand-50' : 'bg-slate-50'}`}>
-              <Mail className={`w-5 h-5 ${notifyResult?.emailsSent ? 'text-brand-600' : 'text-slate-400'}`} />
-              <span className="text-sm">
-                {notifyResult?.emailConfigured === false
-                  ? 'Emails non configurés sur le serveur — contactez vos référents par téléphone.'
-                  : notifyResult?.emailsSent
-                    ? `${notifyResult.emailsSent} email(s) envoyé(s) aux référents`
-                    : notifyResult?.error || 'Aucun email envoyé — vérifiez les adresses de vos référents'}
-              </span>
+            <div className={`p-3 rounded-xl ${notifyResult?.emailsSent ? 'bg-brand-50' : 'bg-slate-50'}`}>
+              <div className="flex items-center gap-3">
+                <Mail className={`w-5 h-5 flex-shrink-0 ${notifyResult?.emailsSent ? 'text-brand-600' : 'text-slate-400'}`} />
+                <span className="text-sm">
+                  {notifyResult?.emailConfigured === false
+                    ? 'Emails non configurés sur le serveur — contactez vos référents par téléphone.'
+                    : notifyResult?.emailsSent
+                      ? `${notifyResult.emailsSent} email(s) envoyé(s) aux référents`
+                      : 'Aucun email envoyé'}
+                </span>
+              </div>
+              {notifyResult?.error && !notifyResult.emailsSent && (
+                <p className="text-xs text-red-600 mt-2 ml-8 break-words">{notifyResult.error}</p>
+              )}
             </div>
 
             <div className={`flex items-center gap-3 p-3 rounded-xl ${notifyResult?.smsSent ? 'bg-brand-50' : 'bg-slate-50'}`}>
@@ -80,7 +85,12 @@ export default function EmergencyPage() {
               {referents.map(r => (
                 <p key={r.id} className="text-sm text-amber-900">
                   {r.priority}. {r.firstName} {r.lastName} —{' '}
-                  <a href={`tel:${r.phone}`} className="underline font-medium">{r.phone}</a>
+                  {r.email ? (
+                    <a href={`mailto:${r.email}`} className="underline">{r.email}</a>
+                  ) : (
+                    <span className="text-red-600 font-medium">email manquant</span>
+                  )}{' '}
+                  — <a href={`tel:${r.phone}`} className="underline font-medium">{r.phone}</a>
                 </p>
               ))}
             </div>

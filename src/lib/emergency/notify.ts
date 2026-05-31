@@ -43,7 +43,14 @@ export async function notifyReferentsEmergency(data: {
     return {
       emailsSent: body.emailsSent as number,
       smsSent: (body.smsSent as number) ?? 0,
-      error: null as string | null,
+      error: (body.error as string) || (
+        (body.emailsSent as number) === 0 && body.results?.length
+          ? (body.results as { email: string; error?: string }[])
+              .map(r => r.error ? `${r.email || 'référent'} : ${r.error}` : null)
+              .filter(Boolean)
+              .join(' | ') || null
+          : null
+      ),
       emailConfigured: body.emailConfigured as boolean,
       smsConfigured: body.smsConfigured as boolean,
       results: body.results as { email: string; sent: boolean; error?: string; smsSent?: boolean }[],
