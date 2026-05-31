@@ -1,12 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getStripeClient } from '../lib/stripe-client.js'
+import { stripePostForm } from '../lib/stripe-api.js'
+
+type PortalSessionResponse = { url: string | null }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!process.env.STRIPE_SECRET_KEY?.trim()) {
     return res.status(500).json({ error: 'STRIPE_SECRET_KEY non configurée' })
   }
 
@@ -16,11 +18,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'customerId requis' })
   }
 
+  const appUrl = (process.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')
+
   try {
-    const stripe = getStripeClient()
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await stripePostForm<PortalSessionResponse>('/billing_portal/sessions', {
       customer: customerId,
-      return_url: returnUrl || `${process.env.VITE_APP_URL}/app/abonnement`,
+      return_url: returnUrl || `${appUrl}/app/abonnement`,
     })
 
     return res.status(200).json({ url: session.url })

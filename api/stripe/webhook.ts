@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { insertOwnerInvoice, upsertOwnerSubscription } from '../lib/supabase-admin.js'
 import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 import { getStripeClient } from '../lib/stripe-client.js'
+import { stripeGet } from '../lib/stripe-api.js'
 
 export const config = {
   api: { bodyParser: false },
@@ -39,8 +40,7 @@ async function syncCheckoutCompleted(session: Stripe.Checkout.Session) {
   let autoRenew = true
 
   if (subscriptionId) {
-    const stripe = getStripe()
-    const sub = await stripe.subscriptions.retrieve(subscriptionId)
+    const sub = await stripeGet<Stripe.Subscription>(`/subscriptions/${subscriptionId}`)
     renewalDate = formatDate(getSubscriptionPeriodEnd(sub))
     autoRenew = !sub.cancel_at_period_end
   }
