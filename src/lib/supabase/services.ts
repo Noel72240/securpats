@@ -156,8 +156,7 @@ export async function fetchSubscriptionByOwner(ownerId: string) {
 }
 
 export async function upsertSubscription(sub: Omit<Subscription, 'id'> & { id?: string }) {
-  const { data, error } = await getSupabase().from('subscriptions').upsert({
-    id: sub.id,
+  const row = {
     owner_id: sub.ownerId,
     plan: sub.plan,
     status: sub.status,
@@ -167,7 +166,32 @@ export async function upsertSubscription(sub: Omit<Subscription, 'id'> & { id?: 
     auto_renew: sub.autoRenew,
     stripe_customer_id: sub.stripeCustomerId ?? null,
     stripe_subscription_id: sub.stripeSubscriptionId ?? null,
-  }).select().single()
+  }
+
+  const { data: existing } = await getSupabase()
+    .from('subscriptions')
+    .select('id')
+    .eq('owner_id', sub.ownerId)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existing?.id) {
+    const { data, error } = await getSupabase()
+      .from('subscriptions')
+      .update(row)
+      .eq('id', existing.id)
+      .select()
+      .single()
+    if (error) return { subscription: null as Subscription | null, error: error.message }
+    return { subscription: subscriptionFromRow(data), error: null }
+  }
+
+  const { data, error } = await getSupabase()
+    .from('subscriptions')
+    .insert(row)
+    .select()
+    .single()
   if (error) return { subscription: null as Subscription | null, error: error.message }
   return { subscription: subscriptionFromRow(data), error: null }
 }

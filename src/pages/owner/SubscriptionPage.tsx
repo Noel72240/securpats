@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CreditCard, Check, Star, Receipt, Shield, ExternalLink, Loader2, AlertCircle } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, Badge, CardHeader, EmptyState } from '@/components/ui/Card'
 import { useApp, useHasActiveSubscription } from '@/contexts/AppContext'
 import { SUBSCRIPTION_PLANS } from '@/lib/stripe/plans'
-import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured } from '@/lib/stripe/client'
+import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured, reconcileSubscriptionAccess } from '@/lib/stripe/client'
 import { formatDate } from '@/lib/utils'
 import type { SubscriptionPlan } from '@/types'
 
@@ -20,6 +20,17 @@ export default function SubscriptionPage() {
   const stripeReady = isStripeConfigured()
   const hasAccess = useHasActiveSubscription()
   const needsPayment = stripeReady && !hasAccess
+  const reconciled = useRef(false)
+
+  useEffect(() => {
+    if (!currentUser || hasAccess || reconciled.current) return
+    if (!invoices.some(i => i.status === 'paid')) return
+
+    reconciled.current = true
+    void reconcileSubscriptionAccess(currentUser.id).then(result => {
+      if (result.activated) window.location.reload()
+    })
+  }, [currentUser, hasAccess, invoices])
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!currentUser) return

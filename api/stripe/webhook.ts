@@ -98,6 +98,37 @@ async function syncInvoice(invoice: Stripe.Invoice, status: 'paid' | 'failed') {
     plan,
     stripeInvoiceId: invoice.id,
   })
+
+  if (status === 'paid') {
+    const invoiceSub = (invoice as Stripe.Invoice & { subscription?: string | { id?: string } | null }).subscription
+    const subscriptionId = typeof invoiceSub === 'string' ? invoiceSub : invoiceSub?.id
+
+    let renewalDate = formatDate(invoice.created + (plan === 'monthly' ? 30 : 365) * 86400)
+    let stripeCustomerId: string | null | undefined = typeof invoice.customer === 'string'
+      ? invoice.customer
+      : invoice.customer?.id
+
+    if (subscriptionId) {
+      try {
+        const sub = await stripeGet<Stripe.Subscription>(`/subscriptions/${subscriptionId}`)
+        renewalDate = formatDate(getSubscriptionPeriodEnd(sub))
+        stripeCustomerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
+      } catch {
+        // fallback renewalDate above
+      }
+    }
+
+    await upsertOwnerSubscription({
+      ownerId: userId,
+      plan,
+      status: 'active',
+      startDate: formatDate(invoice.created),
+      renewalDate,
+      autoRenew: true,
+      stripeCustomerId,
+      stripeSubscriptionId: subscriptionId ?? null,
+    })
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

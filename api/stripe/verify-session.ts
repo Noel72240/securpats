@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 import { stripeGet } from '../lib/stripe-api.js'
+import { upsertOwnerSubscription } from '../lib/supabase-admin.js'
 
 const PLAN_PRICES = { monthly: 4.99, yearly: 49.99 } as const
 
@@ -51,12 +52,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? new Date(getSubscriptionPeriodEnd(subscription as Parameters<typeof getSubscriptionPeriodEnd>[0]) * 1000).toISOString().split('T')[0]
       : new Date(Date.now() + (plan === 'monthly' ? 30 : 365) * 86400000).toISOString().split('T')[0]
 
+    const startDate = new Date().toISOString().split('T')[0]
+
+    if (userId) {
+      await upsertOwnerSubscription({
+        ownerId: userId,
+        plan,
+        status: 'active',
+        startDate,
+        renewalDate,
+        autoRenew: subscription?.cancel_at_period_end !== true,
+        stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+        stripeSubscriptionId: typeof session.subscription === 'string'
+          ? session.subscription
+          : subscription?.id ?? null,
+      })
+    }
+
     return res.status(200).json({
       userId,
       plan,
       status: 'active',
       price: PLAN_PRICES[plan],
-      startDate: new Date().toISOString().split('T')[0],
+      startDate,
       renewalDate,
       autoRenew: subscription?.cancel_at_period_end === false,
       stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.id,

@@ -528,11 +528,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const syncSubscriptionFromStripe = useCallback((data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => {
+  const syncSubscriptionFromStripe = useCallback(async (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => {
     if (!currentUser) return
     const ownerId = data.ownerId || currentUser.id
-    const newSub: Subscription = {
-      id: generateId('sub'),
+    const payload = {
       ownerId,
       plan: data.plan,
       status: data.status,
@@ -543,12 +542,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stripeCustomerId: data.stripeCustomerId,
       stripeSubscriptionId: data.stripeSubscriptionId,
     }
+
     if (supabaseMode) {
-      db.upsertSubscription(newSub)
-      db.createInvoice({ ownerId, amount: data.price, date: data.startDate, status: 'paid', plan: data.plan })
+      const { subscription: saved, error } = await db.upsertSubscription(payload)
+      if (saved) {
+        setSubscription(saved)
+      } else if (error) {
+        console.error('[Subscription]', error)
+        setSubscription({ id: '', ...payload })
+      }
+    } else {
+      setSubscription({ id: generateId('sub'), ...payload })
     }
-    setSubscription(newSub)
-    setInvoices(prev => [{ id: generateId('inv'), ownerId, amount: data.price, date: data.startDate, status: 'paid', plan: data.plan }, ...prev])
+
+    setInvoices(prev => {
+      const exists = prev.some(i => i.date === data.startDate && i.amount === data.price && i.status === 'paid')
+      if (exists) return prev
+      return [{ id: generateId('inv'), ownerId, amount: data.price, date: data.startDate, status: 'paid' as const, plan: data.plan }, ...prev]
+    })
     addActivity('subscription', `Abonnement ${data.plan === 'monthly' ? 'mensuel' : 'annuel'} activé via Stripe`)
   }, [currentUser, addActivity])
 

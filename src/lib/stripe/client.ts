@@ -86,6 +86,21 @@ export async function createSubscriptionCheckout(
   }
 }
 
+export async function reconcileSubscriptionAccess(userId: string): Promise<{ activated?: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/stripe/reconcile-subscription', {
+      method: 'POST',
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ userId }),
+    })
+    const data = await response.json()
+    if (!response.ok) return { error: data.error || 'Synchronisation impossible' }
+    return { activated: data.activated }
+  } catch {
+    return { error: 'Impossible de synchroniser l\'abonnement' }
+  }
+}
+
 export async function openCustomerPortal(customerId: string): Promise<{ error?: string }> {
   try {
     const response = await fetch('/api/stripe/create-portal-session', {
