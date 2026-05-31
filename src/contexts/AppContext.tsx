@@ -14,6 +14,7 @@ import { signIn, signUp, signOut, getSessionUser, onAuthStateChange } from '@/li
 import * as db from '@/lib/supabase/services'
 import { hydrateUserData, hydratePublicSite, clearUserData } from '@/lib/supabase/hydrate'
 import { isOwnerSubscriptionActive } from '@/lib/subscription/access'
+import { reconcileSubscriptionAccess } from '@/lib/stripe/client'
 
 interface AppState {
   currentUser: User | null
@@ -112,6 +113,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile,
   }), [])
 
+  const syncOwnerSubscriptionInBackground = useCallback(async (user: User) => {
+    if (user.role !== 'owner') return
+    const result = await reconcileSubscriptionAccess(user.id)
+    if (result.activated) {
+      await hydrateUserData(user, dataSetters)
+    }
+  }, [dataSetters])
+
   // Init Supabase session + site public
   useEffect(() => {
     if (!supabaseMode) {
@@ -136,6 +145,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (user) {
           setCurrentUser(user)
           await hydrateUserData(user, dataSetters)
+          void syncOwnerSubscriptionInBackground(user)
         }
       } catch (err) {
         console.error('[Supabase] Init session:', err)
@@ -148,6 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (user) {
             setCurrentUser(user)
             await hydrateUserData(user, dataSetters)
+            void syncOwnerSubscriptionInBackground(user)
           } else {
             setCurrentUser(null)
             clearUserData(dataSetters)
@@ -163,9 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(safetyTimer)
       unsubscribe?.()
     }
-  }, [dataSetters])
-
-  // Persist local mode
+  }, [dataSetters, syncOwnerSubscriptionInBackground])
   useEffect(() => {
     if (supabaseMode) return
     saveState({
@@ -200,6 +209,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (error || !user) return null
       setCurrentUser(user)
       await hydrateUserData(user, dataSetters)
+      void syncOwnerSubscriptionInBackground(user)
       return user
     }
 
@@ -209,7 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return user
     }
     return null
-  }, [allUsers, dataSetters])
+  }, [allUsers, dataSetters, syncOwnerSubscriptionInBackground])
 
   const logout = useCallback(async () => {
     if (supabaseMode) await signOut()
@@ -697,8 +707,8 @@ export function usePetByToken(token: string) {
 }
 
 export function useHasActiveSubscription() {
-  const { subscription, currentUser } = useApp()
-  return isOwnerSubscriptionActive(subscription, currentUser?.id)
+  const { subscription, currentUser, invoices } = useApp()
+  return isOwnerSubscriptionActive(subscription, currentUser?.id, invoices)
 }
 
 export function usePetSitterMissions() {

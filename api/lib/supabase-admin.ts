@@ -29,9 +29,11 @@ export async function upsertOwnerSubscription(data: {
   autoRenew: boolean
   stripeCustomerId?: string | null
   stripeSubscriptionId?: string | null
-}) {
+}): Promise<{ ok: boolean; error?: string }> {
   const supabase = getSupabaseAdmin()
-  if (!supabase || !data.ownerId) return
+  if (!supabase || !data.ownerId) {
+    return { ok: false, error: 'Supabase admin non configuré' }
+  }
 
   const row = {
     owner_id: data.ownerId,
@@ -53,11 +55,25 @@ export async function upsertOwnerSubscription(data: {
     .limit(1)
     .maybeSingle()
 
-  if (existing?.id) {
-    await supabase.from('subscriptions').update(row).eq('id', existing.id)
-  } else {
-    await supabase.from('subscriptions').insert(row)
+  const write = async (payload: typeof row) => {
+    if (existing?.id) {
+      return supabase.from('subscriptions').update(payload).eq('id', existing.id)
+    }
+    return supabase.from('subscriptions').insert(payload)
   }
+
+  let { error } = await write(row)
+
+  if (error?.code === '23505' && row.stripe_subscription_id) {
+    ;({ error } = await write({ ...row, stripe_subscription_id: null }))
+  }
+
+  if (error) {
+    console.error('[upsertOwnerSubscription]', error.message)
+    return { ok: false, error: error.message }
+  }
+
+  return { ok: true }
 }
 
 export async function insertOwnerInvoice(data: {

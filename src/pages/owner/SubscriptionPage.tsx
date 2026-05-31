@@ -128,6 +128,18 @@ export default function SubscriptionPage() {
           </Card>
         )}
 
+        {!subscription && hasAccess && (
+          <Card className="bg-brand-50 border-brand-100">
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">Abonnement actif</h3>
+                <p className="text-sm text-slate-600 mt-1">Paiement confirmé via Stripe</p>
+              </div>
+              <Badge variant="success">Actif</Badge>
+            </div>
+          </Card>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6">
           {(['monthly', 'yearly'] as const).map(plan => {
             const config = SUBSCRIPTION_PLANS[plan]

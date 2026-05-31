@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startDate = latest.date
   const renewalDate = plan === 'yearly' ? addYears(startDate, 1) : addMonths(startDate, 1)
 
-  await upsertOwnerSubscription({
+  const upsert = await upsertOwnerSubscription({
     ownerId: userId,
     plan,
     status: 'active',
@@ -74,6 +74,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     stripeCustomerId: existingSub?.stripe_customer_id ?? null,
     stripeSubscriptionId: existingSub?.stripe_subscription_id ?? null,
   })
+
+  if (!upsert.ok) {
+    return res.status(500).json({ error: upsert.error || 'Impossible d\'activer l\'abonnement' })
+  }
 
   return res.status(200).json({
     activated: true,
