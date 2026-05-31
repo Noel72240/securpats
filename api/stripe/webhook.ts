@@ -1,13 +1,16 @@
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { insertOwnerInvoice, upsertOwnerSubscription } from '../lib/supabase-admin.js'
 import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
+import { getStripeClient } from '../lib/stripe-client.js'
 
 export const config = {
   api: { bodyParser: false },
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+function getStripe() {
+  return getStripeClient()
+}
 
 function getRawBody(req: VercelRequest): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -36,6 +39,7 @@ async function syncCheckoutCompleted(session: Stripe.Checkout.Session) {
   let autoRenew = true
 
   if (subscriptionId) {
+    const stripe = getStripe()
     const sub = await stripe.subscriptions.retrieve(subscriptionId)
     renewalDate = formatDate(getSubscriptionPeriodEnd(sub))
     autoRenew = !sub.cancel_at_period_end
@@ -114,6 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let event: Stripe.Event
 
   try {
+    const stripe = getStripe()
     const rawBody = await getRawBody(req)
     event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
   } catch (err) {

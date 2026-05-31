@@ -1,8 +1,7 @@
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+import { getStripeClient } from '../lib/stripe-client.js'
 
 const PLAN_PRICES = { monthly: 4.99, yearly: 49.99 } as const
 
@@ -21,6 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const stripe = getStripeClient()
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['subscription'],
     })

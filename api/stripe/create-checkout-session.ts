@@ -1,8 +1,6 @@
-import Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { verifyRequestUser } from '../lib/verify-auth.js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+import { getStripeClient } from '../lib/stripe-client.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -25,6 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const stripe = getStripeClient()
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],

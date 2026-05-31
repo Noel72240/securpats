@@ -1,7 +1,5 @@
-import Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+import { getStripeClient } from '../lib/stripe-client.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -19,6 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const stripe = getStripeClient()
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl || `${process.env.VITE_APP_URL}/app/abonnement`,
