@@ -263,6 +263,7 @@ export function mergeSiteSettings(partial: unknown): SiteSettings {
     legal: { ...defaultSiteSettings.legal, ...p.legal },
     home: { ...defaultSiteSettings.home, ...p.home },
     footer: { ...defaultSiteSettings.footer, ...p.footer },
+    maintenance: { ...defaultSiteSettings.maintenance, ...p.maintenance },
     testimonials: p.testimonials ?? defaultSiteSettings.testimonials,
   }
 }

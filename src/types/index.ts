@@ -165,9 +165,23 @@ export interface SiteTestimonial {
   avatar: string
 }
 
+export type SiteMaintenanceMode = 'development' | 'maintenance'
+
+export interface SiteMaintenanceSettings {
+  /** Affiche une bannière sur tout le site */
+  enabled: boolean
+  /** Type de bannière affichée */
+  mode: SiteMaintenanceMode
+  /** Message personnalisé sous le titre de la bannière */
+  message: string
+  /** Bloque les paiements Stripe (checkout) quand la bannière est active */
+  blockPayments: boolean
+}
+
 export interface SiteSettings {
   siteName: string
   logoUrl: string
+  maintenance: SiteMaintenanceSettings
   contact: {
     email: string
     phone: string

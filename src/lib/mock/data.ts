@@ -29,6 +29,12 @@ export const mockPetSitter: PetSitterProfile | null = null
 export const defaultSiteSettings: SiteSettings = {
   siteName: 'SécurPats',
   logoUrl: '/logo-securpats-icon.png',
+  maintenance: {
+    enabled: false,
+    mode: 'maintenance',
+    message: 'Les paiements sont temporairement suspendus. Merci de votre patience.',
+    blockPayments: true,
+  },
   contact: {
     email: 'contact@securpats.fr',
     phone: '',

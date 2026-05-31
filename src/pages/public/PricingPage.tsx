@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
-import { Check, Star, ArrowRight } from 'lucide-react'
+import { Check, Star, ArrowRight, AlertCircle } from 'lucide-react'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { PLAN_PRICES } from '@/types'
+import { useApp } from '@/contexts/AppContext'
+import { arePaymentsBlocked } from '@/lib/maintenance'
 
 const features = [
   'Animaux illimités',
@@ -16,10 +18,21 @@ const features = [
 ]
 
 export default function PricingPage() {
+  const { siteSettings } = useApp()
+  const paymentsBlocked = arePaymentsBlocked(siteSettings)
+
   return (
     <PublicLayout>
       <section className="py-16 lg:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {paymentsBlocked && (
+            <div className="mb-8 p-4 rounded-xl bg-orange-50 border border-orange-200 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-orange-800">
+                {siteSettings.maintenance.message || 'Les inscriptions restent possibles, mais les paiements sont temporairement suspendus.'}
+              </p>
+            </div>
+          )}
           <div className="text-center mb-16">
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Tarifs simples et transparents</h1>
             <p className="text-lg text-slate-600">Choisissez l'offre adaptée à vos besoins. Sans frais cachés.</p>
@@ -42,9 +55,15 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link to="/inscription">
-                <Button variant="outline" className="w-full">Choisir mensuel</Button>
-              </Link>
+              {paymentsBlocked ? (
+                <Button variant="outline" className="w-full" disabled>
+                  Paiements suspendus
+                </Button>
+              ) : (
+                <Link to="/inscription">
+                  <Button variant="outline" className="w-full">Choisir mensuel</Button>
+                </Link>
+              )}
             </Card>
 
             {/* Yearly - highlighted */}
@@ -71,9 +90,15 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link to="/inscription">
-                <Button className="w-full" icon={ArrowRight}>Choisir annuel</Button>
-              </Link>
+              {paymentsBlocked ? (
+                <Button className="w-full" icon={ArrowRight} disabled>
+                  Paiements suspendus
+                </Button>
+              ) : (
+                <Link to="/inscription">
+                  <Button className="w-full" icon={ArrowRight}>Choisir annuel</Button>
+                </Link>
+              )}
             </Card>
           </div>
         </div>

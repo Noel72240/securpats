@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
+import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
 
 interface NavItem {
   to: string
@@ -149,7 +150,9 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
 
       {/* Main content */}
       <div className="flex-1 lg:ml-72">
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg border-b border-slate-100">
+        <div className="sticky top-0 z-20">
+          <MaintenanceBanner />
+          <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
             <div className="flex items-center gap-4">
               <button
@@ -171,6 +174,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
             </button>
           </div>
         </header>
+        </div>
         <main className="p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

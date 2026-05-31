@@ -7,6 +7,7 @@ import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { DeveloperCredit } from '@/components/legal/DeveloperCredit'
 import { SEO_NAV_LINKS } from '@/lib/seo/content'
+import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
 
 const navLinks = [
   { to: '/', label: 'Accueil' },
@@ -22,7 +23,7 @@ export function PublicHeader() {
   const { currentUser } = useApp()
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
+    <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 lg:h-24 py-2">
           <BrandLogo variant="icon" className="group" />
@@ -172,7 +173,10 @@ export function PublicFooter() {
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <PublicHeader />
+      <div className="sticky top-0 z-50">
+        <MaintenanceBanner />
+        <PublicHeader />
+      </div>
       <main className="flex-1">{children}</main>
       <PublicFooter />
     </div>

@@ -7,11 +7,12 @@ import { Card, Badge, CardHeader, EmptyState } from '@/components/ui/Card'
 import { useApp, useHasActiveSubscription } from '@/contexts/AppContext'
 import { SUBSCRIPTION_PLANS } from '@/lib/stripe/plans'
 import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured, reconcileSubscriptionAccess } from '@/lib/stripe/client'
+import { arePaymentsBlocked } from '@/lib/maintenance'
 import { formatDate } from '@/lib/utils'
 import type { SubscriptionPlan } from '@/types'
 
 export default function SubscriptionPage() {
-  const { subscription, invoices, currentUser } = useApp()
+  const { subscription, invoices, currentUser, siteSettings } = useApp()
   const [searchParams] = useSearchParams()
   const canceled = searchParams.get('canceled')
   const [loading, setLoading] = useState<SubscriptionPlan | null>(null)
@@ -19,6 +20,7 @@ export default function SubscriptionPage() {
 
   const stripeReady = isStripeConfigured()
   const hasAccess = useHasActiveSubscription()
+  const paymentsBlocked = arePaymentsBlocked(siteSettings)
   const needsPayment = stripeReady && !hasAccess
   const reconciled = useRef(false)
 
@@ -34,6 +36,10 @@ export default function SubscriptionPage() {
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!currentUser) return
+    if (paymentsBlocked) {
+      setError('Les paiements sont temporairement suspendus. Réessayez ultérieurement.')
+      return
+    }
     if (!stripeReady) {
       setError('Stripe n\'est pas encore configuré. Ajoutez les clés dans votre fichier .env et déployez sur Vercel.')
       return
@@ -63,6 +69,18 @@ export default function SubscriptionPage() {
   return (
     <DashboardLayout variant="owner" title="Abonnement">
       <div className="space-y-8 max-w-4xl">
+        {paymentsBlocked && needsPayment && (
+          <Card className="bg-orange-50 border-orange-200 !p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-orange-900">Paiements temporairement suspendus</p>
+              <p className="text-sm text-orange-800 mt-1">
+                {siteSettings.maintenance.message || 'Le site est en maintenance. Les abonnements reprendront très bientôt.'}
+              </p>
+            </div>
+          </Card>
+        )}
+
         {needsPayment && (
           <Card className="bg-brand-50 border-brand-200 !p-4">
             <p className="font-semibold text-slate-900">Activez votre abonnement pour accéder à SécurPats</p>
@@ -173,10 +191,10 @@ export default function SubscriptionPage() {
                   className="w-full mt-6"
                   variant={plan === 'yearly' ? 'primary' : 'outline'}
                   icon={loading === plan ? Loader2 : CreditCard}
-                  disabled={!!loading || isCurrent || !stripeReady}
+                  disabled={!!loading || isCurrent || !stripeReady || paymentsBlocked}
                   onClick={() => handleSubscribe(plan)}
                 >
-                  {loading === plan ? 'Redirection Stripe...' : isCurrent ? 'Plan actuel' : `S'abonner — ${config.price.toFixed(2).replace('.', ',')} €${config.intervalLabel}`}
+                  {loading === plan ? 'Redirection Stripe...' : paymentsBlocked && !isCurrent ? 'Paiements suspendus' : isCurrent ? 'Plan actuel' : `S'abonner — ${config.price.toFixed(2).replace('.', ',')} €${config.intervalLabel}`}
                 </Button>
               </Card>
             )

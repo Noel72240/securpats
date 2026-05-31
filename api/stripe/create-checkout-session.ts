@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { verifyRequestUser } from '../lib/verify-auth.js'
 import { stripePostForm } from '../lib/stripe-api.js'
+import { arePaymentsBlockedOnServer } from '../lib/site-settings.js'
 
 type CheckoutSessionResponse = {
   id: string
@@ -25,6 +26,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await verifyRequestUser(req.headers.authorization, userId, customerEmail)
   if (!auth.valid) {
     return res.status(401).json({ error: auth.error })
+  }
+
+  if (await arePaymentsBlockedOnServer()) {
+    return res.status(503).json({
+      error: 'Les paiements sont temporairement suspendus (maintenance). Réessayez ultérieurement.',
+    })
   }
 
   const appUrl = (process.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')

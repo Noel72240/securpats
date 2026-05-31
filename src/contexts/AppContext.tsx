@@ -610,6 +610,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         legal: updates.legal ? { ...prev.legal, ...updates.legal } : prev.legal,
         home: updates.home ? { ...prev.home, ...updates.home } : prev.home,
         footer: updates.footer ? { ...prev.footer, ...updates.footer } : prev.footer,
+        maintenance: updates.maintenance ? { ...prev.maintenance, ...updates.maintenance } : prev.maintenance,
         testimonials: updates.testimonials ?? prev.testimonials,
       }
       if (supabaseMode) db.updateSiteSettings(next)
