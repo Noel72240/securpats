@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { PageSEO } from '@/components/seo/PageSEO'
 import { SEO_NAV_LINKS } from '@/lib/seo/content'
+import { HeroVisual } from '@/components/home/HeroVisual'
 
 const features = [
   { icon: PawPrint, title: 'Fiches animaux complètes', desc: 'Photo, traitements, allergies, alimentation et consignes en un seul endroit.' },
@@ -39,10 +40,10 @@ export default function HomePage() {
         keywords={['protection animale urgence', 'hospitalisation animal', 'alerte référents chien chat', 'SécurPats']}
       />
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-emerald-50">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-brand-200 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl" />
+      <section className="relative bg-gradient-to-br from-brand-50 via-white to-emerald-50">
+        <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-brand-200 rounded-full blur-3xl hero-aurora" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent-400/20 rounded-full blur-3xl hero-aurora" style={{ animationDelay: '2s' }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -73,31 +74,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="relative animate-fade-in-up animation-delay-200">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-brand-900/10">
-                {home.heroImage ? (
-                  <img
-                    src={home.heroImage}
-                    alt={home.heroImageAlt}
-                    className="w-full h-[400px] lg:h-[500px] object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-[400px] lg:h-[500px] bg-gradient-to-br from-brand-100 to-brand-200 flex flex-col items-center justify-center">
-                    <PawPrint className="w-24 h-24 text-brand-400 mb-4" />
-                    <p className="text-brand-600 font-medium text-sm">Ajoutez votre image depuis l'admin</p>
-                  </div>
-                )}
-                <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
-                      <QrCode className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">QR Code d'urgence</p>
-                      <p className="text-sm text-slate-500">Accès instantané aux infos vitales</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <HeroVisual heroImage={home.heroImage} heroImageAlt={home.heroImageAlt} />
             </div>
           </div>
         </div>
