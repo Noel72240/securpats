@@ -1,95 +1,91 @@
+import { useLocation } from 'react-router-dom'
+import { PawPrint } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type PawVariant = 'dog' | 'cat'
 
-interface PawProps {
-  variant: PawVariant
-  className?: string
-  style?: React.CSSProperties
+interface PawItem {
+  top: string
+  size: number
+  rotate: number
+  delay: number
 }
 
-/** Petite patte arrondie — chien (vert) ou chat (rose) */
-function Paw({ variant, className, style }: PawProps) {
-  const fill = variant === 'dog' ? '#6ee7b7' : '#fda4af'
-  const pad = variant === 'dog' ? '#34d399' : '#fb7185'
+const LEFT_PAWS: PawItem[] = [
+  { top: '6%', size: 52, rotate: -25, delay: 0 },
+  { top: '20%', size: 38, rotate: 18, delay: 1.2 },
+  { top: '36%', size: 58, rotate: -12, delay: 0.5 },
+  { top: '52%', size: 42, rotate: 28, delay: 1.8 },
+  { top: '68%', size: 50, rotate: -18, delay: 0.3 },
+  { top: '82%', size: 36, rotate: 14, delay: 2.1 },
+  { top: '94%', size: 46, rotate: -8, delay: 1 },
+]
+
+const RIGHT_PAWS: PawItem[] = [
+  { top: '10%', size: 44, rotate: 22, delay: 0.7 },
+  { top: '24%', size: 56, rotate: -14, delay: 0.2 },
+  { top: '40%', size: 40, rotate: 26, delay: 1.6 },
+  { top: '56%', size: 52, rotate: -6, delay: 1 },
+  { top: '72%', size: 38, rotate: 20, delay: 2.3 },
+  { top: '86%', size: 48, rotate: -20, delay: 0.4 },
+  { top: '96%', size: 34, rotate: 10, delay: 1.4 },
+]
+
+const DASHBOARD_PREFIXES = ['/app', '/admin', '/pet-sitter']
+
+function SidePaw({
+  variant,
+  item,
+  side,
+}: {
+  variant: PawVariant
+  item: PawItem
+  side: 'left' | 'right'
+}) {
+  const isDog = variant === 'dog'
 
   return (
-    <svg
-      viewBox="0 0 48 48"
-      fill="none"
+    <PawPrint
       aria-hidden
-      className={cn('paw-print', className)}
-      style={style}
-    >
-      {/* Coussinet principal */}
-      <ellipse cx="24" cy="30" rx="11" ry="9" fill={pad} opacity="0.85" />
-      {/* Doigts */}
-      <ellipse cx="12" cy="16" rx="5" ry="6.5" fill={fill} opacity="0.9" />
-      <ellipse cx="24" cy="11" rx="5" ry="6.5" fill={fill} opacity="0.9" />
-      <ellipse cx="36" cy="16" rx="5" ry="6.5" fill={fill} opacity="0.9" />
-      <ellipse cx="42" cy="26" rx="4" ry="5.5" fill={fill} opacity="0.75" />
-      <ellipse cx="6" cy="26" rx="4" ry="5.5" fill={fill} opacity="0.75" />
-    </svg>
+      strokeWidth={1.5}
+      className={cn(
+        'absolute paw-float drop-shadow-sm',
+        isDog ? 'text-brand-700 fill-brand-200/80' : 'text-rose-600 fill-rose-200/80',
+        side === 'left' ? 'left-3 xl:left-5' : 'right-3 xl:right-5',
+      )}
+      style={{
+        top: item.top,
+        width: item.size,
+        height: item.size,
+        opacity: isDog ? 0.55 : 0.5,
+        ['--paw-rotate' as string]: `${item.rotate}deg`,
+        animationDelay: `${item.delay}s`,
+      }}
+    />
   )
 }
 
-const LEFT_PAWS: { top: string; size: number; rotate: number; delay: number }[] = [
-  { top: '8%', size: 44, rotate: -25, delay: 0 },
-  { top: '22%', size: 32, rotate: 15, delay: 1.2 },
-  { top: '38%', size: 52, rotate: -10, delay: 0.6 },
-  { top: '55%', size: 36, rotate: 30, delay: 2 },
-  { top: '70%', size: 48, rotate: -20, delay: 0.3 },
-  { top: '85%', size: 30, rotate: 12, delay: 1.5 },
-]
-
-const RIGHT_PAWS: { top: string; size: number; rotate: number; delay: number }[] = [
-  { top: '12%', size: 38, rotate: 20, delay: 0.8 },
-  { top: '28%', size: 50, rotate: -15, delay: 0.2 },
-  { top: '44%', size: 34, rotate: 25, delay: 1.8 },
-  { top: '60%', size: 46, rotate: -8, delay: 1 },
-  { top: '76%', size: 32, rotate: 18, delay: 2.2 },
-  { top: '90%', size: 42, rotate: -22, delay: 0.5 },
-]
-
+/** Pattes décoratives chien (gauche) et chat (droite) — visibles dans les marges latérales */
 export function PawDecorations() {
+  const { pathname } = useLocation()
+  const isDashboard = DASHBOARD_PREFIXES.some(p => pathname.startsWith(p))
+
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden hidden lg:block"
+      className="pointer-events-none fixed inset-0 z-[35] overflow-hidden hidden md:block"
       aria-hidden
     >
-      {/* Pattes chien — côté gauche */}
-      <div className="absolute left-0 top-0 bottom-0 w-24 lg:w-28">
-        {LEFT_PAWS.map((p, i) => (
-          <Paw
-            key={`dog-${i}`}
-            variant="dog"
-            className="absolute left-2 lg:left-4 opacity-[0.35] hover:opacity-50 transition-opacity paw-float"
-            style={{
-              top: p.top,
-              width: p.size,
-              height: p.size,
-              ['--paw-rotate' as string]: `${p.rotate}deg`,
-              animationDelay: `${p.delay}s`,
-            }}
-          />
-        ))}
-      </div>
+      {!isDashboard && (
+        <div className="absolute inset-y-0 left-0 w-16 sm:w-20 xl:w-24">
+          {LEFT_PAWS.map((p, i) => (
+            <SidePaw key={`dog-${i}`} variant="dog" item={p} side="left" />
+          ))}
+        </div>
+      )}
 
-      {/* Pattes chat — côté droit */}
-      <div className="absolute right-0 top-0 bottom-0 w-24 lg:w-28">
+      <div className="absolute inset-y-0 right-0 w-16 sm:w-20 xl:w-24">
         {RIGHT_PAWS.map((p, i) => (
-          <Paw
-            key={`cat-${i}`}
-            variant="cat"
-            className="absolute right-2 lg:right-4 opacity-[0.35] hover:opacity-50 transition-opacity paw-float"
-            style={{
-              top: p.top,
-              width: p.size,
-              height: p.size,
-              ['--paw-rotate' as string]: `${p.rotate}deg`,
-              animationDelay: `${p.delay + 0.4}s`,
-            }}
-          />
+          <SidePaw key={`cat-${i}`} variant="cat" item={p} side="right" />
         ))}
       </div>
     </div>

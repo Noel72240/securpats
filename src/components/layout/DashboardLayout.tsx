@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
-import { PawDecorations } from '@/components/decor/PawDecorations'
 
 interface NavItem {
   to: string
@@ -133,8 +132,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 flex relative">
-      <PawDecorations />
+    <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-white border-r border-slate-100 fixed inset-y-0 left-0 z-30">
         <Sidebar />
@@ -151,7 +149,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
       )}
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-72 relative z-10">
+      <div className="flex-1 lg:ml-72">
         <div className="sticky top-0 z-20">
           <MaintenanceBanner />
           <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">

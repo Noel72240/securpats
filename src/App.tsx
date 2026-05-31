@@ -14,6 +14,7 @@ import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
 import { ScrollToTop } from '@/components/ScrollToTop'
+import { PawDecorations } from '@/components/decor/PawDecorations'
 import { SeoPageView } from '@/pages/public/SeoLandingPage'
 import { SEO_PAGES } from '@/lib/seo/content'
 
@@ -138,6 +139,7 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <PawDecorations />
         <AppRoutes />
         <CookieBanner />
       </BrowserRouter>
