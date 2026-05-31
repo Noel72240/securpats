@@ -1,4 +1,4 @@
-export const SITE_URL = 'https://securpats.fr'
+export const SITE_URL = 'https://www.securpats.fr'
 export const SITE_NAME = 'SécurPats'
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/logo-securpats-icon.png`
 
