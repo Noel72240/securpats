@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { insertOwnerInvoice, upsertOwnerSubscription } from '../lib/supabase-admin'
+import { insertOwnerInvoice, upsertOwnerSubscription } from '../lib/supabase-admin.js'
+import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 
 export const config = {
   api: { bodyParser: false },
@@ -36,7 +37,7 @@ async function syncCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (subscriptionId) {
     const sub = await stripe.subscriptions.retrieve(subscriptionId)
-    renewalDate = formatDate(sub.current_period_end)
+    renewalDate = formatDate(getSubscriptionPeriodEnd(sub))
     autoRenew = !sub.cancel_at_period_end
   }
 
@@ -71,7 +72,7 @@ async function syncSubscriptionChange(subscription: Stripe.Subscription) {
     plan,
     status,
     startDate: formatDate(subscription.start_date),
-    renewalDate: formatDate(subscription.current_period_end),
+    renewalDate: formatDate(getSubscriptionPeriodEnd(subscription)),
     autoRenew: !subscription.cancel_at_period_end && status === 'active',
     stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id,
     stripeSubscriptionId: subscription.id,
@@ -79,17 +80,11 @@ async function syncSubscriptionChange(subscription: Stripe.Subscription) {
 }
 
 async function syncInvoice(invoice: Stripe.Invoice, status: 'paid' | 'failed') {
-  const userId = invoice.subscription_details?.metadata?.userId
-    || (typeof invoice.subscription === 'object' && invoice.subscription?.metadata?.userId)
-    || invoice.metadata?.userId
+  const userId = getInvoiceUserId(invoice)
 
   if (!userId) return
 
-  const plan = planFromMetadata(
-    invoice.subscription_details?.metadata
-    || (typeof invoice.subscription === 'object' ? invoice.subscription.metadata : null)
-    || invoice.metadata
-  )
+  const plan = planFromMetadata(getInvoicePlanMetadata(invoice))
 
   await insertOwnerInvoice({
     ownerId: userId,

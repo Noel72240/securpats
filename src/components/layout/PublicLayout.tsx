@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
+import { DeveloperCredit } from '@/components/legal/DeveloperCredit'
 
 const navLinks = [
   { to: '/', label: 'Accueil' },
@@ -144,10 +145,14 @@ export function PublicFooter() {
               <li><Link to="/confidentialite" className="hover:text-brand-400 transition-colors">Confidentialité</Link></li>
               <li><Link to="/rgpd" className="hover:text-brand-400 transition-colors">RGPD</Link></li>
               <li><Link to="/cookies" className="hover:text-brand-400 transition-colors">Cookies</Link></li>
+              <li><Link to="/developpeur" className="hover:text-brand-400 transition-colors">Développeur</Link></li>
             </ul>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t border-slate-800 text-sm text-center">
+
+        <DeveloperCredit variant="footer" />
+
+        <div className="mt-8 pt-6 border-t border-slate-800 text-sm text-center">
           © {new Date().getFullYear()} {legal.companyName || 'SécurPats'}. Tous droits réservés.
         </div>
       </div>

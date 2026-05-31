@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
 
@@ -33,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const subscription = session.subscription as Stripe.Subscription | null
 
     const renewalDate = subscription
-      ? new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
+      ? new Date(getSubscriptionPeriodEnd(subscription) * 1000).toISOString().split('T')[0]
       : new Date(Date.now() + (plan === 'monthly' ? 30 : 365) * 86400000).toISOString().split('T')[0]
 
     return res.status(200).json({
@@ -45,7 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       renewalDate,
       autoRenew: subscription?.cancel_at_period_end === false,
       stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.id,
-      stripeSubscriptionId: typeof subscription === 'object' ? subscription.id : subscription,
+      stripeSubscriptionId: typeof subscription === 'string'
+        ? subscription
+        : subscription?.id ?? null,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur vérification session'

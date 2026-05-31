@@ -9,6 +9,7 @@ import ContactPage from '@/pages/public/ContactPage'
 import LoginPage from '@/pages/public/LoginPage'
 import RegisterPage from '@/pages/public/RegisterPage'
 import RescuePage from '@/pages/public/RescuePage'
+import DeveloppeurPage from '@/pages/public/DeveloppeurPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
@@ -69,6 +70,7 @@ function AppRoutes() {
       <Route path="/rgpd" element={<RGPDPage />} />
       <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
       <Route path="/cookies" element={<CookiesPage />} />
+      <Route path="/developpeur" element={<DeveloppeurPage />} />
 
       {/* Owner */}
       <Route path="/app" element={<ProtectedRoute roles={['owner']}><OwnerDashboard /></ProtectedRoute>} />

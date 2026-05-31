@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyRequestUser } from '../lib/verify-auth'
+import { verifyRequestUser } from '../lib/verify-auth.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
 
