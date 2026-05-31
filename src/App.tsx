@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AppProvider, useApp, useHasActiveSubscription } from '@/contexts/AppContext'
+import { AppProvider, useApp, useHasActiveSubscription, useHasPetsitterVip } from '@/contexts/AppContext'
 
 import HomePage from '@/pages/public/HomePage'
 import HowItWorksPage from '@/pages/public/HowItWorksPage'
@@ -34,6 +34,8 @@ import MissionsPage from '@/pages/petsitter/MissionsPage'
 import AvailabilityPage from '@/pages/petsitter/AvailabilityPage'
 import PetSitterProfilePage from '@/pages/petsitter/PetSitterProfilePage'
 import PetSitterRegisterPage from '@/pages/petsitter/PetSitterRegisterPage'
+import PetSitterSubscriptionPage from '@/pages/petsitter/PetSitterSubscriptionPage'
+import PetSitterSubscriptionSuccessPage from '@/pages/petsitter/PetSitterSubscriptionSuccessPage'
 
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
@@ -72,7 +74,7 @@ function OwnerRoute({ children, requireSubscription = true }: { children: React.
   )
 }
 
-function PetSitterRoute({ children }: { children: React.ReactNode }) {
+function PetSitterIdentityRoute({ children, requireVip = true }: { children: React.ReactNode; requireVip?: boolean }) {
   const { currentUser, petSitterProfile, authLoading } = useApp()
   if (authLoading) return null
   if (!currentUser) return <Navigate to="/connexion" replace />
@@ -80,6 +82,15 @@ function PetSitterRoute({ children }: { children: React.ReactNode }) {
   if (!petSitterProfile?.idDocument) {
     return <Navigate to="/pet-sitter/inscription" replace />
   }
+  if (requireVip) {
+    return <PetSitterVipRoute>{children}</PetSitterVipRoute>
+  }
+  return <>{children}</>
+}
+
+function PetSitterVipRoute({ children }: { children: React.ReactNode }) {
+  const hasVip = useHasPetsitterVip()
+  if (!hasVip) return <Navigate to="/pet-sitter/abonnement" replace />
   return <>{children}</>
 }
 
@@ -122,10 +133,12 @@ function AppRoutes() {
 
       {/* Pet-Sitter */}
       <Route path="/pet-sitter/inscription" element={<PetSitterRegisterPage />} />
-      <Route path="/pet-sitter" element={<PetSitterRoute><PetSitterDashboard /></PetSitterRoute>} />
-      <Route path="/pet-sitter/missions" element={<PetSitterRoute><MissionsPage /></PetSitterRoute>} />
-      <Route path="/pet-sitter/disponibilites" element={<PetSitterRoute><AvailabilityPage /></PetSitterRoute>} />
-      <Route path="/pet-sitter/profil" element={<PetSitterRoute><PetSitterProfilePage /></PetSitterRoute>} />
+      <Route path="/pet-sitter/abonnement" element={<PetSitterIdentityRoute requireVip={false}><PetSitterSubscriptionPage /></PetSitterIdentityRoute>} />
+      <Route path="/pet-sitter/abonnement/succes" element={<PetSitterIdentityRoute requireVip={false}><PetSitterSubscriptionSuccessPage /></PetSitterIdentityRoute>} />
+      <Route path="/pet-sitter" element={<PetSitterIdentityRoute><PetSitterDashboard /></PetSitterIdentityRoute>} />
+      <Route path="/pet-sitter/missions" element={<PetSitterIdentityRoute><MissionsPage /></PetSitterIdentityRoute>} />
+      <Route path="/pet-sitter/disponibilites" element={<PetSitterIdentityRoute><AvailabilityPage /></PetSitterIdentityRoute>} />
+      <Route path="/pet-sitter/profil" element={<PetSitterIdentityRoute><PetSitterProfilePage /></PetSitterIdentityRoute>} />
 
       {/* Admin */}
       <Route path="/admin/connexion" element={<AdminLoginPage />} />

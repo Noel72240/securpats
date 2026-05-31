@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { User } from '@/types'
 import {
   loadOwnerData, loadAdminData, loadPublicData,
-  fetchPetsitterProfile, fetchAllMissions,
+  fetchPetsitterProfile, fetchAllMissions, fetchSubscriptionByOwner, fetchInvoicesByOwner,
 } from '@/lib/supabase/services'
 
 type Setters = {
@@ -43,12 +43,16 @@ export async function hydrateUserData(user: User, setters: Setters) {
   }
 
   if (user.role === 'petsitter') {
-    const [profile, missions] = await Promise.all([
+    const [profile, missions, subscription, invoices] = await Promise.all([
       fetchPetsitterProfile(user.id),
       fetchAllMissions(),
+      fetchSubscriptionByOwner(user.id),
+      fetchInvoicesByOwner(user.id),
     ])
     if (profile.profile) setters.setPetSitterProfile(profile.profile)
     setters.setMissions(missions.missions)
+    setters.setSubscription(subscription.subscription)
+    setters.setInvoices(invoices.invoices)
   }
 }
 

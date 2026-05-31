@@ -6,8 +6,7 @@
  */
 
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
-import type { SubscriptionPlan } from '@/types'
-import { getPlanConfig } from './plans'
+import { getPlanConfig, type OwnerSubscriptionPlan } from './plans'
 import { getSupabaseSafe } from '@/lib/supabase/client'
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
@@ -45,7 +44,7 @@ export function getStripe() {
 }
 
 export async function createSubscriptionCheckout(
-  plan: SubscriptionPlan,
+  plan: OwnerSubscriptionPlan,
   options: { userId: string; email: string }
 ): Promise<{ error?: string }> {
   const planConfig = getPlanConfig(plan)
@@ -86,6 +85,62 @@ export async function createSubscriptionCheckout(
   }
 }
 
+export async function createPetsitterVipCheckout(
+  options: { userId: string; email: string },
+): Promise<{ error?: string }> {
+  const { PETSITTER_VIP_PLAN } = await import('./petsitter-vip')
+
+  if (!PETSITTER_VIP_PLAN.stripePriceId) {
+    return { error: 'Price ID Stripe manquant. Configurez VITE_STRIPE_PRICE_PETSITTER_VIP.' }
+  }
+
+  try {
+    const response = await fetch('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({
+        priceId: PETSITTER_VIP_PLAN.stripePriceId,
+        plan: 'petsitter_vip',
+        userId: options.userId,
+        customerEmail: options.email,
+        successUrl: `${stripeConfig.appUrl}/pet-sitter/abonnement/succes?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${stripeConfig.appUrl}/pet-sitter/abonnement?canceled=1`,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return { error: data.error || 'Erreur lors de la création de la session de paiement' }
+    }
+
+    if (data.url) {
+      window.location.href = data.url
+    } else {
+      return { error: 'Réponse Stripe invalide' }
+    }
+
+    return {}
+  } catch {
+    return { error: 'Impossible de contacter le serveur de paiement. Vérifiez que les routes API sont déployées.' }
+  }
+}
+
+export async function reconcilePetsitterVipAccess(userId: string): Promise<{ activated?: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/stripe/reconcile-subscription', {
+      method: 'POST',
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ userId, planType: 'petsitter_vip' }),
+    })
+    const data = await response.json()
+    if (!response.ok) return { error: data.error || 'Synchronisation impossible' }
+    return { activated: data.activated }
+  } catch {
+    return { error: 'Impossible de synchroniser l\'abonnement VIP' }
+  }
+}
+
 export async function reconcileSubscriptionAccess(userId: string): Promise<{ activated?: boolean; error?: string }> {
   try {
     const response = await fetch('/api/stripe/reconcile-subscription', {
@@ -101,14 +156,14 @@ export async function reconcileSubscriptionAccess(userId: string): Promise<{ act
   }
 }
 
-export async function openCustomerPortal(customerId: string): Promise<{ error?: string }> {
+export async function openCustomerPortal(customerId: string, returnUrl?: string): Promise<{ error?: string }> {
   try {
     const response = await fetch('/api/stripe/create-portal-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         customerId,
-        returnUrl: `${stripeConfig.appUrl}/app/abonnement`,
+        returnUrl: returnUrl || `${stripeConfig.appUrl}/app/abonnement`,
       }),
     })
 

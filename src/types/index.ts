@@ -69,7 +69,7 @@ export interface PetDocument {
   storagePath?: string
 }
 
-export type SubscriptionPlan = 'monthly' | 'yearly'
+export type SubscriptionPlan = 'monthly' | 'yearly' | 'petsitter_vip'
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing'
 
 export interface Subscription {
@@ -158,6 +158,7 @@ export const DOCUMENT_LABELS: Record<DocumentCategory, string> = {
 export const PLAN_PRICES = {
   monthly: 4.99,
   yearly: 49.99,
+  petsitter_vip: 9.90,
 } as const
 
 export interface SiteTestimonial {

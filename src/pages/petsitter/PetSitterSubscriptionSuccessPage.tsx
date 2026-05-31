@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { CheckCircle, Loader2, AlertCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle, Loader2, AlertCircle, ArrowRight, Star } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
-import { SUBSCRIPTION_PLANS, type OwnerSubscriptionPlan } from '@/lib/stripe/plans'
+import { PETSITTER_VIP_PLAN } from '@/lib/stripe/petsitter-vip'
 
-export default function SubscriptionSuccessPage() {
+export default function PetSitterSubscriptionSuccessPage() {
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const { syncSubscriptionFromStripe, currentUser } = useApp()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [plan, setPlan] = useState<OwnerSubscriptionPlan>('monthly')
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
@@ -34,7 +33,6 @@ export default function SubscriptionSuccessPage() {
           setErrorMsg(data.error)
           return
         }
-        setPlan(data.plan === 'yearly' ? 'yearly' : 'monthly')
         syncSubscriptionFromStripe({
           plan: data.plan,
           status: data.status,
@@ -54,29 +52,30 @@ export default function SubscriptionSuccessPage() {
       })
   }, [sessionId, syncSubscriptionFromStripe, currentUser?.id])
 
-  const planConfig = SUBSCRIPTION_PLANS[plan]
-
   return (
-    <DashboardLayout variant="owner" title="Abonnement activé">
+    <DashboardLayout variant="petsitter" title="Abonnement VIP activé">
       <div className="max-w-lg mx-auto">
         <Card padding="lg" className="text-center">
           {status === 'loading' && (
             <>
-              <Loader2 className="w-16 h-16 text-brand-500 mx-auto mb-4 animate-spin" />
+              <Loader2 className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-spin" />
               <h2 className="text-xl font-bold text-slate-900 mb-2">Confirmation du paiement...</h2>
-              <p className="text-slate-600 text-sm">Vérification de votre abonnement Stripe en cours.</p>
+              <p className="text-slate-600 text-sm">Vérification de votre abonnement VIP en cours.</p>
             </>
           )}
 
           {status === 'success' && (
             <>
-              <CheckCircle className="w-16 h-16 text-brand-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Abonnement activé !</h2>
+              <CheckCircle className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-accent-500 text-white text-xs font-bold mb-4">
+                <Star className="w-3 h-3" /> VIP
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Vous êtes Pet-Sitter VIP !</h2>
               <p className="text-slate-600 mb-4">
-                Votre formule <strong>{planConfig.name}</strong> ({planConfig.price.toFixed(2).replace('.', ',')} €{planConfig.intervalLabel}) est active.
+                Votre abonnement <strong>{PETSITTER_VIP_PLAN.name}</strong> ({PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €{PETSITTER_VIP_PLAN.intervalLabel}) est actif.
                 Le renouvellement est <strong>automatique</strong>.
               </p>
-              <Link to="/app">
+              <Link to="/pet-sitter">
                 <Button icon={ArrowRight}>Accéder à mon espace</Button>
               </Link>
             </>
@@ -87,8 +86,8 @@ export default function SubscriptionSuccessPage() {
               <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-slate-900 mb-2">Erreur de confirmation</h2>
               <p className="text-slate-600 mb-4 text-sm">{errorMsg}</p>
-              <Link to="/app/abonnement">
-                <Button variant="outline">Retour aux abonnements</Button>
+              <Link to="/pet-sitter/abonnement">
+                <Button variant="outline">Retour à l&apos;abonnement</Button>
               </Link>
             </>
           )}

@@ -33,6 +33,7 @@ const petsitterNav: NavItem[] = [
   { to: '/pet-sitter/missions', label: 'Missions', icon: Briefcase },
   { to: '/pet-sitter/disponibilites', label: 'Disponibilités', icon: Calendar },
   { to: '/pet-sitter/profil', label: 'Mon profil', icon: Settings },
+  { to: '/pet-sitter/abonnement', label: 'Abonnement VIP', icon: CreditCard },
 ]
 
 const adminNav: NavItem[] = [

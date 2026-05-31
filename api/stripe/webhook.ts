@@ -1,6 +1,6 @@
 import type Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { insertOwnerInvoice, upsertOwnerSubscription } from '../lib/supabase-admin.js'
+import { insertOwnerInvoice, upsertOwnerSubscription, PLAN_PRICES } from '../lib/supabase-admin.js'
 import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 import { getStripeClient } from '../lib/stripe-client.js'
 import { stripeGet } from '../lib/stripe-api.js'
@@ -22,8 +22,14 @@ function getRawBody(req: VercelRequest): Promise<Buffer> {
   })
 }
 
-function planFromMetadata(metadata: Stripe.Metadata | null | undefined): 'monthly' | 'yearly' {
-  return metadata?.plan === 'yearly' ? 'yearly' : 'monthly'
+function planFromMetadata(metadata: Stripe.Metadata | null | undefined): keyof typeof PLAN_PRICES {
+  if (metadata?.plan === 'yearly') return 'yearly'
+  if (metadata?.plan === 'petsitter_vip') return 'petsitter_vip'
+  return 'monthly'
+}
+
+function renewalDaysForPlan(plan: keyof typeof PLAN_PRICES): number {
+  return plan === 'yearly' ? 365 : 30
 }
 
 function formatDate(ts: number) {
@@ -36,7 +42,7 @@ async function syncCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const plan = planFromMetadata(session.metadata)
   const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
-  let renewalDate = new Date(Date.now() + (plan === 'monthly' ? 30 : 365) * 86400000).toISOString().split('T')[0]
+  let renewalDate = new Date(Date.now() + renewalDaysForPlan(plan) * 86400000).toISOString().split('T')[0]
   let autoRenew = true
 
   if (subscriptionId) {
@@ -103,7 +109,7 @@ async function syncInvoice(invoice: Stripe.Invoice, status: 'paid' | 'failed') {
     const invoiceSub = (invoice as Stripe.Invoice & { subscription?: string | { id?: string } | null }).subscription
     const subscriptionId = typeof invoiceSub === 'string' ? invoiceSub : invoiceSub?.id
 
-    let renewalDate = formatDate(invoice.created + (plan === 'monthly' ? 30 : 365) * 86400)
+    let renewalDate = formatDate(invoice.created + renewalDaysForPlan(plan) * 86400)
     let stripeCustomerId: string | null | undefined = typeof invoice.customer === 'string'
       ? invoice.customer
       : invoice.customer?.id

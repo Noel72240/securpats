@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react'
-import type { User, Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SubscriptionPlan, SiteSettings, SiteTestimonial } from '@/types'
+import type { User, Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings, SiteTestimonial } from '@/types'
+import type { OwnerSubscriptionPlan } from '@/lib/stripe/plans'
 import { PLAN_PRICES } from '@/types'
 import { notifyReferentsEmergency } from '@/lib/emergency/notify'
 import {
@@ -13,7 +14,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { signIn, signUp, signOut, getSessionUser, onAuthStateChange } from '@/lib/supabase/auth'
 import * as db from '@/lib/supabase/services'
 import { hydrateUserData, hydratePublicSite, clearUserData } from '@/lib/supabase/hydrate'
-import { isOwnerSubscriptionActive } from '@/lib/subscription/access'
+import { isOwnerSubscriptionActive, isPetsitterVipActive } from '@/lib/subscription/access'
 import { reconcileSubscriptionAccess } from '@/lib/stripe/client'
 import { uploadPetSitterDocFile } from '@/lib/supabase/uploads'
 import { validatePetsitterIdFile } from '@/lib/petsitter/validation'
@@ -83,7 +84,7 @@ interface AppContextType extends AppState {
   deleteDocument: (id: string) => void
   declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
   updateMissionStatus: (id: string, status: Mission['status']) => void
-  updateSubscription: (plan: SubscriptionPlan) => void
+  updateSubscription: (plan: OwnerSubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
   cancelSubscription: () => void
   updatePetSitterProfile: (profile: Partial<PetSitterProfile>) => void
@@ -140,10 +141,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }), [])
 
   const syncOwnerSubscriptionInBackground = useCallback(async (user: User) => {
-    if (user.role !== 'owner') return
-    const result = await reconcileSubscriptionAccess(user.id)
-    if (result.activated) {
-      await hydrateUserData(user, dataSetters)
+    if (user.role === 'owner') {
+      const result = await reconcileSubscriptionAccess(user.id)
+      if (result.activated) {
+        await hydrateUserData(user, dataSetters)
+      }
+      return
+    }
+    if (user.role === 'petsitter') {
+      const { reconcilePetsitterVipAccess } = await import('@/lib/stripe/client')
+      const result = await reconcilePetsitterVipAccess(user.id)
+      if (result.activated) {
+        await hydrateUserData(user, dataSetters)
+      }
     }
   }, [dataSetters])
 
@@ -794,7 +804,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addActivity('subscription', `Abonnement ${data.plan === 'monthly' ? 'mensuel' : 'annuel'} activé via Stripe`)
   }, [currentUser, addActivity])
 
-  const updateSubscription = useCallback((plan: SubscriptionPlan) => {
+  const updateSubscription = useCallback((plan: OwnerSubscriptionPlan) => {
     syncSubscriptionFromStripe({
       plan,
       status: 'active',
@@ -886,7 +896,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentUser, pets, referents, documents, subscription, invoices,
       missions, petSitterProfile, activities, allUsers, registeredUsers, siteSettings,
       authLoading, isSupabaseMode: supabaseMode,
-      login, logout, register, registerPetsitter, completePetsitterIdentity, exportUserData, deleteAccount, addPet, updatePet, deletePet,
+      login, logout, register, registerPetsitter, completePetsitterIdentity,
+      exportUserData, deleteAccount, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
       addDocument, deleteDocument, declareEmergency, updateMissionStatus,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,
@@ -931,6 +942,11 @@ export function usePetByToken(token: string) {
 export function useHasActiveSubscription() {
   const { subscription, currentUser, invoices } = useApp()
   return isOwnerSubscriptionActive(subscription, currentUser?.id, invoices)
+}
+
+export function useHasPetsitterVip() {
+  const { subscription, currentUser, invoices } = useApp()
+  return isPetsitterVipActive(subscription, currentUser?.id, invoices)
 }
 
 export function usePetSitterMissions() {

@@ -35,11 +35,10 @@ export default function PricingPage() {
           )}
           <div className="text-center mb-16">
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Tarifs simples et transparents</h1>
-            <p className="text-lg text-slate-600">Choisissez l'offre adaptée à vos besoins. Sans frais cachés.</p>
+            <p className="text-lg text-slate-600">Choisissez l&apos;offre adaptée à vos besoins. Sans frais cachés.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Monthly */}
             <Card padding="lg" className="relative">
               <h3 className="text-xl font-bold text-slate-900 mb-1">Mensuel</h3>
               <p className="text-sm text-slate-500 mb-6">Flexibilité maximale</p>
@@ -56,9 +55,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               {paymentsBlocked ? (
-                <Button variant="outline" className="w-full" disabled>
-                  Paiements suspendus
-                </Button>
+                <Button variant="outline" className="w-full" disabled>Paiements suspendus</Button>
               ) : (
                 <Link to="/inscription">
                   <Button variant="outline" className="w-full">Choisir mensuel</Button>
@@ -66,7 +63,6 @@ export default function PricingPage() {
               )}
             </Card>
 
-            {/* Yearly - highlighted */}
             <Card padding="lg" className="relative border-2 border-brand-500 shadow-lg shadow-brand-500/10">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                 <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-accent-500 text-white text-xs font-bold">
@@ -91,9 +87,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               {paymentsBlocked ? (
-                <Button className="w-full" icon={ArrowRight} disabled>
-                  Paiements suspendus
-                </Button>
+                <Button className="w-full" icon={ArrowRight} disabled>Paiements suspendus</Button>
               ) : (
                 <Link to="/inscription">
                   <Button className="w-full" icon={ArrowRight}>Choisir annuel</Button>

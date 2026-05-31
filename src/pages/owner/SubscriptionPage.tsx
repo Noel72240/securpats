@@ -5,17 +5,16 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, CardHeader, EmptyState } from '@/components/ui/Card'
 import { useApp, useHasActiveSubscription } from '@/contexts/AppContext'
-import { SUBSCRIPTION_PLANS } from '@/lib/stripe/plans'
+import { SUBSCRIPTION_PLANS, type OwnerSubscriptionPlan } from '@/lib/stripe/plans'
 import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured, reconcileSubscriptionAccess } from '@/lib/stripe/client'
 import { arePaymentsBlocked } from '@/lib/maintenance'
 import { formatDate } from '@/lib/utils'
-import type { SubscriptionPlan } from '@/types'
 
 export default function SubscriptionPage() {
   const { subscription, invoices, currentUser, siteSettings } = useApp()
   const [searchParams] = useSearchParams()
   const canceled = searchParams.get('canceled')
-  const [loading, setLoading] = useState<SubscriptionPlan | null>(null)
+  const [loading, setLoading] = useState<OwnerSubscriptionPlan | null>(null)
   const [error, setError] = useState('')
 
   const stripeReady = isStripeConfigured()
@@ -34,7 +33,7 @@ export default function SubscriptionPage() {
     })
   }, [currentUser, hasAccess, invoices])
 
-  const handleSubscribe = async (plan: SubscriptionPlan) => {
+  const handleSubscribe = async (plan: OwnerSubscriptionPlan) => {
     if (!currentUser) return
     if (paymentsBlocked) {
       setError('Les paiements sont temporairement suspendus. Réessayez ultérieurement.')

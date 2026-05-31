@@ -1,9 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 import { stripeGet } from '../lib/stripe-api.js'
-import { upsertOwnerSubscription } from '../lib/supabase-admin.js'
+import { upsertOwnerSubscription, PLAN_PRICES } from '../lib/supabase-admin.js'
 
-const PLAN_PRICES = { monthly: 4.99, yearly: 49.99 } as const
+type Plan = keyof typeof PLAN_PRICES
+
+function planFromMetadata(plan?: string): Plan {
+  if (plan === 'yearly') return 'yearly'
+  if (plan === 'petsitter_vip') return 'petsitter_vip'
+  return 'monthly'
+}
+
+function renewalDaysForPlan(plan: Plan): number {
+  return plan === 'yearly' ? 365 : 30
+}
 
 type StripeSubscription = {
   id: string
@@ -44,13 +54,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Paiement non confirmé' })
     }
 
-    const plan = (session.metadata?.plan || 'monthly') as 'monthly' | 'yearly'
+    const plan = planFromMetadata(session.metadata?.plan)
     const userId = session.metadata?.userId || ''
     const subscription = typeof session.subscription === 'object' ? session.subscription : null
 
     const renewalDate = subscription
       ? new Date(getSubscriptionPeriodEnd(subscription as Parameters<typeof getSubscriptionPeriodEnd>[0]) * 1000).toISOString().split('T')[0]
-      : new Date(Date.now() + (plan === 'monthly' ? 30 : 365) * 86400000).toISOString().split('T')[0]
+      : new Date(Date.now() + renewalDaysForPlan(plan) * 86400000).toISOString().split('T')[0]
 
     const startDate = new Date().toISOString().split('T')[0]
 

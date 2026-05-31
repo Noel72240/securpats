@@ -61,7 +61,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col min-[400px]:flex-row gap-3 sm:gap-4">
                 <Link to="/inscription" className="w-full min-[400px]:w-auto">
-                  <Button size="lg" icon={ArrowRight} className="w-full min-[400px]:w-auto">Commencer gratuitement</Button>
+                  <Button size="lg" icon={ArrowRight} className="w-full min-[400px]:w-auto">Commencer maintenant</Button>
                 </Link>
                 <Link to="/fonctionnement" className="w-full min-[400px]:w-auto">
                   <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">Comment ça marche</Button>

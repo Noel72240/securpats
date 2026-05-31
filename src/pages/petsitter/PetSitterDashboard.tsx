@@ -19,8 +19,8 @@ export default function PetSitterDashboard() {
     <DashboardLayout variant="petsitter" title="Tableau de bord">
       <div className="space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">Espace Pet-Sitter</h2>
-          <p className="text-slate-600">Inscription gratuite — aucun abonnement requis.</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Espace Pet-Sitter VIP</h2>
+          <p className="text-slate-600">Abonnement VIP actif — vous pouvez recevoir des missions d&apos;urgence.</p>
         </div>
 
         {!petSitterProfile?.verified && (

@@ -20,10 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userId } = req.body
+  const { userId, planType } = req.body
   if (!userId) {
     return res.status(400).json({ error: 'userId requis' })
   }
+
+  const expectedPlan = planType === 'petsitter_vip' ? 'petsitter_vip' : null
 
   const auth = await verifyRequestUser(req.headers.authorization, userId, '')
   if (!auth.valid) {
@@ -53,14 +55,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .eq('owner_id', userId)
     .eq('status', 'paid')
     .order('date', { ascending: false })
-    .limit(1)
 
-  const latest = paidInvoices?.[0]
+  const latest = expectedPlan
+    ? paidInvoices?.find(i => i.plan === expectedPlan)
+    : paidInvoices?.[0]
   if (!latest) {
     return res.status(404).json({ error: 'Aucune facture payée trouvée' })
   }
 
-  const plan = latest.plan === 'yearly' ? 'yearly' : 'monthly'
+  const plan = latest.plan === 'yearly' ? 'yearly' : latest.plan === 'petsitter_vip' ? 'petsitter_vip' : 'monthly'
   const startDate = latest.date
   const renewalDate = plan === 'yearly' ? addYears(startDate, 1) : addMonths(startDate, 1)
 

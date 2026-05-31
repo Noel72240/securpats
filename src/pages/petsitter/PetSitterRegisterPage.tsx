@@ -143,7 +143,7 @@ export default function PetSitterRegisterPage() {
         setError(result.error)
         return
       }
-      navigate('/pet-sitter')
+      navigate('/pet-sitter/abonnement')
       return
     }
 
@@ -185,7 +185,7 @@ export default function PetSitterRegisterPage() {
       setSuccess(result.message ?? 'Compte créé. Vérifiez votre email pour continuer.')
       return
     }
-    navigate('/pet-sitter')
+    navigate('/pet-sitter/abonnement')
   }
 
   return (
@@ -195,15 +195,15 @@ export default function PetSitterRegisterPage() {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-4">
               <Heart className="w-3.5 h-3.5" />
-              Inscription 100 % gratuite — sans abonnement
+              Abonnement VIP — 9,90 €/mois
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-              {completionMode ? 'Finaliser votre inscription Pet-Sitter' : 'Devenir Pet-Sitter'}
+              {completionMode ? 'Finaliser votre inscription Pet-Sitter' : 'Devenir Pet-Sitter VIP'}
             </h1>
             <p className="text-slate-600 text-sm sm:text-base max-w-lg mx-auto">
               {completionMode
-                ? 'Dernière étape : envoyez votre pièce d\'identité pour activer votre dossier. Sans ce document, l\'accès à l\'espace pet-sitter reste bloqué.'
-                : 'Rejoignez le réseau SécurPats pour intervenir en cas d\'urgence animale. Aucun paiement requis.'}
+                ? 'Dernière étape : envoyez votre pièce d\'identité, puis activez votre abonnement VIP (9,90 €/mois).'
+                : 'Rejoignez le réseau SécurPats. Inscription gratuite, puis abonnement VIP à 9,90 €/mois pour accéder à l\'espace et recevoir des missions.'}
             </p>
           </div>
 

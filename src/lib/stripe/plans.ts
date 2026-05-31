@@ -1,5 +1,6 @@
-import type { SubscriptionPlan } from '@/types'
 import { PLAN_PRICES } from '@/types'
+
+export type OwnerSubscriptionPlan = 'monthly' | 'yearly'
 
 export const SUBSCRIPTION_PLANS = {
   monthly: {
@@ -25,8 +26,8 @@ export const SUBSCRIPTION_PLANS = {
     description: '49,99 € débités automatiquement chaque année',
     savings: PLAN_PRICES.monthly * 12 - PLAN_PRICES.yearly,
   },
-} satisfies Record<SubscriptionPlan, {
-  id: SubscriptionPlan
+} satisfies Record<OwnerSubscriptionPlan, {
+  id: OwnerSubscriptionPlan
   name: string
   price: number
   priceCents: number
@@ -38,6 +39,6 @@ export const SUBSCRIPTION_PLANS = {
   savings?: number
 }>
 
-export function getPlanConfig(plan: SubscriptionPlan) {
+export function getPlanConfig(plan: OwnerSubscriptionPlan) {
   return SUBSCRIPTION_PLANS[plan]
 }
