@@ -4,7 +4,7 @@ import { getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
 
-const PLAN_PRICES = { monthly: 3.99, yearly: 47.88 } as const
+const PLAN_PRICES = { monthly: 5.99, yearly: 59.90 } as const
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

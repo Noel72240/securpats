@@ -15,7 +15,7 @@ export function getSupabaseAdmin(): SupabaseClient | null {
   return adminClient
 }
 
-export const PLAN_PRICES = { monthly: 3.99, yearly: 47.88 } as const
+export const PLAN_PRICES = { monthly: 5.99, yearly: 59.90 } as const
 
 type Plan = keyof typeof PLAN_PRICES
 type SubStatus = 'active' | 'cancelled' | 'past_due' | 'trialing'

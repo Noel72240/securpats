@@ -145,7 +145,7 @@ export function PublicFooter() {
               <li><Link to="/confidentialite" className="hover:text-brand-400 transition-colors">Confidentialité</Link></li>
               <li><Link to="/rgpd" className="hover:text-brand-400 transition-colors">RGPD</Link></li>
               <li><Link to="/cookies" className="hover:text-brand-400 transition-colors">Cookies</Link></li>
-              <li><Link to="/developpeur" className="hover:text-brand-400 transition-colors">Développeur</Link></li>
+              <li><a href="https://allotech72.fr" target="_blank" rel="noopener noreferrer" className="hover:text-brand-400 transition-colors">Informations développeur</a></li>
             </ul>
           </div>
         </div>

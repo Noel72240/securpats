@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Upload, FileText, Trash2, FolderOpen, Download } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
@@ -14,41 +14,62 @@ export default function DocumentsPage() {
   const documents = useOwnerDocuments()
   const pets = useOwnerPets()
   const { currentUser, addDocument, deleteDocument } = useApp()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [filter, setFilter] = useState<string>('all')
+  const [selectedPetId, setSelectedPetId] = useState(pets[0]?.id || '')
+  const [uploadCategory, setUploadCategory] = useState<DocumentCategory>('divers')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const filtered = filter === 'all' ? documents : documents.filter(d => d.category === filter)
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !currentUser) return
+
+    if (isSupabaseConfigured() && !selectedPetId) {
+      setError('Sélectionnez un animal avant d\'uploader un document.')
+      e.target.value = ''
+      return
+    }
+
     setUploading(true)
     setError('')
+    setSuccess('')
 
     const docMeta = {
       name: file.name.replace(/\.[^.]+$/, ''),
-      category: 'divers' as DocumentCategory,
+      category: uploadCategory,
       fileName: file.name,
       fileSize: file.size,
-      petId: pets[0]?.id,
+      petId: selectedPetId || undefined,
     }
 
-    if (isSupabaseConfigured()) {
-      const { path, error: uploadError } = await uploadDocumentFile(currentUser.id, pets[0]?.id, file)
-      if (uploadError || !path) {
-        setError(uploadError || 'Échec de l\'upload')
-        setUploading(false)
-        e.target.value = ''
-        return
+    try {
+      if (isSupabaseConfigured()) {
+        const { path, error: uploadError } = await uploadDocumentFile(currentUser.id, selectedPetId, file)
+        if (uploadError || !path) {
+          setError(uploadError || 'Échec de l\'upload vers le stockage')
+          return
+        }
+        const dbError = await addDocument(docMeta, path)
+        if (dbError) {
+          setError(dbError)
+          return
+        }
+      } else {
+        const dbError = await addDocument(docMeta)
+        if (dbError) {
+          setError(dbError)
+          return
+        }
       }
-      addDocument(docMeta, path)
-    } else {
-      addDocument(docMeta)
+      setSuccess(`« ${docMeta.name} » ajouté avec succès.`)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
     }
-
-    setUploading(false)
-    e.target.value = ''
   }
 
   const handleDownload = async (storagePath?: string) => {
@@ -71,7 +92,7 @@ export default function DocumentsPage() {
   return (
     <DashboardLayout variant="owner" title="Documents">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex flex-col lg:flex-row gap-4 justify-between">
           <Select
             label=""
             value={filter}
@@ -79,15 +100,50 @@ export default function DocumentsPage() {
             options={[{ value: 'all', label: 'Tous les documents' }, ...Object.entries(DOCUMENT_LABELS).map(([k, v]) => ({ value: k, label: v }))]}
             className="max-w-xs"
           />
-          <label className="inline-flex cursor-pointer">
-            <input type="file" className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-            <Button icon={Upload} loading={uploading} type="button">
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            {pets.length > 0 && (
+              <Select
+                label="Animal"
+                value={selectedPetId}
+                onChange={e => setSelectedPetId(e.target.value)}
+                options={pets.map(p => ({ value: p.id, label: p.name }))}
+                className="min-w-[160px]"
+              />
+            )}
+            <Select
+              label="Catégorie"
+              value={uploadCategory}
+              onChange={e => setUploadCategory(e.target.value as DocumentCategory)}
+              options={Object.entries(DOCUMENT_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+              className="min-w-[160px]"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleUpload}
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            />
+            <Button
+              icon={Upload}
+              loading={uploading}
+              type="button"
+              disabled={pets.length === 0 && isSupabaseConfigured()}
+              onClick={() => fileInputRef.current?.click()}
+            >
               Uploader un document
             </Button>
-          </label>
+          </div>
         </div>
 
+        {pets.length === 0 && isSupabaseConfigured() && (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            Ajoutez d&apos;abord un animal pour pouvoir uploader des documents.
+          </p>
+        )}
+
         {error && <p className="text-sm text-red-500">{error}</p>}
+        {success && <p className="text-sm text-brand-600">{success}</p>}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(DOCUMENT_LABELS).map(([key, label]) => {

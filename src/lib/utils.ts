@@ -51,5 +51,10 @@ export function generateQrToken(name: string): string {
 }
 
 export function getRescueUrl(token: string): string {
-  return `${window.location.origin}/secours/${token}`
+  // En navigateur : URL du site actuel → le QR mène toujours à /secours (fiche publique)
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/secours/${encodeURIComponent(token)}`
+  }
+  const envBase = (import.meta.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')
+  return `${envBase}/secours/${encodeURIComponent(token)}`
 }

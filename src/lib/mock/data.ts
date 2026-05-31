@@ -62,7 +62,7 @@ export const defaultSiteSettings: SiteSettings = {
     heroImage: '',
     heroImageAlt: 'Votre compagnon',
     ctaTitle: 'Protégez vos compagnons dès aujourd\'hui',
-    ctaSubtitle: 'Abonnement à partir de 3,99 €/mois — renouvellement automatique.',
+    ctaSubtitle: 'Abonnement à partir de 5,99 €/mois — renouvellement automatique.',
   },
   footer: {
     description: 'La plateforme qui garantit qu\'aucun animal ne soit laissé sans prise en charge en cas d\'urgence.',
@@ -89,7 +89,7 @@ export const faqItems = [
   },
   {
     question: 'Comment fonctionne l\'abonnement ?',
-    answer: 'Deux formules avec renouvellement automatique : 3,99 €/mois ou 47,88 €/an. Le paiement est sécurisé par Stripe. Vous pouvez gérer ou résilier votre abonnement à tout moment depuis votre espace.',
+    answer: 'Deux formules avec renouvellement automatique : 5,99 €/mois ou 59,90 €/an. Le paiement est sécurisé par Stripe. Vous pouvez gérer ou résilier votre abonnement à tout moment depuis votre espace.',
   },
 ]
 

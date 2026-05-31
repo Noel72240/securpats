@@ -152,8 +152,8 @@ export const DOCUMENT_LABELS: Record<DocumentCategory, string> = {
 }
 
 export const PLAN_PRICES = {
-  monthly: 3.99,
-  yearly: 47.88,
+  monthly: 5.99,
+  yearly: 59.90,
 } as const
 
 export interface SiteTestimonial {

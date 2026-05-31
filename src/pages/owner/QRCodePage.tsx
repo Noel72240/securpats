@@ -71,6 +71,7 @@ export default function QRCodePage() {
               </div>
               <p className="mt-4 font-semibold text-slate-900">{pet.name}</p>
               <p className="text-sm text-slate-500 mt-1 break-all">{url}</p>
+              <p className="text-xs text-brand-600 mt-2">Ce QR ouvre directement la fiche de secours publique (sans connexion).</p>
             </Card>
 
             <div className="flex flex-wrap gap-3 justify-center">

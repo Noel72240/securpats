@@ -71,7 +71,7 @@ export default function SubscriptionPage() {
               <div>
                 <p className="font-semibold text-slate-900">Paiement Stripe — configuration requise</p>
                 <p className="text-sm text-slate-600 mt-1">
-                  Les abonnements récurrents (3,99 €/mois ou 47,88 €/an) seront activés une fois Stripe connecté.
+                  Les abonnements récurrents (5,99 €/mois ou 59,90 €/an) seront activés une fois Stripe connecté.
                   Consultez le fichier <code className="text-xs bg-slate-200 px-1 rounded">.env.example</code> et le README.
                 </p>
               </div>

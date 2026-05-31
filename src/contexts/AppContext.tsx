@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import type { User, Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SubscriptionPlan, SiteSettings, SiteTestimonial } from '@/types'
+import { PLAN_PRICES } from '@/types'
+import { notifyReferentsEmergency } from '@/lib/emergency/notify'
 import {
   systemUsers, mockPets, mockReferents, mockDocuments,
   mockInvoices, mockMissions, mockPetSitter, mockActivities,
@@ -42,16 +44,16 @@ interface AppContextType extends AppState {
   }) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>
   exportUserData: () => Record<string, unknown>
   deleteAccount: () => Promise<boolean>
-  addPet: (pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>) => void
+  addPet: (pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>) => Promise<Pet | null>
   updatePet: (id: string, pet: Partial<Pet>) => void
   deletePet: (id: string) => void
   addReferent: (ref: Omit<Referent, 'id' | 'ownerId' | 'priority'>) => void
   updateReferent: (id: string, ref: Partial<Referent>) => void
   deleteReferent: (id: string) => void
   reorderReferents: (ids: string[]) => void
-  addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => void
+  addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => Promise<string | null>
   deleteDocument: (id: string) => void
-  declareEmergency: (petId: string, description: string) => void
+  declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; smsSent?: number; error?: string; emailConfigured?: boolean; smsConfigured?: boolean }>
   updateMissionStatus: (id: string, status: Mission['status']) => void
   updateSubscription: (plan: SubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
@@ -333,16 +335,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return true
   }, [currentUser, dataSetters])
 
-  const addPet = useCallback((pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>) => {
-    if (!currentUser) return
+  const addPet = useCallback(async (pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>): Promise<Pet | null> => {
+    if (!currentUser) return null
     if (supabaseMode) {
-      db.createPet(currentUser.id, pet).then(({ pet: created }) => {
-        if (created) {
-          setPets(prev => [...prev, created])
-          addActivity('pet', `Animal ${pet.name} ajouté`)
-        }
-      })
-      return
+      const { pet: created } = await db.createPet(currentUser.id, pet)
+      if (created) {
+        setPets(prev => [...prev, created])
+        addActivity('pet', `Animal ${pet.name} ajouté`)
+        return created
+      }
+      return null
     }
     const newPet: Pet = {
       ...pet,
@@ -353,6 +355,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     setPets(prev => [...prev, newPet])
     addActivity('pet', `Animal ${pet.name} ajouté`)
+    return newPet
   }, [currentUser, addActivity])
 
   const updatePet = useCallback((id: string, updates: Partial<Pet>) => {
@@ -421,25 +424,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const addDocument = useCallback((doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => {
-    if (!currentUser) return
+  const addDocument = useCallback(async (
+    doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>,
+    storagePath?: string,
+  ): Promise<string | null> => {
+    if (!currentUser) return 'Non connecté'
     if (supabaseMode) {
-      db.createDocument(currentUser.id, doc, storagePath).then(({ document }) => {
-        if (document) {
-          setDocuments(prev => [...prev, document])
-          addActivity('document', `Document "${doc.name}" uploadé`)
-        }
-      })
-      return
+      const { document, error } = await db.createDocument(currentUser.id, doc, storagePath)
+      if (error || !document) return error || 'Enregistrement du document échoué'
+      setDocuments(prev => [...prev, document])
+      addActivity('document', `Document "${doc.name}" uploadé`)
+      return null
     }
     const newDoc: PetDocument = {
       ...doc,
       id: generateId('doc'),
       ownerId: currentUser.id,
       uploadedAt: new Date().toISOString().split('T')[0],
+      storagePath,
     }
     setDocuments(prev => [...prev, newDoc])
     addActivity('document', `Document "${doc.name}" uploadé`)
+    return null
   }, [currentUser, addActivity])
 
   const deleteDocument = useCallback((id: string) => {
@@ -447,10 +453,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDocuments(prev => prev.filter(d => d.id !== id))
   }, [])
 
-  const declareEmergency = useCallback((petId: string, description: string) => {
-    if (!currentUser) return
+  const declareEmergency = useCallback(async (petId: string, description: string) => {
+    if (!currentUser) return { ok: false, emailsSent: 0, error: 'Non connecté' }
     const pet = pets.find(p => p.id === petId)
-    if (!pet) return
+    if (!pet) return { ok: false, emailsSent: 0, error: 'Animal introuvable' }
+
+    const ownerReferents = referents
+      .filter(r => r.ownerId === currentUser.id)
+      .sort((a, b) => a.priority - b.priority)
+
     const missionData: Omit<Mission, 'id' | 'createdAt'> = {
       petId,
       petName: pet.name,
@@ -459,16 +470,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
       type: 'urgence',
       status: 'pending',
       description,
-      address: referents.find(r => r.ownerId === currentUser.id && r.priority === 1)?.address || '',
+      address: ownerReferents.find(r => r.priority === 1)?.address || '',
     }
+
     if (supabaseMode) {
-      db.createMission(missionData).then(({ mission }) => {
-        if (mission) setMissions(prev => [mission, ...prev])
-      })
+      const { mission } = await db.createMission(missionData)
+      if (mission) setMissions(prev => [mission, ...prev])
     } else {
       setMissions(prev => [{ ...missionData, id: generateId('mission'), createdAt: new Date().toISOString() }, ...prev])
     }
+
     addActivity('urgence', `Urgence déclarée pour ${pet.name}`)
+
+    if (supabaseMode && ownerReferents.length > 0) {
+      const notify = await notifyReferentsEmergency({
+        userId: currentUser.id,
+        ownerEmail: currentUser.email,
+        petName: pet.name,
+        description,
+        referents: ownerReferents.map(r => ({
+          firstName: r.firstName,
+          lastName: r.lastName,
+          email: r.email,
+          phone: r.phone,
+        })),
+      })
+
+      if (!notify.emailConfigured) {
+        return {
+          ok: true,
+          emailsSent: 0,
+          smsSent: notify.smsSent ?? 0,
+          emailConfigured: false,
+          smsConfigured: notify.smsConfigured,
+          error: 'Emails non configurés (ajoutez RESEND_API_KEY sur Vercel). Les référents doivent être contactés par téléphone.',
+        }
+      }
+
+      return {
+        ok: true,
+        emailsSent: notify.emailsSent,
+        smsSent: notify.smsSent ?? 0,
+        emailConfigured: true,
+        smsConfigured: notify.smsConfigured,
+        error: notify.error && notify.emailsSent === 0 && (notify.smsSent ?? 0) === 0 ? notify.error : undefined,
+      }
+    }
+
+    return { ok: true, emailsSent: 0, smsSent: 0, emailConfigured: false, smsConfigured: false }
   }, [currentUser, pets, referents, addActivity])
 
   const updateMissionStatus = useCallback((id: string, status: Mission['status']) => {
@@ -509,7 +558,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     syncSubscriptionFromStripe({
       plan,
       status: 'active',
-      price: plan === 'monthly' ? 3.99 : 47.88,
+      price: PLAN_PRICES[plan],
       startDate: new Date().toISOString().split('T')[0],
       renewalDate: new Date(Date.now() + (plan === 'monthly' ? 30 : 365) * 86400000).toISOString().split('T')[0],
       autoRenew: true,

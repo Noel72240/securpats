@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Dog, Edit, Trash2, Search } from 'lucide-react'
+import { Plus, Dog, Edit, Trash2, Search, ImagePlus } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, EmptyState, Modal } from '@/components/ui/Card'
@@ -27,37 +27,84 @@ export default function PetsPage() {
   const [editing, setEditing] = useState<Pet | null>(null)
   const [form, setForm] = useState<PetForm>(emptyPet)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const filtered = pets.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.species.toLowerCase().includes(search.toLowerCase())
   )
 
-  const openCreate = () => { setEditing(null); setForm(emptyPet); setModalOpen(true) }
+  const resetPhotoState = () => {
+    if (photoPreview.startsWith('blob:')) URL.revokeObjectURL(photoPreview)
+    setPendingPhoto(null)
+    setPhotoPreview('')
+  }
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm(emptyPet)
+    resetPhotoState()
+    setModalOpen(true)
+  }
+
   const openEdit = (pet: Pet) => {
     const { id: _id, ownerId: _oid, qrToken: _qt, createdAt: _ca, ...rest } = pet
     setEditing(pet)
     setForm(rest)
+    resetPhotoState()
+    setPhotoPreview(pet.photo || '')
     setModalOpen(true)
   }
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !editing || !currentUser) return
-    setPhotoUploading(true)
-    const { publicUrl, error } = await uploadPetPhotoFile(currentUser.id, editing.id, file)
-    setPhotoUploading(false)
-    if (publicUrl) {
-      setForm(f => ({ ...f, photo: publicUrl }))
-      updatePet(editing.id, { photo: publicUrl })
-    } else if (error) alert(`Upload échoué : ${error}`)
+    if (!file) return
+    if (photoPreview.startsWith('blob:')) URL.revokeObjectURL(photoPreview)
+    setPendingPhoto(file)
+    setPhotoPreview(URL.createObjectURL(file))
     e.target.value = ''
   }
 
-  const handleSave = () => {
-    if (editing) updatePet(editing.id, form)
-    else addPet(form)
+  const uploadPhotoForPet = async (petId: string, file: File) => {
+    if (!currentUser || !isSupabaseConfigured()) return null
+    setPhotoUploading(true)
+    const { publicUrl, error } = await uploadPetPhotoFile(currentUser.id, petId, file)
+    setPhotoUploading(false)
+    if (error) {
+      alert(`Upload photo échoué : ${error}`)
+      return null
+    }
+    return publicUrl
+  }
+
+  const handleSave = async () => {
+    if (!form.name.trim()) return
+    setSaving(true)
+
+    if (editing) {
+      let photoUrl = form.photo
+      if (pendingPhoto) {
+        const uploaded = await uploadPhotoForPet(editing.id, pendingPhoto)
+        if (uploaded) photoUrl = uploaded
+      }
+      updatePet(editing.id, { ...form, photo: photoUrl })
+      setModalOpen(false)
+      resetPhotoState()
+      setSaving(false)
+      return
+    }
+
+    const created = await addPet(form)
+    if (created && pendingPhoto) {
+      const uploaded = await uploadPhotoForPet(created.id, pendingPhoto)
+      if (uploaded) updatePet(created.id, { photo: uploaded })
+    }
+
     setModalOpen(false)
+    resetPhotoState()
+    setSaving(false)
   }
 
   const handleDelete = (id: string) => {
@@ -120,7 +167,7 @@ export default function PetsPage() {
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier l\'animal' : 'Nouvel animal'}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); resetPhotoState() }} title={editing ? 'Modifier l\'animal' : 'Nouvel animal'}>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <Input label="Nom" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           <div className="grid grid-cols-2 gap-4">
@@ -138,14 +185,29 @@ export default function PetsPage() {
             <Input label="Couleur" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
           </div>
           <Input label="N° identification" value={form.identificationNumber} onChange={e => setForm({ ...form, identificationNumber: e.target.value })} />
-          <Input label="URL Photo" value={form.photo || ''} onChange={e => setForm({ ...form, photo: e.target.value })} />
-          {editing && isSupabaseConfigured() && (
-            <label className="block">
-              <span className="block text-sm font-medium text-slate-700 mb-1.5">Photo (upload Supabase)</span>
-              <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={photoUploading} className="text-sm" />
-              {photoUploading && <p className="text-xs text-slate-500 mt-1">Upload en cours...</p>}
-            </label>
-          )}
+
+          <div>
+            <span className="block text-sm font-medium text-slate-700 mb-1.5">Photo de l&apos;animal</span>
+            <div className="flex items-center gap-4">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Aperçu" className="w-20 h-20 rounded-xl object-cover border border-slate-200" />
+              ) : (
+                <div className="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center">
+                  <ImagePlus className="w-8 h-8 text-slate-400" />
+                </div>
+              )}
+              <label className="cursor-pointer">
+                <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" disabled={photoUploading} />
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  {photoUploading ? 'Upload...' : 'Choisir une photo'}
+                </span>
+              </label>
+            </div>
+            {!isSupabaseConfigured() && (
+              <p className="text-xs text-slate-500 mt-1">Mode démo : la photo sera enregistrée localement uniquement.</p>
+            )}
+          </div>
+
           <Textarea label="Traitements" value={form.treatments} onChange={e => setForm({ ...form, treatments: e.target.value })} />
           <Textarea label="Allergies" value={form.allergies} onChange={e => setForm({ ...form, allergies: e.target.value })} />
           <Textarea label="Alimentation" value={form.diet} onChange={e => setForm({ ...form, diet: e.target.value })} />
@@ -155,7 +217,9 @@ export default function PetsPage() {
             <Input label="Tél. vétérinaire" value={form.vetPhone} onChange={e => setForm({ ...form, vetPhone: e.target.value })} />
             <Input label="Adresse vétérinaire" value={form.vetAddress} onChange={e => setForm({ ...form, vetAddress: e.target.value })} />
           </div>
-          <Button onClick={handleSave} className="w-full">{editing ? 'Enregistrer' : 'Ajouter'}</Button>
+          <Button onClick={handleSave} className="w-full" loading={saving || photoUploading}>
+            {editing ? 'Enregistrer' : 'Ajouter'}
+          </Button>
         </div>
       </Modal>
     </DashboardLayout>
