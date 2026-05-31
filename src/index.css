@@ -59,6 +59,19 @@ body {
 .animation-delay-300 { animation-delay: 300ms; }
 .animation-delay-400 { animation-delay: 400ms; }
 
+@keyframes paw-float {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--paw-rotate, 0deg));
+  }
+  50% {
+    transform: translateY(-6px) rotate(calc(var(--paw-rotate, 0deg) + 4deg));
+  }
+}
+
+.paw-float {
+  animation: paw-float 4s ease-in-out infinite;
+}
+
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }

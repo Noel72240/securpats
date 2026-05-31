@@ -8,6 +8,7 @@ import { BrandLogo } from '@/components/brand/BrandLogo'
 import { DeveloperCredit } from '@/components/legal/DeveloperCredit'
 import { SEO_NAV_LINKS } from '@/lib/seo/content'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
+import { PawDecorations } from '@/components/decor/PawDecorations'
 
 const navLinks = [
   { to: '/', label: 'Accueil' },
@@ -172,12 +173,13 @@ export function PublicFooter() {
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 relative">
+      <PawDecorations />
       <div className="sticky top-0 z-50">
         <MaintenanceBanner />
         <PublicHeader />
       </div>
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 relative z-10">{children}</main>
       <PublicFooter />
     </div>
   )
