@@ -72,6 +72,17 @@ function OwnerRoute({ children, requireSubscription = true }: { children: React.
   )
 }
 
+function PetSitterRoute({ children }: { children: React.ReactNode }) {
+  const { currentUser, petSitterProfile, authLoading } = useApp()
+  if (authLoading) return null
+  if (!currentUser) return <Navigate to="/connexion" replace />
+  if (currentUser.role !== 'petsitter') return <Navigate to="/" replace />
+  if (!petSitterProfile?.idDocument) {
+    return <Navigate to="/pet-sitter/inscription" replace />
+  }
+  return <>{children}</>
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -111,10 +122,10 @@ function AppRoutes() {
 
       {/* Pet-Sitter */}
       <Route path="/pet-sitter/inscription" element={<PetSitterRegisterPage />} />
-      <Route path="/pet-sitter" element={<ProtectedRoute roles={['petsitter']}><PetSitterDashboard /></ProtectedRoute>} />
-      <Route path="/pet-sitter/missions" element={<ProtectedRoute roles={['petsitter']}><MissionsPage /></ProtectedRoute>} />
-      <Route path="/pet-sitter/disponibilites" element={<ProtectedRoute roles={['petsitter']}><AvailabilityPage /></ProtectedRoute>} />
-      <Route path="/pet-sitter/profil" element={<ProtectedRoute roles={['petsitter']}><PetSitterProfilePage /></ProtectedRoute>} />
+      <Route path="/pet-sitter" element={<PetSitterRoute><PetSitterDashboard /></PetSitterRoute>} />
+      <Route path="/pet-sitter/missions" element={<PetSitterRoute><MissionsPage /></PetSitterRoute>} />
+      <Route path="/pet-sitter/disponibilites" element={<PetSitterRoute><AvailabilityPage /></PetSitterRoute>} />
+      <Route path="/pet-sitter/profil" element={<PetSitterRoute><PetSitterProfilePage /></PetSitterRoute>} />
 
       {/* Admin */}
       <Route path="/admin/connexion" element={<AdminLoginPage />} />

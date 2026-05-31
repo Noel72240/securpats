@@ -15,6 +15,8 @@ import * as db from '@/lib/supabase/services'
 import { hydrateUserData, hydratePublicSite, clearUserData } from '@/lib/supabase/hydrate'
 import { isOwnerSubscriptionActive } from '@/lib/subscription/access'
 import { reconcileSubscriptionAccess } from '@/lib/stripe/client'
+import { uploadPetSitterDocFile } from '@/lib/supabase/uploads'
+import { validatePetsitterIdFile } from '@/lib/petsitter/validation'
 
 interface AppState {
   currentUser: User | null
@@ -44,6 +46,30 @@ interface AppContextType extends AppState {
     phone: string
     consent: { termsAccepted: boolean; privacyAccepted: boolean; marketingOptIn?: boolean }
   }) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>
+  registerPetsitter: (data: {
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+    phone: string
+    address: string
+    bio: string
+    idFile: File
+    proofFile?: File | null
+    consent: {
+      termsAccepted: boolean
+      privacyAccepted: boolean
+      idProcessingAccepted: boolean
+      marketingOptIn?: boolean
+    }
+  }) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; message?: string }>
+  completePetsitterIdentity: (data: {
+    idFile: File
+    proofFile?: File | null
+    address?: string
+    bio?: string
+    idProcessingAccepted: boolean
+  }) => Promise<{ error: string | null }>
   exportUserData: () => Record<string, unknown>
   deleteAccount: () => Promise<boolean>
   addPet: (pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>) => Promise<Pet | null>
@@ -291,6 +317,204 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentUser(newUser)
     return { error: null }
   }, [allUsers])
+
+  const finishPetsitterProfileSetup = useCallback(async (
+    user: User,
+    data: {
+      phone: string
+      email: string
+      address: string
+      bio: string
+      idFile: File
+      proofFile?: File | null
+    },
+    consentAt: string,
+  ): Promise<{ error: string | null }> => {
+    const idErr = validatePetsitterIdFile(data.idFile)
+    if (idErr) return { error: idErr }
+
+    const { path: idPath, error: idUploadErr } = await uploadPetSitterDocFile(user.id, 'id', data.idFile)
+    if (!idPath) {
+      return {
+        error: `Inscription refusée : la pièce d'identité est obligatoire et n'a pas pu être enregistrée.${idUploadErr ? ` (${idUploadErr})` : ''}`,
+      }
+    }
+
+    let proofPath: string | undefined
+    if (data.proofFile) {
+      const { path, error: proofErr } = await uploadPetSitterDocFile(user.id, 'address', data.proofFile)
+      if (!path) {
+        return { error: proofErr || 'Échec de l\'envoi du justificatif de domicile.' }
+      }
+      proofPath = path
+    }
+
+    const { profile, error: profileErr } = await db.upsertPetsitterProfile(user.id, {
+      bio: data.bio,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      idDocument: idPath,
+      proofOfAddress: proofPath,
+      verified: false,
+      idConsentAt: consentAt,
+      idConsentVersion: LEGAL_VERSION,
+    })
+
+    if (profileErr || !profile) {
+      return { error: profileErr || 'Profil pet-sitter non enregistré.' }
+    }
+
+    setPetSitterProfile(profile)
+    return { error: null }
+  }, [])
+
+  const registerPetsitter = useCallback(async (data: {
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+    phone: string
+    address: string
+    bio: string
+    idFile: File
+    proofFile?: File | null
+    consent: {
+      termsAccepted: boolean
+      privacyAccepted: boolean
+      idProcessingAccepted: boolean
+      marketingOptIn?: boolean
+    }
+  }): Promise<{ error: string | null; needsEmailConfirmation?: boolean; message?: string }> => {
+    if (!data.consent.termsAccepted || !data.consent.privacyAccepted || !data.consent.idProcessingAccepted) {
+      return { error: 'Vous devez accepter les CGU, la politique de confidentialité et le traitement de votre pièce d\'identité.' }
+    }
+
+    const idErr = validatePetsitterIdFile(data.idFile)
+    if (idErr) return { error: idErr }
+
+    const consentAt = new Date().toISOString()
+
+    if (supabaseMode) {
+      const { user, error, needsEmailConfirmation } = await signUp({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        role: 'petsitter',
+        consentAt,
+        consentVersion: LEGAL_VERSION,
+        marketingOptIn: data.consent.marketingOptIn,
+      })
+
+      if (needsEmailConfirmation) {
+        return {
+          error: null,
+          needsEmailConfirmation: true,
+          message: 'Compte pet-sitter créé. Confirmez votre email, puis reconnectez-vous pour envoyer votre pièce d\'identité et finaliser l\'inscription (obligatoire).',
+        }
+      }
+
+      if (error || !user) {
+        if (error?.toLowerCase().includes('already registered')) {
+          return { error: 'Un compte existe déjà avec cet email. Connectez-vous pour finaliser votre inscription pet-sitter.' }
+        }
+        return { error: error || 'Inscription échouée.' }
+      }
+
+      const setup = await finishPetsitterProfileSetup(user, data, consentAt)
+      if (setup.error) return { error: setup.error }
+
+      setCurrentUser(user)
+      return { error: null }
+    }
+
+    if (allUsers.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
+      return { error: 'Un compte existe déjà avec cet email.' }
+    }
+
+    const newUser: User = {
+      id: generateId('user'),
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: 'petsitter',
+      createdAt: new Date().toISOString().split('T')[0],
+      twoFactorEnabled: false,
+      consentAcceptedAt: consentAt,
+      consentVersion: LEGAL_VERSION,
+      marketingOptIn: data.consent.marketingOptIn ?? false,
+    }
+    setRegisteredUsers(prev => [...prev, newUser])
+    setCurrentUser(newUser)
+    setPetSitterProfile({
+      id: generateId('ps'),
+      userId: newUser.id,
+      bio: data.bio,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      idDocument: data.idFile.name,
+      proofOfAddress: data.proofFile?.name,
+      availableDays: [],
+      availableHours: '',
+      serviceArea: '',
+      verified: false,
+      idConsentAt: consentAt,
+      idConsentVersion: LEGAL_VERSION,
+    })
+    return { error: null }
+  }, [allUsers, finishPetsitterProfileSetup])
+
+  const completePetsitterIdentity = useCallback(async (data: {
+    idFile: File
+    proofFile?: File | null
+    address?: string
+    bio?: string
+    idProcessingAccepted: boolean
+  }): Promise<{ error: string | null }> => {
+    if (!currentUser || currentUser.role !== 'petsitter') {
+      return { error: 'Connectez-vous avec un compte pet-sitter.' }
+    }
+    if (!data.idProcessingAccepted) {
+      return { error: 'Vous devez accepter le traitement de votre pièce d\'identité.' }
+    }
+
+    const consentAt = new Date().toISOString()
+    const profileData = {
+      phone: currentUser.phone,
+      email: currentUser.email,
+      address: data.address ?? petSitterProfile?.address ?? '',
+      bio: data.bio ?? petSitterProfile?.bio ?? '',
+      idFile: data.idFile,
+      proofFile: data.proofFile,
+    }
+
+    if (supabaseMode) {
+      const result = await finishPetsitterProfileSetup(currentUser, profileData, consentAt)
+      return result
+    }
+
+    setPetSitterProfile(prev => ({
+      id: prev?.id ?? generateId('ps'),
+      userId: currentUser.id,
+      bio: profileData.bio,
+      phone: profileData.phone,
+      email: profileData.email,
+      address: profileData.address,
+      idDocument: data.idFile.name,
+      proofOfAddress: data.proofFile?.name ?? prev?.proofOfAddress,
+      availableDays: prev?.availableDays ?? [],
+      availableHours: prev?.availableHours ?? '',
+      serviceArea: prev?.serviceArea ?? '',
+      verified: false,
+      idConsentAt: consentAt,
+      idConsentVersion: LEGAL_VERSION,
+    }))
+    return { error: null }
+  }, [currentUser, petSitterProfile, finishPetsitterProfileSetup])
 
   const exportUserData = useCallback((): Record<string, unknown> => {
     if (!currentUser) return {}
@@ -662,7 +886,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentUser, pets, referents, documents, subscription, invoices,
       missions, petSitterProfile, activities, allUsers, registeredUsers, siteSettings,
       authLoading, isSupabaseMode: supabaseMode,
-      login, logout, register, exportUserData, deleteAccount, addPet, updatePet, deletePet,
+      login, logout, register, registerPetsitter, completePetsitterIdentity, exportUserData, deleteAccount, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
       addDocument, deleteDocument, declareEmergency, updateMissionStatus,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,

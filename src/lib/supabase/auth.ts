@@ -14,12 +14,13 @@ export async function signUp(data: {
   firstName: string
   lastName: string
   phone: string
+  role?: UserRole
   consentAt?: string
   consentVersion?: string
   marketingOptIn?: boolean
 }) {
   const supabase = getSupabase()
-  const role = resolveRole(data.email)
+  const role = data.role ?? resolveRole(data.email)
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: data.email,

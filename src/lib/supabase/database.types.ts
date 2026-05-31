@@ -234,6 +234,8 @@ export type Database = {
           available_hours: string
           service_area: string
           verified: boolean
+          id_consent_at: string | null
+          id_consent_version: string | null
         },
         {
           id?: string
@@ -249,6 +251,8 @@ export type Database = {
           available_hours?: string
           service_area?: string
           verified?: boolean
+          id_consent_at?: string | null
+          id_consent_version?: string | null
         }
       >
       activities: TableDef<

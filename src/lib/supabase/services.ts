@@ -290,6 +290,8 @@ export async function upsertPetsitterProfile(userId: string, profile: Partial<Pe
     available_hours: profile.availableHours ?? '',
     service_area: profile.serviceArea ?? '',
     verified: profile.verified ?? false,
+    id_consent_at: profile.idConsentAt ?? null,
+    id_consent_version: profile.idConsentVersion ?? null,
   }, { onConflict: 'user_id' }).select().single()
   if (error) return { profile: null as PetSitterProfile | null, error: error.message }
   return { profile: petsitterFromRow(data), error: null }

@@ -125,6 +125,9 @@ export interface PetSitterProfile {
   availableHours: string
   serviceArea: string
   verified: boolean
+  /** Consentement RGPD — traitement pièce d'identité */
+  idConsentAt?: string
+  idConsentVersion?: string
 }
 
 export interface Activity {

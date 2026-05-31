@@ -96,7 +96,10 @@ export default function PetSitterProfilePage() {
         </Card>
 
         <Card>
-          <h3 className="font-semibold text-slate-900 mb-4">Documents d'identité</h3>
+              <h3 className="font-semibold text-slate-900 mb-4">Documents d&apos;identité</h3>
+              <p className="text-xs text-slate-500 mb-4">
+                La pièce d&apos;identité est obligatoire. Sans elle, l&apos;accès à l&apos;espace pet-sitter est bloqué.
+              </p>
           {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">

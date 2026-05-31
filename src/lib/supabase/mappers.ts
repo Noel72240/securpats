@@ -235,6 +235,8 @@ export function petsitterFromRow(row: Tables<'petsitter_profiles'>): PetSitterPr
     availableHours: row.available_hours,
     serviceArea: row.service_area,
     verified: row.verified,
+    idConsentAt: row.id_consent_at ?? undefined,
+    idConsentVersion: row.id_consent_version ?? undefined,
   }
 }
 

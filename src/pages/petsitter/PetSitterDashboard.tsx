@@ -1,12 +1,12 @@
-import { CheckCircle, XCircle, Clock, Check } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, Check, Shield, AlertTriangle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatCard, Card, CardHeader, Badge } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { formatDateTime } from '@/lib/utils'
 
 export default function PetSitterDashboard() {
-  const { missions } = useApp()
-  const myMissions = missions.filter(m => m.petsitterId === 'user-2' || m.status === 'pending')
+  const { missions, currentUser, petSitterProfile } = useApp()
+  const myMissions = missions.filter(m => m.petsitterId === currentUser?.id || m.status === 'pending')
 
   const counts = {
     received: myMissions.filter(m => m.status === 'pending').length,
@@ -20,8 +20,34 @@ export default function PetSitterDashboard() {
       <div className="space-y-8">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Espace Pet-Sitter</h2>
-          <p className="text-slate-600">Gérez vos missions et disponibilités.</p>
+          <p className="text-slate-600">Inscription gratuite — aucun abonnement requis.</p>
         </div>
+
+        {!petSitterProfile?.verified && (
+          <Card className="!p-4 bg-amber-50 border-amber-200">
+            <div className="flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-900">
+                <p className="font-semibold">Compte en attente de validation</p>
+                <p className="mt-1">
+                  Votre pièce d&apos;identité a bien été reçue. L&apos;équipe SécurPats vérifie votre dossier avant
+                  de vous proposer des missions. Délai habituel : 48 h ouvrées.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {petSitterProfile?.verified && (
+          <Card className="!p-4 bg-brand-50 border-brand-200">
+            <div className="flex gap-3">
+              <Shield className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-brand-800">
+                <strong>Profil vérifié</strong> — vous pouvez recevoir des missions d&apos;urgence dans votre zone.
+              </p>
+            </div>
+          </Card>
+        )}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={Clock} label="Missions reçues" value={counts.received} color="blue" />
