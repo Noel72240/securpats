@@ -13,6 +13,8 @@ import DeveloppeurPage from '@/pages/public/DeveloppeurPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
+import { SeoPageView } from '@/pages/public/SeoLandingPage'
+import { SEO_PAGES } from '@/lib/seo/content'
 
 import OwnerDashboard from '@/pages/owner/OwnerDashboard'
 import PetsPage from '@/pages/owner/PetsPage'
@@ -86,6 +88,11 @@ function AppRoutes() {
       <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
       <Route path="/cookies" element={<CookiesPage />} />
       <Route path="/developpeur" element={<DeveloppeurPage />} />
+
+      {/* Pages SEO — hospitalisation & urgence animale */}
+      {SEO_PAGES.map(page => (
+        <Route key={page.path} path={page.path} element={<SeoPageView path={page.path} />} />
+      ))}
 
       {/* Owner — abonnement actif requis (sauf pages abonnement / RGPD) */}
       <Route path="/app" element={<OwnerRoute><OwnerDashboard /></OwnerRoute>} />

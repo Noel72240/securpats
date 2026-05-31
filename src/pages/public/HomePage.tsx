@@ -7,6 +7,8 @@ import { PublicLayout } from '@/components/layout/PublicLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
+import { PageSEO } from '@/components/seo/PageSEO'
+import { SEO_NAV_LINKS } from '@/lib/seo/content'
 
 const features = [
   { icon: PawPrint, title: 'Fiches animaux complètes', desc: 'Photo, traitements, allergies, alimentation et consignes en un seul endroit.' },
@@ -30,6 +32,12 @@ export default function HomePage() {
 
   return (
     <PublicLayout>
+      <PageSEO
+        title="Protection animale d'urgence — hospitalisation & alerte référents"
+        description="SécurPats protège vos animaux en cas d'hospitalisation ou d'urgence. Alertes automatiques, QR code secours, référents et fiches complètes. Dès 4,99 €/mois."
+        path="/"
+        keywords={['protection animale urgence', 'hospitalisation animal', 'alerte référents chien chat', 'SécurPats']}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-emerald-50">
         <div className="absolute inset-0 opacity-30">
@@ -193,6 +201,31 @@ export default function HomePage() {
         </div>
       </section>
       )}
+
+      {/* Guides SEO — hospitalisation & urgence */}
+      <section className="py-16 bg-white border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <h2 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-3">
+              Hospitalisé(e) ? Qui s&apos;occupe de votre animal ?
+            </h2>
+            <p className="text-slate-600">
+              SécurPats répond à la question que se posent des milliers de propriétaires : que devient mon chien ou mon chat si je suis hospitalisé(e) en urgence ?
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-5xl mx-auto">
+            {SEO_NAV_LINKS.map(link => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-800 transition-colors text-left"
+              >
+                {link.label} →
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="py-20 lg:py-28">

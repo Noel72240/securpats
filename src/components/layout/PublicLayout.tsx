@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { DeveloperCredit } from '@/components/legal/DeveloperCredit'
+import { SEO_NAV_LINKS } from '@/lib/seo/content'
 
 const navLinks = [
   { to: '/', label: 'Accueil' },
@@ -111,7 +112,7 @@ export function PublicFooter() {
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           <div>
             <BrandLogo variant="full" imageClassName="h-16 sm:h-20 lg:h-24" />
             <p className="text-sm leading-relaxed mt-4">{footer.description}</p>
@@ -135,6 +136,14 @@ export function PublicFooter() {
               <li><Link to="/app" className="hover:text-brand-400 transition-colors">Espace propriétaire</Link></li>
               <li><Link to="/pet-sitter" className="hover:text-brand-400 transition-colors">Espace Pet-Sitter</Link></li>
               <li><Link to="/pet-sitter/inscription" className="hover:text-brand-400 transition-colors">Devenir Pet-Sitter</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-white mb-4">Guides urgence</h4>
+            <ul className="space-y-2 text-sm">
+              {SEO_NAV_LINKS.map(l => (
+                <li key={l.to}><Link to={l.to} className="hover:text-brand-400 transition-colors">{l.label}</Link></li>
+              ))}
             </ul>
           </div>
           <div>
