@@ -29,23 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   })
 
   try {
-    const userId = auth.userId
-
-    await admin.from('activities').delete().eq('owner_id', userId)
-    await admin.from('documents').delete().eq('owner_id', userId)
-    await admin.from('referents').delete().eq('owner_id', userId)
-    await admin.from('pets').delete().eq('owner_id', userId)
-    await admin.from('invoices').delete().eq('owner_id', userId)
-    await admin.from('subscriptions').delete().eq('owner_id', userId)
-    await admin.from('missions').delete().eq('owner_id', userId)
-    await admin.from('petsitter_profiles').delete().eq('user_id', userId)
-    await admin.from('profiles').delete().eq('id', userId)
-
-    const { error } = await admin.auth.admin.deleteUser(userId)
-    if (error) {
-      return res.status(500).json({ error: error.message })
-    }
-
+    const { deleteUserData } = await import('../lib/delete-user-data.js')
+    await deleteUserData(admin, auth.userId)
     return res.status(200).json({ success: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur suppression'

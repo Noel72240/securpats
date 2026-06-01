@@ -29,6 +29,7 @@ interface AppState {
   documents: PetDocument[]
   subscription: Subscription | null
   invoices: Invoice[]
+  allSubscriptions: Subscription[]
   missions: Mission[]
   petSitterProfile: PetSitterProfile | null
   allPetsitterProfiles: PetSitterProfile[]
@@ -77,6 +78,7 @@ interface AppContextType extends AppState {
   }) => Promise<{ error: string | null }>
   exportUserData: () => Record<string, unknown>
   deleteAccount: () => Promise<boolean>
+  deleteUserAsAdmin: (userId: string) => Promise<string | null>
   addPet: (pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>) => Promise<Pet | null>
   updatePet: (id: string, pet: Partial<Pet>) => void
   deletePet: (id: string) => void
@@ -132,6 +134,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [documents, setDocuments] = useState<PetDocument[]>(saved.documents ?? mockDocuments)
   const [subscription, setSubscription] = useState<Subscription | null>(saved.subscription ?? null)
   const [invoices, setInvoices] = useState<Invoice[]>(saved.invoices ?? mockInvoices)
+  const [allSubscriptions, setAllSubscriptions] = useState<Subscription[]>([])
   const [missions, setMissions] = useState<Mission[]>(saved.missions ?? mockMissions)
   const [petSitterProfile, setPetSitterProfile] = useState<PetSitterProfile | null>(saved.petSitterProfile ?? mockPetSitter)
   const [allPetsitterProfiles, setAllPetsitterProfiles] = useState<PetSitterProfile[]>([])
@@ -143,7 +146,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dataSetters = useMemo(() => ({
     setPets, setReferents, setDocuments, setSubscription, setInvoices,
-    setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile, setAllPetsitterProfiles,
+    setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile, setAllPetsitterProfiles, setAllSubscriptions,
   }), [])
 
   const syncOwnerSubscriptionInBackground = useCallback(async (user: User) => {
@@ -622,6 +625,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return true
   }, [currentUser, dataSetters])
 
+  const deleteUserAsAdmin = useCallback(async (userId: string): Promise<string | null> => {
+    if (currentUser?.role !== 'admin') return 'Action réservée aux administrateurs'
+
+    const target = allUsers.find(u => u.id === userId)
+    if (!target) return 'Utilisateur introuvable'
+    if (target.role === 'admin') return 'Impossible de supprimer un compte administrateur'
+
+    if (supabaseMode) {
+      const { getSupabase } = await import('@/lib/supabase/client')
+      const { data: { session } } = await getSupabase().auth.getSession()
+      if (!session?.access_token) return 'Session expirée, reconnectez-vous'
+
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ targetUserId: userId }),
+      })
+
+      const body = await response.json().catch(() => ({})) as { error?: string }
+      if (!response.ok) return body.error || 'Suppression échouée'
+
+      await hydrateUserData(currentUser, dataSetters)
+      return null
+    }
+
+    setRegisteredUsers(prev => prev.filter(u => u.id !== userId))
+    setPets(prev => prev.filter(p => p.ownerId !== userId))
+    setReferents(prev => prev.filter(r => r.ownerId !== userId))
+    setDocuments(prev => prev.filter(d => d.ownerId !== userId))
+    setInvoices(prev => prev.filter(i => i.ownerId !== userId))
+    setAllSubscriptions(prev => prev.filter(s => s.ownerId !== userId))
+    setMissions(prev => prev.filter(m => m.ownerId !== userId && m.petsitterId !== userId))
+    setAllPetsitterProfiles(prev => prev.filter(p => p.userId !== userId))
+    return null
+  }, [currentUser, allUsers, dataSetters])
+
   const addPet = useCallback(async (pet: Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>): Promise<Pet | null> => {
     if (!currentUser) return null
     if (supabaseMode) {
@@ -990,11 +1032,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, pets, referents, documents, subscription, invoices,
+      currentUser, pets, referents, documents, subscription, invoices, allSubscriptions,
       missions, petSitterProfile, allPetsitterProfiles, activities, allUsers, registeredUsers, siteSettings,
       authLoading, isSupabaseMode: supabaseMode,
       login, logout, register, registerPetsitter, completePetsitterIdentity,
-      exportUserData, deleteAccount, addPet, updatePet, deletePet,
+      exportUserData, deleteAccount, deleteUserAsAdmin, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
       addDocument, deleteDocument, declareEmergency, updateMissionStatus, setPetsitterVerified: setPetsitterVerifiedAdmin,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,

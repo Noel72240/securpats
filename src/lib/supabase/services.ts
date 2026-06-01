@@ -205,6 +205,15 @@ export async function fetchAllInvoices() {
   return { invoices: dedupeInvoices(data.map(invoiceFromRow)), error: null }
 }
 
+export async function fetchAllSubscriptions() {
+  const { data, error } = await getSupabase()
+    .from('subscriptions')
+    .select('*')
+    .order('start_date', { ascending: false })
+  if (error) return { subscriptions: [] as Subscription[], error: error.message }
+  return { subscriptions: data.map(subscriptionFromRow), error: null }
+}
+
 export async function fetchInvoicesByOwner(ownerId: string) {
   const { data, error } = await getSupabase().from('invoices').select('*').eq('owner_id', ownerId).order('date', { ascending: false })
   if (error) return { invoices: [] as Invoice[], error: error.message }
@@ -467,7 +476,7 @@ export async function loadOwnerData(ownerId: string) {
 }
 
 export async function loadAdminData() {
-  const [profiles, pets, referents, documents, missions, siteSettings, invoices, petsitters] = await Promise.all([
+  const [profiles, pets, referents, documents, missions, siteSettings, invoices, petsitters, subscriptions] = await Promise.all([
     fetchAllProfiles(),
     fetchAllPets(),
     fetchAllReferents(),
@@ -476,6 +485,7 @@ export async function loadAdminData() {
     fetchSiteSettings(),
     fetchAllInvoices(),
     fetchAllPetsitterProfiles(),
+    fetchAllSubscriptions(),
   ])
   return {
     allUsers: profiles.users,
@@ -486,6 +496,7 @@ export async function loadAdminData() {
     siteSettings: siteSettings.settings,
     invoices: invoices.invoices,
     petsitterProfiles: petsitters.profiles,
+    subscriptions: subscriptions.subscriptions,
   }
 }
 

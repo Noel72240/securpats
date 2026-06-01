@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle, Eye, XCircle } from 'lucide-react'
+import { CheckCircle, Eye, Trash2, XCircle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge } from '@/components/ui/Card'
@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/utils'
 import { adminStats } from '@/lib/mock/data'
 import { buildMonthlyRevenue } from '@/lib/admin/analytics'
 import { getPetsitterDocSignedUrl } from '@/lib/supabase/uploads'
+import { subscriptionPlanLabel, subscriptionPlanVariant, userRoleLabel } from '@/lib/admin/plan-labels'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 function AdminTablePage({ title, variant, children }: { title: string; variant: 'admin'; children: React.ReactNode }) {
@@ -19,9 +20,32 @@ function AdminTablePage({ title, variant, children }: { title: string; variant: 
 }
 
 export function AdminUsersPage() {
-  const { allUsers } = useApp()
+  const { allUsers, deleteUserAsAdmin, currentUser } = useApp()
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const handleDelete = async (user: { id: string; firstName: string; lastName: string; email: string; role: string }) => {
+    const label = `${user.firstName} ${user.lastName} (${user.email})`
+    const confirmed = window.confirm(
+      `Supprimer définitivement le compte ${label} ?\n\nCette action est irréversible (profil, animaux, abonnements, missions liées).`,
+    )
+    if (!confirmed) return
+
+    setBusyId(user.id)
+    setActionError(null)
+    const err = await deleteUserAsAdmin(user.id)
+    if (err) setActionError(err)
+    setBusyId(null)
+  }
+
   return (
     <AdminTablePage title="Gestion utilisateurs" variant="admin">
+      <p className="text-sm text-slate-600 px-4 pt-4 pb-2">
+        Supprimez les comptes inactifs, doublons ou tests. Les comptes administrateur ne peuvent pas être supprimés ici.
+      </p>
+      {actionError && (
+        <p className="text-sm text-red-600 px-4 pb-2">{actionError}</p>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100">
@@ -30,15 +54,32 @@ export function AdminUsersPage() {
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Rôle</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">2FA</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Inscription</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
             {allUsers.map(u => (
               <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50">
                 <td className="py-3 px-4 font-medium">{u.firstName} {u.lastName}</td>
                 <td className="py-3 px-4 text-slate-600">{u.email}</td>
-                <td className="py-3 px-4"><Badge variant={u.role === 'admin' ? 'danger' : u.role === 'petsitter' ? 'info' : 'success'}>{u.role}</Badge></td>
+                <td className="py-3 px-4"><Badge variant={u.role === 'admin' ? 'danger' : u.role === 'petsitter' ? 'info' : 'success'}>{userRoleLabel(u.role)}</Badge></td>
                 <td className="py-3 px-4">{u.twoFactorEnabled ? '✓' : '—'}</td>
                 <td className="py-3 px-4 text-slate-500">{formatDate(u.createdAt)}</td>
+                <td className="py-3 px-4">
+                  {u.role === 'admin' || u.id === currentUser?.id ? (
+                    <span className="text-slate-400 text-xs">—</span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={Trash2}
+                      disabled={busyId === u.id}
+                      className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                      onClick={() => void handleDelete(u)}
+                    >
+                      {busyId === u.id ? '…' : 'Supprimer'}
+                    </Button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -280,35 +321,117 @@ export function AdminMissionsPage() {
 }
 
 export function AdminSubscriptionsPage() {
-  const { invoices } = useApp()
+  const { invoices, allSubscriptions, allUsers } = useApp()
   const paidCount = invoices.filter(i => i.status === 'paid').length
+  const ownerSubs = allSubscriptions.filter(s => s.plan !== 'petsitter_vip')
+  const petsitterSubs = allSubscriptions.filter(s => s.plan === 'petsitter_vip')
+
+  const userFor = (userId: string) => allUsers.find(u => u.id === userId)
+
   return (
     <AdminTablePage title="Gestion abonnements" variant="admin">
-      <div className="mb-6 p-4 bg-purple-50 rounded-xl">
-        <p className="font-semibold text-slate-900">Factures Stripe</p>
-        <p className="text-sm text-slate-600">{paidCount} paiement{paidCount > 1 ? 's' : ''} enregistré{paidCount > 1 ? 's' : ''}</p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead><tr className="border-b border-slate-100">
-            <th className="text-left py-3 px-4 font-semibold text-slate-600">Facture</th>
-            <th className="text-left py-3 px-4 font-semibold text-slate-600">Montant</th>
-            <th className="text-left py-3 px-4 font-semibold text-slate-600">Plan</th>
-            <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
-            <th className="text-left py-3 px-4 font-semibold text-slate-600">Date</th>
-          </tr></thead>
-          <tbody>
-            {invoices.map(inv => (
-              <tr key={inv.id} className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="py-3 px-4 font-mono text-xs">{inv.id}</td>
-                <td className="py-3 px-4 font-medium">{inv.amount.toFixed(2)} €</td>
-                <td className="py-3 px-4">{inv.plan}</td>
-                <td className="py-3 px-4"><Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>{inv.status}</Badge></td>
-                <td className="py-3 px-4 text-slate-500">{formatDate(inv.date)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-8 p-4">
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div className="p-4 bg-purple-50 rounded-xl">
+            <p className="text-2xl font-bold text-slate-900">{allSubscriptions.length}</p>
+            <p className="text-sm text-slate-600">Abonnements en base</p>
+          </div>
+          <div className="p-4 bg-emerald-50 rounded-xl">
+            <p className="text-2xl font-bold text-slate-900">{ownerSubs.length}</p>
+            <p className="text-sm text-slate-600">Propriétaires</p>
+          </div>
+          <div className="p-4 bg-blue-50 rounded-xl">
+            <p className="text-2xl font-bold text-slate-900">{petsitterSubs.length}</p>
+            <p className="text-sm text-slate-600">Pet-Sitters VIP</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-slate-900 mb-3">Abonnements actifs et historique</h3>
+          <div className="overflow-x-auto border border-slate-100 rounded-xl">
+            <table className="w-full text-sm">
+              <thead><tr className="border-b border-slate-100 bg-slate-50">
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Utilisateur</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Rôle</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Plan</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Prix</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Renouvellement</th>
+              </tr></thead>
+              <tbody>
+                {allSubscriptions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 px-4 text-center text-slate-500">Aucun abonnement enregistré.</td>
+                  </tr>
+                ) : allSubscriptions.map(sub => {
+                  const u = userFor(sub.ownerId)
+                  return (
+                    <tr key={sub.id} className="border-b border-slate-50 hover:bg-slate-50">
+                      <td className="py-3 px-4">
+                        <p className="font-medium">{u ? `${u.firstName} ${u.lastName}` : '—'}</p>
+                        <p className="text-xs text-slate-500">{u?.email ?? sub.ownerId}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={u?.role === 'petsitter' ? 'info' : 'success'}>
+                          {u ? userRoleLabel(u.role) : '—'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={subscriptionPlanVariant(sub.plan)}>{subscriptionPlanLabel(sub.plan)}</Badge>
+                      </td>
+                      <td className="py-3 px-4 font-medium">{sub.price.toFixed(2)} €</td>
+                      <td className="py-3 px-4">
+                        <Badge variant={sub.status === 'active' ? 'success' : 'warning'}>{sub.status}</Badge>
+                      </td>
+                      <td className="py-3 px-4 text-slate-500">{formatDate(sub.renewalDate)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-slate-900 mb-1">Factures Stripe</h3>
+          <p className="text-sm text-slate-600 mb-3">{paidCount} paiement{paidCount > 1 ? 's' : ''} enregistré{paidCount > 1 ? 's' : ''}</p>
+          <div className="overflow-x-auto border border-slate-100 rounded-xl">
+            <table className="w-full text-sm">
+              <thead><tr className="border-b border-slate-100 bg-slate-50">
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Utilisateur</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Plan</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Montant</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Date</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-600">Réf.</th>
+              </tr></thead>
+              <tbody>
+                {invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 px-4 text-center text-slate-500">Aucune facture.</td>
+                  </tr>
+                ) : invoices.map(inv => {
+                  const u = userFor(inv.ownerId)
+                  return (
+                    <tr key={inv.id} className="border-b border-slate-50 hover:bg-slate-50">
+                      <td className="py-3 px-4">
+                        <p className="font-medium">{u ? `${u.firstName} ${u.lastName}` : '—'}</p>
+                        <p className="text-xs text-slate-500">{u?.email}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={subscriptionPlanVariant(inv.plan)}>{subscriptionPlanLabel(inv.plan)}</Badge>
+                      </td>
+                      <td className="py-3 px-4 font-medium">{inv.amount.toFixed(2)} €</td>
+                      <td className="py-3 px-4"><Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>{inv.status}</Badge></td>
+                      <td className="py-3 px-4 text-slate-500">{formatDate(inv.date)}</td>
+                      <td className="py-3 px-4 font-mono text-xs text-slate-400">{inv.stripeInvoiceId?.slice(0, 14) ?? inv.id.slice(0, 8)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </AdminTablePage>
   )

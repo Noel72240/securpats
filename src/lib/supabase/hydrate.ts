@@ -17,6 +17,7 @@ type Setters = {
   setSiteSettings: Dispatch<SetStateAction<import('@/types').SiteSettings>>
   setPetSitterProfile: Dispatch<SetStateAction<import('@/types').PetSitterProfile | null>>
   setAllPetsitterProfiles: Dispatch<SetStateAction<import('@/types').PetSitterProfile[]>>
+  setAllSubscriptions: Dispatch<SetStateAction<import('@/types').Subscription[]>>
 }
 
 export async function hydrateUserData(user: User, setters: Setters) {
@@ -30,6 +31,7 @@ export async function hydrateUserData(user: User, setters: Setters) {
     setters.setSiteSettings(data.siteSettings)
     setters.setInvoices(data.invoices)
     setters.setAllPetsitterProfiles(data.petsitterProfiles)
+    setters.setAllSubscriptions(data.subscriptions)
     return
   }
 
@@ -73,4 +75,5 @@ export function clearUserData(setters: Setters) {
   setters.setActivities([])
   setters.setPetSitterProfile(null)
   setters.setAllPetsitterProfiles([])
+  setters.setAllSubscriptions([])
 }
