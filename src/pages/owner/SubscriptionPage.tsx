@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { CreditCard, Check, Star, Receipt, Shield, ExternalLink, Loader2, AlertCircle } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, CardHeader, EmptyState } from '@/components/ui/Card'
@@ -9,6 +9,7 @@ import { SUBSCRIPTION_PLANS, type OwnerSubscriptionPlan } from '@/lib/stripe/pla
 import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured, reconcileSubscriptionAccess } from '@/lib/stripe/client'
 import { arePaymentsBlocked } from '@/lib/maintenance'
 import { formatDate } from '@/lib/utils'
+import { PETSITTER_VIP_PLAN } from '@/lib/stripe/petsitter-vip'
 
 export default function SubscriptionPage() {
   const { subscription, invoices, currentUser, siteSettings } = useApp()
@@ -199,6 +200,23 @@ export default function SubscriptionPage() {
             )
           })}
         </div>
+
+        <Card className="bg-blue-50 border-blue-200 !p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="font-semibold text-slate-900">Vous êtes pet-sitter ?</p>
+              <p className="text-sm text-slate-600 mt-1">
+                L&apos;abonnement propriétaire (4,99 € / 49,99 €) ne concerne pas les pet-sitters.
+                L&apos;offre dédiée est <strong>Pet-Sitter VIP à {PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois</strong>.
+              </p>
+            </div>
+            <Link to="/tarifs#pet-sitter" className="flex-shrink-0">
+              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
+                Voir l&apos;offre pet-sitter
+              </Button>
+            </Link>
+          </div>
+        </Card>
 
         <Card>
           <CardHeader title="Historique des paiements" subtitle="Factures et transactions Stripe" />

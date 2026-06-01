@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(false)
     if (user) {
       if (user.role === 'admin') navigate('/admin')
-      else if (user.role === 'petsitter') navigate('/pet-sitter')
+      else if (user.role === 'petsitter') navigate('/pet-sitter/abonnement')
       else navigate('/app')
     } else {
       setError('Email ou mot de passe incorrect. Créez un compte si vous n\'en avez pas encore.')
