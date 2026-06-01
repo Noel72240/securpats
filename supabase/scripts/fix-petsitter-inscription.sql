@@ -14,3 +14,5 @@ ALTER TYPE subscription_plan ADD VALUE IF NOT EXISTS 'petsitter_vip';
 -- 010 — prise de mission exclusive (un seul pet-sitter) : exécuter migrations/010_accept_mission_rpc.sql
 
 -- 011 — doublons abonnements : exécuter migrations/011_dedupe_subscriptions.sql
+
+-- 012 — suppression missions par propriétaire/admin : migrations/012_missions_owner_delete.sql

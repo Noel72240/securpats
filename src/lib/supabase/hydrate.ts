@@ -43,6 +43,7 @@ export async function hydrateUserData(user: User, setters: Setters) {
     setters.setSubscription(data.subscription)
     setters.setInvoices(data.invoices)
     setters.setActivities(data.activities)
+    setters.setMissions(data.missions)
     return
   }
 

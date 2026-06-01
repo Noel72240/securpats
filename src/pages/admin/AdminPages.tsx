@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle, Eye, Trash2, XCircle } from 'lucide-react'
+import { CheckCircle, Eye, Trash2, XCircle, AlertTriangle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge } from '@/components/ui/Card'
@@ -290,10 +290,109 @@ export function AdminDocumentsPage() {
   )
 }
 
+const missionStatusLabel: Record<string, string> = {
+  pending: 'En attente',
+  accepted: 'Acceptée',
+  declined: 'Refusée',
+  completed: 'Terminée',
+}
+
 export function AdminMissionsPage() {
-  const { missions } = useApp()
+  const { missions, deleteMission, allUsers } = useApp()
+  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted'>('all')
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const pendingCount = missions.filter(m => m.status === 'pending').length
+  const filtered = filter === 'all' ? missions : missions.filter(m => m.status === filter)
+
+  const spamByOwner = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const m of missions.filter(x => x.status === 'pending')) {
+      counts.set(m.ownerId, (counts.get(m.ownerId) ?? 0) + 1)
+    }
+    return [...counts.entries()].filter(([, n]) => n >= 3)
+  }, [missions])
+
+  const handleDelete = async (id: string, petName: string) => {
+    if (!window.confirm(`Supprimer la mission « ${petName} » ? Action irréversible.`)) return
+    setBusyId(id)
+    setActionError(null)
+    const err = await deleteMission(id)
+    if (err) setActionError(err)
+    setBusyId(null)
+  }
+
+  const deleteOwnerPending = async (ownerId: string, ownerName: string) => {
+    const pending = missions.filter(m => m.ownerId === ownerId && m.status === 'pending')
+    if (!window.confirm(`Supprimer les ${pending.length} missions en attente de ${ownerName} ?`)) return
+    setBusyId(ownerId)
+    setActionError(null)
+    for (const m of pending) {
+      const err = await deleteMission(m.id)
+      if (err) {
+        setActionError(err)
+        break
+      }
+    }
+    setBusyId(null)
+  }
+
   return (
     <AdminTablePage title="Gestion missions" variant="admin">
+      <div className="space-y-4 px-4 pt-4">
+        <p className="text-sm text-slate-600">
+          Modérez les demandes d&apos;urgence : supprimez le spam ou les doublons.
+          {pendingCount > 0 && (
+            <span className="font-medium text-amber-700"> {pendingCount} en attente.</span>
+          )}
+        </p>
+
+        {spamByOwner.length > 0 && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900">
+            <p className="font-semibold flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4" /> Suspect spam (3+ urgences en attente)
+            </p>
+            <ul className="space-y-2">
+              {spamByOwner.map(([ownerId, count]) => {
+                const u = allUsers.find(x => x.id === ownerId)
+                const name = u ? `${u.firstName} ${u.lastName}` : ownerId
+                return (
+                  <li key={ownerId} className="flex flex-wrap items-center justify-between gap-2">
+                    <span>{name} — {count} missions en attente</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      icon={Trash2}
+                      disabled={busyId === ownerId}
+                      className="!text-red-600 !border-red-200"
+                      onClick={() => void deleteOwnerPending(ownerId, name)}
+                    >
+                      Tout supprimer
+                    </Button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+
+        {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+
+        <div className="flex flex-wrap gap-2">
+          {(['all', 'pending', 'accepted'] as const).map(f => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${filter === f ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+            >
+              {f === 'all' ? 'Toutes' : f === 'pending' ? 'En attente' : 'Acceptées'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100">
@@ -301,16 +400,39 @@ export function AdminMissionsPage() {
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Type</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Propriétaire</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Description</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Date</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {missions.map(m => (
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-slate-500">Aucune mission.</td>
+              </tr>
+            ) : filtered.map(m => (
               <tr key={m.id} className="border-b border-slate-50 hover:bg-slate-50">
                 <td className="py-3 px-4 font-medium">{m.petName}</td>
                 <td className="py-3 px-4"><Badge variant={m.type === 'urgence' ? 'danger' : 'info'}>{m.type}</Badge></td>
-                <td className="py-3 px-4"><Badge variant={m.status === 'pending' ? 'warning' : m.status === 'accepted' ? 'success' : 'default'}>{m.status}</Badge></td>
+                <td className="py-3 px-4">
+                  <Badge variant={m.status === 'pending' ? 'warning' : m.status === 'accepted' ? 'success' : 'default'}>
+                    {missionStatusLabel[m.status] ?? m.status}
+                  </Badge>
+                </td>
                 <td className="py-3 px-4">{m.ownerName}</td>
+                <td className="py-3 px-4 text-slate-600 max-w-[200px] truncate">{m.description || '—'}</td>
                 <td className="py-3 px-4 text-slate-500">{formatDate(m.createdAt)}</td>
+                <td className="py-3 px-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={Trash2}
+                    disabled={busyId === m.id}
+                    className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                    onClick={() => void handleDelete(m.id, m.petName)}
+                  >
+                    Supprimer
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>

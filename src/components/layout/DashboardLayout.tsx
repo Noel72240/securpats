@@ -24,6 +24,7 @@ const ownerNav: NavItem[] = [
   { to: '/app/qr-code', label: 'QR Code', icon: QrCode },
   { to: '/app/carte-urgence', label: 'Carte d\'urgence', icon: CreditCard },
   { to: '/app/urgence', label: 'Déclarer urgence', icon: AlertTriangle },
+  { to: '/app/missions', label: 'Mes urgences', icon: Briefcase },
   { to: '/app/abonnement', label: 'Abonnement', icon: CreditCard },
   { to: '/app/donnees-personnelles', label: 'Mes données', icon: Lock },
 ]

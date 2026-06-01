@@ -26,6 +26,7 @@ import DocumentsPage from '@/pages/owner/DocumentsPage'
 import QRCodePage from '@/pages/owner/QRCodePage'
 import EmergencyCardPage from '@/pages/owner/EmergencyCardPage'
 import EmergencyPage from '@/pages/owner/EmergencyPage'
+import OwnerMissionsPage from '@/pages/owner/OwnerMissionsPage'
 import SubscriptionPage from '@/pages/owner/SubscriptionPage'
 import SubscriptionSuccessPage from '@/pages/owner/SubscriptionSuccessPage'
 
@@ -132,6 +133,7 @@ function AppRoutes() {
       <Route path="/app/qr-code" element={<OwnerRoute><QRCodePage /></OwnerRoute>} />
       <Route path="/app/carte-urgence" element={<OwnerRoute><EmergencyCardPage /></OwnerRoute>} />
       <Route path="/app/urgence" element={<OwnerRoute><EmergencyPage /></OwnerRoute>} />
+      <Route path="/app/missions" element={<OwnerRoute><OwnerMissionsPage /></OwnerRoute>} />
       <Route path="/app/abonnement" element={<OwnerRoute requireSubscription={false}><SubscriptionPage /></OwnerRoute>} />
       <Route path="/app/abonnement/succes" element={<OwnerRoute requireSubscription={false}><SubscriptionSuccessPage /></OwnerRoute>} />
       <Route path="/app/donnees-personnelles" element={<OwnerRoute requireSubscription={false}><PrivacyDataPage /></OwnerRoute>} />

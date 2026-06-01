@@ -90,6 +90,8 @@ interface AppContextType extends AppState {
   deleteDocument: (id: string) => void
   declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
   updateMissionStatus: (id: string, status: Mission['status']) => Promise<string | null>
+  deleteMission: (id: string) => Promise<string | null>
+  deleteActivity: (id: string) => Promise<string | null>
   setPetsitterVerified: (userId: string, verified: boolean) => Promise<string | null>
   updateSubscription: (plan: OwnerSubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
@@ -892,6 +894,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null
   }, [currentUser, petSitterProfile?.verified, missions])
 
+  const deleteMission = useCallback(async (id: string): Promise<string | null> => {
+    const mission = missions.find(m => m.id === id)
+    if (!mission) return 'Mission introuvable'
+
+    if (currentUser?.role === 'owner') {
+      if (mission.ownerId !== currentUser.id) return 'Non autorisé'
+      if (mission.status === 'accepted') {
+        return 'Mission déjà acceptée par un pet-sitter — contactez l\'admin pour l\'annuler.'
+      }
+    } else if (currentUser?.role !== 'admin') {
+      return 'Non autorisé'
+    }
+
+    if (supabaseMode) {
+      const { error } = await db.deleteMission(id)
+      if (error) return error
+    }
+
+    setMissions(prev => prev.filter(m => m.id !== id))
+    return null
+  }, [currentUser, missions])
+
+  const deleteActivity = useCallback(async (id: string): Promise<string | null> => {
+    const activity = activities.find(a => a.id === id)
+    if (!activity) return 'Entrée introuvable'
+
+    if (currentUser?.role === 'owner' && activity.ownerId !== currentUser.id) {
+      return 'Non autorisé'
+    }
+    if (currentUser?.role !== 'owner' && currentUser?.role !== 'admin') {
+      return 'Non autorisé'
+    }
+
+    if (supabaseMode) {
+      const { error } = await db.deleteActivity(id)
+      if (error) return error
+    }
+
+    setActivities(prev => prev.filter(a => a.id !== id))
+    return null
+  }, [currentUser, activities])
+
   const setPetsitterVerifiedAdmin = useCallback(async (userId: string, verified: boolean): Promise<string | null> => {
     if (supabaseMode) {
       const { profile, error } = await db.setPetsitterVerified(userId, verified)
@@ -1038,7 +1082,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login, logout, register, registerPetsitter, completePetsitterIdentity,
       exportUserData, deleteAccount, deleteUserAsAdmin, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
-      addDocument, deleteDocument, declareEmergency, updateMissionStatus, setPetsitterVerified: setPetsitterVerifiedAdmin,
+      addDocument, deleteDocument, declareEmergency, updateMissionStatus, deleteMission, deleteActivity,
+      setPetsitterVerified: setPetsitterVerifiedAdmin,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,
       updateSiteSettings, resetSiteSettings, addTestimonial, updateTestimonial, deleteTestimonial,
     }}>
@@ -1071,6 +1116,11 @@ export function useOwnerDocuments() {
 export function useOwnerActivities() {
   const { activities, currentUser } = useApp()
   return activities.filter(a => a.ownerId === currentUser?.id)
+}
+
+export function useOwnerMissions() {
+  const { missions, currentUser } = useApp()
+  return missions.filter(m => m.ownerId === currentUser?.id)
 }
 
 export function usePetByToken(token: string) {

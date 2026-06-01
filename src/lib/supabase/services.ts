@@ -276,6 +276,21 @@ export async function fetchAllMissions() {
   return { missions: data.map(missionFromRow), error: null }
 }
 
+export async function fetchMissionsByOwner(ownerId: string) {
+  const { data, error } = await getSupabase()
+    .from('missions')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false })
+  if (error) return { missions: [] as Mission[], error: error.message }
+  return { missions: data.map(missionFromRow), error: null }
+}
+
+export async function deleteMission(id: string) {
+  const { error } = await getSupabase().from('missions').delete().eq('id', id)
+  return { error: error?.message ?? null }
+}
+
 export async function createMission(mission: Omit<Mission, 'id' | 'createdAt'>) {
   const { data, error } = await getSupabase().from('missions').insert({
     pet_id: mission.petId,
@@ -431,6 +446,11 @@ export async function createActivity(ownerId: string, type: string, message: str
   return { activity: activityFromRow(data), error: null }
 }
 
+export async function deleteActivity(id: string) {
+  const { error } = await getSupabase().from('activities').delete().eq('id', id)
+  return { error: error?.message ?? null }
+}
+
 // ─── Site Settings ──────────────────────────────────────────
 
 const SITE_SETTINGS_ID = 'global'
@@ -478,13 +498,14 @@ export async function createContactMessage(msg: {
 // ─── Load all data for user ─────────────────────────────────
 
 export async function loadOwnerData(ownerId: string) {
-  const [pets, referents, documents, subscription, invoices, activities] = await Promise.all([
+  const [pets, referents, documents, subscription, invoices, activities, missions] = await Promise.all([
     fetchPetsByOwner(ownerId),
     fetchReferentsByOwner(ownerId),
     fetchDocumentsByOwner(ownerId),
     fetchSubscriptionByOwner(ownerId),
     fetchInvoicesByOwner(ownerId),
     fetchActivitiesByOwner(ownerId),
+    fetchMissionsByOwner(ownerId),
   ])
   return {
     pets: pets.pets,
@@ -493,6 +514,7 @@ export async function loadOwnerData(ownerId: string) {
     subscription: subscription.subscription,
     invoices: invoices.invoices,
     activities: activities.activities,
+    missions: missions.missions,
   }
 }
 
