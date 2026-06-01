@@ -4,7 +4,7 @@ import {
   petFromRow, petToInsert, petToUpdate,
   referentFromRow, referentToInsert,
   documentFromRow,
-  subscriptionFromRow, invoiceFromRow, dedupeInvoices,
+  subscriptionFromRow, invoiceFromRow, dedupeInvoices, dedupeSubscriptions,
   missionFromRow,
   petsitterFromRow,
   activityFromRow,
@@ -150,9 +150,36 @@ export async function deleteDocument(id: string) {
 // ─── Subscriptions ──────────────────────────────────────────
 
 export async function fetchSubscriptionByOwner(ownerId: string) {
-  const { data, error } = await getSupabase().from('subscriptions').select('*').eq('owner_id', ownerId).order('start_date', { ascending: false }).limit(1).maybeSingle()
+  const { data, error } = await getSupabase().from('subscriptions').select('*').eq('owner_id', ownerId).order('start_date', { ascending: false })
   if (error) return { subscription: null as Subscription | null, error: error.message }
-  return { subscription: data ? subscriptionFromRow(data) : null, error: null }
+  const deduped = dedupeSubscriptions(data.map(subscriptionFromRow))
+  return { subscription: deduped[0] ?? null, error: null }
+}
+
+async function findSubscriptionRowId(
+  userId: string,
+  plan: Subscription['plan'],
+  stripeSubscriptionId?: string | null,
+) {
+  if (stripeSubscriptionId) {
+    const { data } = await getSupabase()
+      .from('subscriptions')
+      .select('id')
+      .eq('stripe_subscription_id', stripeSubscriptionId)
+      .maybeSingle()
+    if (data?.id) return data.id
+  }
+
+  const { data } = await getSupabase()
+    .from('subscriptions')
+    .select('id')
+    .eq('owner_id', userId)
+    .eq('plan', plan)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return data?.id ?? null
 }
 
 export async function upsertSubscription(sub: Omit<Subscription, 'id'> & { id?: string }) {
@@ -168,19 +195,13 @@ export async function upsertSubscription(sub: Omit<Subscription, 'id'> & { id?: 
     stripe_subscription_id: sub.stripeSubscriptionId ?? null,
   }
 
-  const { data: existing } = await getSupabase()
-    .from('subscriptions')
-    .select('id')
-    .eq('owner_id', sub.ownerId)
-    .order('start_date', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const existingId = await findSubscriptionRowId(sub.ownerId, sub.plan, sub.stripeSubscriptionId)
 
-  if (existing?.id) {
+  if (existingId) {
     const { data, error } = await getSupabase()
       .from('subscriptions')
       .update(row)
-      .eq('id', existing.id)
+      .eq('id', existingId)
       .select()
       .single()
     if (error) return { subscription: null as Subscription | null, error: error.message }
@@ -211,7 +232,7 @@ export async function fetchAllSubscriptions() {
     .select('*')
     .order('start_date', { ascending: false })
   if (error) return { subscriptions: [] as Subscription[], error: error.message }
-  return { subscriptions: data.map(subscriptionFromRow), error: null }
+  return { subscriptions: dedupeSubscriptions(data.map(subscriptionFromRow)), error: null }
 }
 
 export async function fetchInvoicesByOwner(ownerId: string) {

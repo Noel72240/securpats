@@ -47,17 +47,32 @@ export async function upsertOwnerSubscription(data: {
     stripe_subscription_id: data.stripeSubscriptionId ?? null,
   }
 
-  const { data: existing } = await supabase
-    .from('subscriptions')
-    .select('id')
-    .eq('owner_id', data.ownerId)
-    .order('start_date', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  let existingId: string | null = null
+
+  if (data.stripeSubscriptionId) {
+    const { data: byStripe } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('stripe_subscription_id', data.stripeSubscriptionId)
+      .maybeSingle()
+    existingId = byStripe?.id ?? null
+  }
+
+  if (!existingId) {
+    const { data: byPlan } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('owner_id', data.ownerId)
+      .eq('plan', data.plan)
+      .order('start_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    existingId = byPlan?.id ?? null
+  }
 
   const write = async (payload: typeof row) => {
-    if (existing?.id) {
-      return supabase.from('subscriptions').update(payload).eq('id', existing.id)
+    if (existingId) {
+      return supabase.from('subscriptions').update(payload).eq('id', existingId)
     }
     return supabase.from('subscriptions').insert(payload)
   }

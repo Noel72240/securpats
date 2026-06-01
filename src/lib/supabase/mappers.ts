@@ -200,6 +200,27 @@ export function dedupeInvoices(invoices: Invoice[]): Invoice[] {
   })
 }
 
+/** Un enregistrement par utilisateur et par plan (le plus récent / actif en priorité). */
+export function dedupeSubscriptions(subs: Subscription[]): Subscription[] {
+  const byKey = new Map<string, Subscription>()
+  const rank = (s: Subscription) => {
+    const statusScore = s.status === 'active' || s.status === 'trialing' ? 2 : 1
+    return statusScore * 1_000_000 + new Date(s.startDate).getTime()
+  }
+
+  for (const sub of subs) {
+    const key = `${sub.ownerId}|${sub.plan}`
+    const prev = byKey.get(key)
+    if (!prev || rank(sub) >= rank(prev)) {
+      byKey.set(key, sub)
+    }
+  }
+
+  return [...byKey.values()].sort(
+    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+  )
+}
+
 // ─── Missions ───────────────────────────────────────────────
 
 export function missionFromRow(row: Tables<'missions'>): Mission {
