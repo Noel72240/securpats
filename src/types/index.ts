@@ -95,7 +95,7 @@ export interface Invoice {
   stripeInvoiceId?: string
 }
 
-export type MissionStatus = 'pending' | 'accepted' | 'declined' | 'completed'
+export type MissionStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled'
 
 export interface Mission {
   id: string

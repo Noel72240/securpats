@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2, AlertTriangle, Briefcase } from 'lucide-react'
+import { Trash2, AlertTriangle, Briefcase, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
@@ -13,10 +13,11 @@ const statusLabel: Record<Mission['status'], string> = {
   accepted: 'Acceptée',
   declined: 'Refusée',
   completed: 'Terminée',
+  cancelled: 'Annulée',
 }
 
 export default function OwnerMissionsPage() {
-  const { deleteMission } = useApp()
+  const { deleteMission, cancelMission } = useApp()
   const missions = useOwnerMissions()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -36,12 +37,29 @@ export default function OwnerMissionsPage() {
     setBusyId(null)
   }
 
+  const handleCancel = async (m: Mission) => {
+    const msg = m.status === 'accepted'
+      ? `Annuler la mission en cours pour ${m.petName} ?\n\nLe pet-sitter sera informé que la mission n'est plus d'actualité.`
+      : `Annuler la demande d'urgence pour ${m.petName} ?`
+
+    if (!window.confirm(msg)) return
+
+    setBusyId(m.id)
+    setError(null)
+    const err = await cancelMission(m.id)
+    if (err) setError(err)
+    setBusyId(null)
+  }
+
+  const canCancel = (m: Mission) => m.status === 'pending' || m.status === 'accepted'
+  const canDelete = (m: Mission) => m.status === 'pending' || m.status === 'declined' || m.status === 'cancelled'
+
   return (
     <DashboardLayout variant="owner" title="Mes demandes d'urgence">
       <div className="max-w-3xl space-y-6">
         <p className="text-sm text-slate-600">
-          Chaque déclaration d&apos;urgence crée une mission visible par les pet-sitters VIP.
-          Supprimez les demandes en double ou envoyées par erreur.
+          Annulez une mission en cours (déjà acceptée par un pet-sitter) ou supprimez les demandes
+          en double / envoyées par erreur.
         </p>
 
         {error && (
@@ -72,7 +90,12 @@ export default function OwnerMissionsPage() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <p className="font-semibold text-slate-900">{m.petName}</p>
                       <Badge variant="danger">Urgence</Badge>
-                      <Badge variant={m.status === 'pending' ? 'warning' : m.status === 'accepted' ? 'success' : 'default'}>
+                      <Badge variant={
+                        m.status === 'pending' ? 'warning'
+                          : m.status === 'accepted' ? 'success'
+                            : m.status === 'cancelled' ? 'default'
+                              : 'default'
+                      }>
                         {statusLabel[m.status]}
                       </Badge>
                     </div>
@@ -81,16 +104,32 @@ export default function OwnerMissionsPage() {
                       <p className="text-sm text-slate-600 mt-2 line-clamp-2">{m.description}</p>
                     )}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Trash2}
-                    disabled={busyId === m.id || m.status === 'accepted'}
-                    className="!text-red-600 !border-red-200 hover:!bg-red-50 shrink-0"
-                    onClick={() => void handleDelete(m)}
-                  >
-                    {busyId === m.id ? '…' : 'Supprimer'}
-                  </Button>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {canCancel(m) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={XCircle}
+                        disabled={busyId === m.id}
+                        className="!text-amber-700 !border-amber-200 hover:!bg-amber-50"
+                        onClick={() => void handleCancel(m)}
+                      >
+                        {busyId === m.id ? '…' : 'Annuler'}
+                      </Button>
+                    )}
+                    {canDelete(m) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={Trash2}
+                        disabled={busyId === m.id}
+                        className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                        onClick={() => void handleDelete(m)}
+                      >
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}

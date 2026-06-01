@@ -291,6 +291,22 @@ export async function deleteMission(id: string) {
   return { error: error?.message ?? null }
 }
 
+/** Annulation par le propriétaire (mission en attente ou acceptée). */
+export async function cancelMission(id: string) {
+  const { data, error } = await getSupabase()
+    .from('missions')
+    .update({ status: 'cancelled' as Mission['status'] })
+    .eq('id', id)
+    .in('status', ['pending', 'accepted'])
+    .select()
+    .maybeSingle()
+  if (error) return { mission: null as Mission | null, error: error.message }
+  if (!data) {
+    return { mission: null, error: 'Cette mission ne peut plus être annulée.' }
+  }
+  return { mission: missionFromRow(data), error: null }
+}
+
 export async function createMission(mission: Omit<Mission, 'id' | 'createdAt'>) {
   const { data, error } = await getSupabase().from('missions').insert({
     pet_id: mission.petId,

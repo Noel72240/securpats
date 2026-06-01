@@ -295,6 +295,7 @@ const missionStatusLabel: Record<string, string> = {
   accepted: 'Acceptée',
   declined: 'Refusée',
   completed: 'Terminée',
+  cancelled: 'Annulée',
 }
 
 export function AdminMissionsPage() {

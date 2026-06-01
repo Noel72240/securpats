@@ -91,6 +91,7 @@ interface AppContextType extends AppState {
   declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
   updateMissionStatus: (id: string, status: Mission['status']) => Promise<string | null>
   deleteMission: (id: string) => Promise<string | null>
+  cancelMission: (id: string) => Promise<string | null>
   deleteActivity: (id: string) => Promise<string | null>
   setPetsitterVerified: (userId: string, verified: boolean) => Promise<string | null>
   updateSubscription: (plan: OwnerSubscriptionPlan) => void
@@ -916,6 +917,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null
   }, [currentUser, missions])
 
+  const cancelMission = useCallback(async (id: string): Promise<string | null> => {
+    const mission = missions.find(m => m.id === id)
+    if (!mission) return 'Mission introuvable'
+
+    if (currentUser?.role === 'owner') {
+      if (mission.ownerId !== currentUser.id) return 'Non autorisé'
+    } else if (currentUser?.role !== 'admin') {
+      return 'Non autorisé'
+    }
+
+    if (mission.status !== 'pending' && mission.status !== 'accepted') {
+      return 'Cette mission ne peut plus être annulée.'
+    }
+
+    if (supabaseMode) {
+      const { mission: updated, error } = await db.cancelMission(id)
+      if (error) return error
+      if (updated) {
+        setMissions(prev => prev.map(m => m.id === id ? updated : m))
+        if (currentUser?.role === 'owner') {
+          addActivity('urgence', `Mission annulée pour ${mission.petName}`)
+        }
+        return null
+      }
+      return 'Annulation impossible.'
+    }
+
+    setMissions(prev => prev.map(m => (
+      m.id === id ? { ...m, status: 'cancelled' as Mission['status'] } : m
+    )))
+    return null
+  }, [currentUser, missions, addActivity])
+
   const deleteActivity = useCallback(async (id: string): Promise<string | null> => {
     const activity = activities.find(a => a.id === id)
     if (!activity) return 'Entrée introuvable'
@@ -1082,7 +1116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login, logout, register, registerPetsitter, completePetsitterIdentity,
       exportUserData, deleteAccount, deleteUserAsAdmin, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
-      addDocument, deleteDocument, declareEmergency, updateMissionStatus, deleteMission, deleteActivity,
+      addDocument, deleteDocument, declareEmergency, updateMissionStatus, deleteMission, cancelMission, deleteActivity,
       setPetsitterVerified: setPetsitterVerifiedAdmin,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,
       updateSiteSettings, resetSiteSettings, addTestimonial, updateTestimonial, deleteTestimonial,

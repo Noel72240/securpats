@@ -16,3 +16,5 @@ ALTER TYPE subscription_plan ADD VALUE IF NOT EXISTS 'petsitter_vip';
 -- 011 — doublons abonnements : exécuter migrations/011_dedupe_subscriptions.sql
 
 -- 012 — suppression missions par propriétaire/admin : migrations/012_missions_owner_delete.sql
+
+-- 013 — statut cancelled pour annulation propriétaire : migrations/013_mission_cancelled_status.sql

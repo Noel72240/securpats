@@ -29,11 +29,11 @@ export default function MissionsPage() {
   const canAccept = (m: Mission) => m.status === 'pending' && !m.petsitterId
 
   const statusLabel = (s: Mission['status']) => ({
-    pending: 'En attente', accepted: 'Acceptée', declined: 'Refusée', completed: 'Terminée',
+    pending: 'En attente', accepted: 'Acceptée', declined: 'Refusée', completed: 'Terminée', cancelled: 'Annulée',
   }[s])
 
   const statusVariant = (s: Mission['status']) => ({
-    pending: 'warning' as const, accepted: 'success' as const, declined: 'danger' as const, completed: 'info' as const,
+    pending: 'warning' as const, accepted: 'success' as const, declined: 'danger' as const, completed: 'info' as const, cancelled: 'default' as const,
   }[s])
 
   return (
