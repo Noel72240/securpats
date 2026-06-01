@@ -917,13 +917,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [addActivity])
 
   const updatePetSitterProfile = useCallback((updates: Partial<PetSitterProfile>) => {
+    setPetSitterProfile(prev => (prev ? { ...prev, ...updates } : prev))
     if (supabaseMode && currentUser) {
-      db.upsertPetsitterProfile(currentUser.id, updates).then(({ profile }) => {
+      void db.patchPetsitterProfile(currentUser.id, updates).then(({ profile, error }) => {
+        if (error) console.error('[petsitter profile]', error)
         if (profile) setPetSitterProfile(profile)
       })
       return
     }
-    setPetSitterProfile(prev => prev ? { ...prev, ...updates } : null)
   }, [currentUser])
 
   const persistSiteSettings = useCallback((settings: SiteSettings) => {

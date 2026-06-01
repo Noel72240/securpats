@@ -356,6 +356,37 @@ export async function upsertPetsitterProfile(userId: string, profile: Partial<Pe
   return { profile: petsitterFromRow(data), error: null }
 }
 
+/** Mise à jour partielle — ne touche pas aux champs non fournis (évite d'effacer la CNI). */
+export async function patchPetsitterProfile(userId: string, profile: Partial<PetSitterProfile>) {
+  const patch: TablesUpdate<'petsitter_profiles'> = {}
+  if (profile.photo !== undefined) patch.photo = profile.photo ?? null
+  if (profile.bio !== undefined) patch.bio = profile.bio
+  if (profile.phone !== undefined) patch.phone = profile.phone
+  if (profile.email !== undefined) patch.email = profile.email
+  if (profile.address !== undefined) patch.address = profile.address
+  if (profile.idDocument !== undefined) patch.id_document_path = profile.idDocument ?? null
+  if (profile.proofOfAddress !== undefined) patch.proof_of_address_path = profile.proofOfAddress ?? null
+  if (profile.availableDays !== undefined) patch.available_days = profile.availableDays
+  if (profile.availableHours !== undefined) patch.available_hours = profile.availableHours
+  if (profile.serviceArea !== undefined) patch.service_area = profile.serviceArea
+  if (profile.verified !== undefined) patch.verified = profile.verified
+  if (profile.idConsentAt !== undefined) patch.id_consent_at = profile.idConsentAt ?? null
+  if (profile.idConsentVersion !== undefined) patch.id_consent_version = profile.idConsentVersion ?? null
+
+  if (Object.keys(patch).length === 0) {
+    return fetchPetsitterProfile(userId)
+  }
+
+  const { data, error } = await getSupabase()
+    .from('petsitter_profiles')
+    .update(patch)
+    .eq('user_id', userId)
+    .select()
+    .single()
+  if (error) return { profile: null as PetSitterProfile | null, error: error.message }
+  return { profile: petsitterFromRow(data), error: null }
+}
+
 // ─── Activities ─────────────────────────────────────────────
 
 export async function fetchActivitiesByOwner(ownerId: string) {
