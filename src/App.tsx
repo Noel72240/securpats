@@ -34,6 +34,7 @@ import MissionsPage from '@/pages/petsitter/MissionsPage'
 import AvailabilityPage from '@/pages/petsitter/AvailabilityPage'
 import PetSitterProfilePage from '@/pages/petsitter/PetSitterProfilePage'
 import PetSitterRegisterPage from '@/pages/petsitter/PetSitterRegisterPage'
+import PetSitterLoginPage from '@/pages/petsitter/PetSitterLoginPage'
 import PetSitterSubscriptionPage from '@/pages/petsitter/PetSitterSubscriptionPage'
 import PetSitterSubscriptionSuccessPage from '@/pages/petsitter/PetSitterSubscriptionSuccessPage'
 
@@ -45,10 +46,11 @@ import {
   AdminDocumentsPage, AdminMissionsPage, AdminSubscriptionsPage, AdminStatsPage,
 } from '@/pages/admin/AdminPages'
 
-function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
+function OwnerProtectedRoute({ children }: { children: React.ReactNode }) {
   const { currentUser } = useApp()
   if (!currentUser) return <Navigate to="/connexion" replace />
-  if (roles && !roles.includes(currentUser.role)) return <Navigate to="/" replace />
+  if (currentUser.role === 'petsitter') return <Navigate to="/pet-sitter" replace />
+  if (currentUser.role !== 'owner') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -68,17 +70,20 @@ function OwnerSubscribedRoute({ children }: { children: React.ReactNode }) {
 
 function OwnerRoute({ children, requireSubscription = true }: { children: React.ReactNode; requireSubscription?: boolean }) {
   return (
-    <ProtectedRoute roles={['owner']}>
+    <OwnerProtectedRoute>
       {requireSubscription ? <OwnerSubscribedRoute>{children}</OwnerSubscribedRoute> : children}
-    </ProtectedRoute>
+    </OwnerProtectedRoute>
   )
 }
 
 function PetSitterIdentityRoute({ children, requireVip = true }: { children: React.ReactNode; requireVip?: boolean }) {
   const { currentUser, petSitterProfile, authLoading } = useApp()
   if (authLoading) return null
-  if (!currentUser) return <Navigate to="/connexion" replace />
-  if (currentUser.role !== 'petsitter') return <Navigate to="/" replace />
+  if (!currentUser) return <Navigate to="/pet-sitter/connexion" replace />
+  if (currentUser.role !== 'petsitter') {
+    if (currentUser.role === 'owner') return <Navigate to="/app" replace />
+    return <Navigate to="/" replace />
+  }
   if (!petSitterProfile?.idDocument) {
     return <Navigate to="/pet-sitter/inscription" replace />
   }
@@ -131,7 +136,8 @@ function AppRoutes() {
       <Route path="/app/abonnement/succes" element={<OwnerRoute requireSubscription={false}><SubscriptionSuccessPage /></OwnerRoute>} />
       <Route path="/app/donnees-personnelles" element={<OwnerRoute requireSubscription={false}><PrivacyDataPage /></OwnerRoute>} />
 
-      {/* Pet-Sitter */}
+      {/* Pet-Sitter — espace séparé */}
+      <Route path="/pet-sitter/connexion" element={<PetSitterLoginPage />} />
       <Route path="/pet-sitter/inscription" element={<PetSitterRegisterPage />} />
       <Route path="/pet-sitter/abonnement" element={<PetSitterIdentityRoute requireVip={false}><PetSitterSubscriptionPage /></PetSitterIdentityRoute>} />
       <Route path="/pet-sitter/abonnement/succes" element={<PetSitterIdentityRoute requireVip={false}><PetSitterSubscriptionSuccessPage /></PetSitterIdentityRoute>} />

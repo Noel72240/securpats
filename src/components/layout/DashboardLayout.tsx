@@ -66,7 +66,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
 
   const handleLogout = () => {
     logout()
-    navigate('/')
+    navigate(variant === 'petsitter' ? '/pet-sitter/connexion' : variant === 'admin' ? '/admin/connexion' : '/connexion')
   }
 
   const colorClasses = {

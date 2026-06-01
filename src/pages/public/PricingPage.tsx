@@ -160,10 +160,16 @@ export default function PricingPage() {
           </div>
 
           <p className="text-center text-sm text-slate-500 mt-10">
-            Déjà inscrit ?{' '}
-            <Link to="/connexion" className="text-brand-600 font-semibold hover:underline">Connectez-vous</Link>
-            {' '}— propriétaires vers l&apos;espace /app, pet-sitters vers{' '}
-            <Link to="/pet-sitter/abonnement" className="text-blue-600 font-semibold hover:underline">/pet-sitter/abonnement</Link>
+            <strong className="text-slate-700">Propriétaire</strong> :{' '}
+            <Link to="/connexion" className="text-brand-600 font-semibold hover:underline">connexion</Link>
+            {' · '}
+            <Link to="/inscription" className="text-brand-600 font-semibold hover:underline">inscription</Link>
+            <br className="sm:hidden" />
+            <span className="hidden sm:inline"> — </span>
+            <strong className="text-slate-700">Pet-Sitter</strong> :{' '}
+            <Link to="/pet-sitter/connexion" className="text-blue-600 font-semibold hover:underline">connexion</Link>
+            {' · '}
+            <Link to="/pet-sitter/inscription" className="text-blue-600 font-semibold hover:underline">inscription VIP</Link>
           </p>
         </div>
       </section>

@@ -45,15 +45,24 @@ export function PublicHeader() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2">
             {currentUser ? (
               <Link to={currentUser.role === 'admin' ? '/admin' : currentUser.role === 'petsitter' ? '/pet-sitter' : '/app'}>
                 <Button variant="primary" size="sm">Mon espace</Button>
               </Link>
             ) : (
               <>
-                <Link to="/connexion"><Button variant="ghost" size="sm">Connexion</Button></Link>
-                <Link to="/inscription"><Button variant="primary" size="sm">Inscription</Button></Link>
+                <Link to="/connexion">
+                  <Button variant="ghost" size="sm">Propriétaire</Button>
+                </Link>
+                <Link to="/pet-sitter/connexion">
+                  <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                    Pet-Sitter
+                  </Button>
+                </Link>
+                <Link to="/inscription">
+                  <Button variant="primary" size="sm">S&apos;inscrire</Button>
+                </Link>
               </>
             )}
           </div>
@@ -85,16 +94,29 @@ export function PublicHeader() {
             ))}
             <div className="pt-4 flex flex-col gap-2">
               {currentUser ? (
-                <Link to="/app" onClick={() => setMobileOpen(false)}>
+                <Link
+                  to={currentUser.role === 'admin' ? '/admin' : currentUser.role === 'petsitter' ? '/pet-sitter' : '/app'}
+                  onClick={() => setMobileOpen(false)}
+                >
                   <Button variant="primary" className="w-full">Mon espace</Button>
                 </Link>
               ) : (
                 <>
                   <Link to="/connexion" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full">Connexion</Button>
+                    <Button variant="outline" className="w-full">Connexion propriétaire</Button>
+                  </Link>
+                  <Link to="/pet-sitter/connexion" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" className="w-full border-blue-300 text-blue-700">
+                      Connexion Pet-Sitter
+                    </Button>
                   </Link>
                   <Link to="/inscription" onClick={() => setMobileOpen(false)}>
-                    <Button variant="primary" className="w-full">Inscription</Button>
+                    <Button variant="primary" className="w-full">Inscription propriétaire</Button>
+                  </Link>
+                  <Link to="/pet-sitter/inscription" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" className="w-full border-blue-200 text-blue-700">
+                      Devenir Pet-Sitter VIP
+                    </Button>
                   </Link>
                 </>
               )}
@@ -134,9 +156,10 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-white mb-4">Espaces</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/app" className="hover:text-brand-400 transition-colors">Espace propriétaire</Link></li>
-              <li><Link to="/pet-sitter" className="hover:text-brand-400 transition-colors">Espace Pet-Sitter</Link></li>
-              <li><Link to="/pet-sitter/inscription" className="hover:text-brand-400 transition-colors">Devenir Pet-Sitter</Link></li>
+              <li><Link to="/connexion" className="hover:text-brand-400 transition-colors">Connexion propriétaire</Link></li>
+              <li><Link to="/inscription" className="hover:text-brand-400 transition-colors">Inscription propriétaire</Link></li>
+              <li><Link to="/pet-sitter/connexion" className="hover:text-blue-300 transition-colors">Connexion Pet-Sitter</Link></li>
+              <li><Link to="/pet-sitter/inscription" className="hover:text-blue-300 transition-colors">Devenir Pet-Sitter VIP</Link></li>
             </ul>
           </div>
           <div>

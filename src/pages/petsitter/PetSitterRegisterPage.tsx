@@ -333,7 +333,7 @@ export default function PetSitterRegisterPage() {
               <Card className="!p-4 bg-brand-50 border-brand-200 text-sm text-brand-800 text-center">
                 {success}
                 <p className="mt-2">
-                  <Link to="/connexion" className="font-semibold underline">Aller à la connexion</Link>
+                  <Link to="/pet-sitter/connexion" className="font-semibold underline">Aller à la connexion Pet-Sitter</Link>
                 </p>
               </Card>
             )}
@@ -361,7 +361,7 @@ export default function PetSitterRegisterPage() {
             {!completionMode && (
               <p className="text-center text-sm text-slate-500">
                 Déjà inscrit ?{' '}
-                <Link to="/connexion" className="text-brand-600 font-semibold hover:underline">Connectez-vous</Link>
+                <Link to="/pet-sitter/connexion" className="text-blue-600 font-semibold hover:underline">Connexion Pet-Sitter</Link>
               </p>
             )}
           </form>

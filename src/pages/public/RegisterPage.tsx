@@ -54,7 +54,7 @@ export default function RegisterPage() {
         <div className="max-w-md mx-auto px-4">
           <Card padding="lg">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-slate-900 mb-2">Créer un compte</h1>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Inscription propriétaire</h1>
               <p className="text-slate-600 text-sm">Protégez vos animaux en quelques minutes</p>
             </div>
 
@@ -103,7 +103,13 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-slate-500 mt-6">
               Déjà un compte ?{' '}
-              <Link to="/connexion" className="text-brand-600 font-semibold hover:underline">Connectez-vous</Link>
+              <Link to="/connexion" className="text-brand-600 font-semibold hover:underline">Connexion propriétaire</Link>
+            </p>
+            <p className="text-center text-sm text-slate-500 mt-2">
+              Pet-sitter ?{' '}
+              <Link to="/pet-sitter/inscription" className="text-blue-600 font-semibold hover:underline">
+                Espace Pet-Sitter VIP
+              </Link>
             </p>
           </Card>
         </div>

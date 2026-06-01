@@ -210,9 +210,9 @@ export default function SubscriptionPage() {
                 L&apos;offre dédiée est <strong>Pet-Sitter VIP à {PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois</strong>.
               </p>
             </div>
-            <Link to="/tarifs#pet-sitter" className="flex-shrink-0">
+            <Link to="/pet-sitter/connexion" className="flex-shrink-0">
               <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
-                Voir l&apos;offre pet-sitter
+                Connexion Pet-Sitter
               </Button>
             </Link>
           </div>
