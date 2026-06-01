@@ -12,7 +12,7 @@ import {
   siteSettingsToJson,
 } from './mappers'
 import type { Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings } from '@/types'
-import type { TablesUpdate } from './database.types'
+import type { Tables, TablesUpdate } from './database.types'
 import { defaultSiteSettings } from '@/lib/mock/data'
 import { generateQrToken } from '@/lib/utils'
 
@@ -262,17 +262,51 @@ export async function createMission(mission: Omit<Mission, 'id' | 'createdAt'>) 
   return { mission: missionFromRow(data), error: null }
 }
 
+/** Prise exclusive d'une mission (atomique côté base). */
+export async function acceptMission(missionId: string) {
+  const { data, error } = await getSupabase().rpc('accept_mission', { p_mission_id: missionId })
+  if (error) {
+    const msg = error.message.includes('déjà été acceptée')
+      ? 'Cette mission a déjà été acceptée par un autre pet-sitter.'
+      : error.message
+    return { mission: null as Mission | null, error: msg }
+  }
+  if (!data) {
+    return { mission: null as Mission | null, error: 'Cette mission a déjà été acceptée par un autre pet-sitter.' }
+  }
+  return { mission: missionFromRow(data as Tables<'missions'>), error: null }
+}
+
 export async function updateMissionStatus(
   id: string,
   status: Mission['status'],
   options?: { petsitterId?: string },
 ) {
-  const patch: { status: Mission['status']; petsitter_id?: string } = { status }
   if (status === 'accepted' && options?.petsitterId) {
-    patch.petsitter_id = options.petsitterId
+    return acceptMission(id)
   }
-  const { data, error } = await getSupabase().from('missions').update(patch).eq('id', id).select().single()
+
+  const patch: { status: Mission['status']; petsitter_id?: string } = { status }
+  let query = getSupabase().from('missions').update(patch).eq('id', id)
+
+  if (status === 'declined') {
+    query = query.eq('status', 'pending').is('petsitter_id', null)
+  }
+  if (status === 'completed' && options?.petsitterId) {
+    query = query.eq('status', 'accepted').eq('petsitter_id', options.petsitterId)
+  }
+
+  const { data, error } = await query.select().maybeSingle()
   if (error) return { mission: null as Mission | null, error: error.message }
+  if (!data) {
+    if (status === 'declined') {
+      return { mission: null, error: 'Cette mission n\'est plus disponible.' }
+    }
+    if (status === 'completed') {
+      return { mission: null, error: 'Impossible de terminer cette mission.' }
+    }
+    return { mission: null, error: 'Mise à jour impossible.' }
+  }
   return { mission: missionFromRow(data), error: null }
 }
 

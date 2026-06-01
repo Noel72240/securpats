@@ -10,7 +10,9 @@ import {
 } from '@/lib/mock/data'
 import { generateId, generateQrToken } from '@/lib/utils'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
-import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
+import { missionFromRow } from '@/lib/supabase/mappers'
+import type { Tables } from '@/lib/supabase/database.types'
 import { signIn, signUp, signOut, getSessionUser, onAuthStateChange } from '@/lib/supabase/auth'
 import * as db from '@/lib/supabase/services'
 import { hydrateUserData, hydratePublicSite, clearUserData } from '@/lib/supabase/hydrate'
@@ -85,7 +87,7 @@ interface AppContextType extends AppState {
   addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => Promise<string | null>
   deleteDocument: (id: string) => void
   declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
-  updateMissionStatus: (id: string, status: Mission['status']) => string | null
+  updateMissionStatus: (id: string, status: Mission['status']) => Promise<string | null>
   setPetsitterVerified: (userId: string, verified: boolean) => Promise<string | null>
   updateSubscription: (plan: OwnerSubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
@@ -215,6 +217,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribe?.()
     }
   }, [dataSetters, syncOwnerSubscriptionInBackground])
+
+  // Missions en temps réel pour les pet-sitters (retrait immédiat si un collègue accepte)
+  useEffect(() => {
+    if (!supabaseMode || currentUser?.role !== 'petsitter') return
+
+    const uid = currentUser.id
+    const supabase = getSupabase()
+    const channel = supabase
+      .channel(`missions-petsitter-${uid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const oldId = (payload.old as { id?: string }).id
+          if (oldId) setMissions(prev => prev.filter(m => m.id !== oldId))
+          return
+        }
+        const mission = missionFromRow(payload.new as Tables<'missions'>)
+        const isMine = mission.petsitterId === uid
+        const isOpen = mission.status === 'pending' && !mission.petsitterId
+        setMissions(prev => {
+          if (!isMine && !isOpen) return prev.filter(m => m.id !== mission.id)
+          const idx = prev.findIndex(m => m.id === mission.id)
+          if (idx >= 0) {
+            const next = [...prev]
+            next[idx] = mission
+            return next
+          }
+          return [mission, ...prev]
+        })
+      })
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [currentUser?.id, currentUser?.role])
+
   useEffect(() => {
     if (supabaseMode) return
     saveState({
@@ -766,7 +804,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { ok: true, emailsSent: 0, emailConfigured: false }
   }, [currentUser, pets, referents, addActivity])
 
-  const updateMissionStatus = useCallback((id: string, status: Mission['status']): string | null => {
+  const updateMissionStatus = useCallback(async (id: string, status: Mission['status']): Promise<string | null> => {
     if (currentUser?.role === 'petsitter' && !petSitterProfile?.verified) {
       if (status === 'accepted' || status === 'declined' || status === 'completed') {
         return 'Votre compte doit être validé par SécurPats avant de gérer des missions.'
@@ -778,12 +816,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     if (supabaseMode) {
-      const petsitterId = status === 'accepted' && currentUser?.role === 'petsitter' ? currentUser.id : undefined
-      void db.updateMissionStatus(id, status, petsitterId ? { petsitterId } : undefined).then(({ mission, error }) => {
-        if (error) console.error('[missions]', error)
-        if (mission) applyLocal(mission)
-      })
-      return null
+      const petsitterId = currentUser?.role === 'petsitter' ? currentUser.id : undefined
+      const { mission, error } = await db.updateMissionStatus(
+        id,
+        status,
+        petsitterId ? { petsitterId } : undefined,
+      )
+      if (error) return error
+      if (mission) {
+        applyLocal(mission)
+        return null
+      }
+      return status === 'accepted'
+        ? 'Cette mission a déjà été acceptée par un autre pet-sitter.'
+        : 'Mise à jour de la mission impossible.'
+    }
+
+    const target = missions.find(m => m.id === id)
+    if (status === 'accepted') {
+      if (target?.status !== 'pending' || target.petsitterId) {
+        return 'Cette mission a déjà été acceptée par un autre pet-sitter.'
+      }
     }
 
     setMissions(prev => prev.map(m => {
@@ -795,7 +848,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return next
     }))
     return null
-  }, [currentUser, petSitterProfile?.verified])
+  }, [currentUser, petSitterProfile?.verified, missions])
 
   const setPetsitterVerifiedAdmin = useCallback(async (userId: string, verified: boolean): Promise<string | null> => {
     if (supabaseMode) {
@@ -994,5 +1047,8 @@ export function useHasPetsitterVip() {
 
 export function usePetSitterMissions() {
   const { missions, currentUser } = useApp()
-  return missions.filter(m => m.petsitterId === currentUser?.id || m.status === 'pending')
+  const uid = currentUser?.id
+  return missions.filter(
+    m => m.petsitterId === uid || (m.status === 'pending' && !m.petsitterId),
+  )
 }

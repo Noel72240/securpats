@@ -1,12 +1,12 @@
 import { CheckCircle, XCircle, Clock, Check, Shield, AlertTriangle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatCard, Card, CardHeader, Badge } from '@/components/ui/Card'
-import { useApp } from '@/contexts/AppContext'
+import { useApp, usePetSitterMissions } from '@/contexts/AppContext'
 import { formatDateTime } from '@/lib/utils'
 
 export default function PetSitterDashboard() {
-  const { missions, currentUser, petSitterProfile } = useApp()
-  const myMissions = missions.filter(m => m.petsitterId === currentUser?.id || m.status === 'pending')
+  const { petSitterProfile } = useApp()
+  const myMissions = usePetSitterMissions()
 
   const counts = {
     received: myMissions.filter(m => m.status === 'pending').length,

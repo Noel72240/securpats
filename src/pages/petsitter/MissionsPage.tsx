@@ -3,24 +3,30 @@ import { Check, X, Eye, Briefcase, AlertTriangle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, Modal, EmptyState } from '@/components/ui/Card'
-import { useApp } from '@/contexts/AppContext'
+import { useApp, usePetSitterMissions } from '@/contexts/AppContext'
 import { formatDateTime } from '@/lib/utils'
 import type { Mission } from '@/types'
 
 export default function MissionsPage() {
-  const { missions, updateMissionStatus, petSitterProfile } = useApp()
+  const { updateMissionStatus, petSitterProfile, currentUser } = useApp()
+  const missions = usePetSitterMissions()
   const [selected, setSelected] = useState<Mission | null>(null)
   const [filter, setFilter] = useState<string>('all')
   const [actionError, setActionError] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
   const canManageMissions = petSitterProfile?.verified === true
 
-  const handleStatus = (id: string, status: Mission['status']) => {
+  const handleStatus = async (id: string, status: Mission['status']) => {
     setActionError(null)
-    const err = updateMissionStatus(id, status)
+    setBusyId(id)
+    const err = await updateMissionStatus(id, status)
     if (err) setActionError(err)
+    setBusyId(null)
   }
 
   const filtered = filter === 'all' ? missions : missions.filter(m => m.status === filter)
+  const isMine = (m: Mission) => m.petsitterId === currentUser?.id
+  const canAccept = (m: Mission) => m.status === 'pending' && !m.petsitterId
 
   const statusLabel = (s: Mission['status']) => ({
     pending: 'En attente', accepted: 'Acceptée', declined: 'Refusée', completed: 'Terminée',
@@ -79,14 +85,36 @@ export default function MissionsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" icon={Eye} onClick={() => setSelected(m)}>Détails</Button>
-                    {m.status === 'pending' && canManageMissions && (
+                    {canAccept(m) && canManageMissions && (
                       <>
-                        <Button size="sm" icon={Check} onClick={() => handleStatus(m.id, 'accepted')}>Accepter</Button>
-                        <Button variant="outline" size="sm" icon={X} onClick={() => handleStatus(m.id, 'declined')}>Refuser</Button>
+                        <Button
+                          size="sm"
+                          icon={Check}
+                          disabled={busyId === m.id}
+                          onClick={() => void handleStatus(m.id, 'accepted')}
+                        >
+                          {busyId === m.id ? 'En cours…' : 'Accepter'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={X}
+                          disabled={busyId === m.id}
+                          onClick={() => void handleStatus(m.id, 'declined')}
+                        >
+                          Refuser
+                        </Button>
                       </>
                     )}
-                    {m.status === 'accepted' && canManageMissions && (
-                      <Button size="sm" variant="secondary" onClick={() => handleStatus(m.id, 'completed')}>Terminer</Button>
+                    {m.status === 'accepted' && isMine(m) && canManageMissions && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={busyId === m.id}
+                        onClick={() => void handleStatus(m.id, 'completed')}
+                      >
+                        Terminer
+                      </Button>
                     )}
                   </div>
                 </div>

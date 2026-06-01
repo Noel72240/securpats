@@ -322,6 +322,10 @@ export type Database = {
         Args: Record<string, never>
         Returns: boolean
       }
+      accept_mission: {
+        Args: { p_mission_id: string }
+        Returns: Database['public']['Tables']['missions']['Row']
+      }
     }
     Enums: {
       [_ in never]: never
