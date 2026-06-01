@@ -31,7 +31,7 @@ export default function PetSitterDashboard() {
                 <p className="font-semibold">Compte en attente de validation</p>
                 <p className="mt-1">
                   Votre pièce d&apos;identité a bien été reçue. L&apos;équipe SécurPats vérifie votre dossier avant
-                  de vous proposer des missions. Délai habituel : 48 h ouvrées.
+                  que vous puissiez accepter des missions. Délai habituel : 48 h ouvrées.
                 </p>
               </div>
             </div>

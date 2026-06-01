@@ -1,10 +1,13 @@
+import { useMemo, useState } from 'react'
+import { CheckCircle, Eye, XCircle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { Button } from '@/components/ui/Button'
 import { Card, Badge } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { formatDate } from '@/lib/utils'
 import { adminStats } from '@/lib/mock/data'
 import { buildMonthlyRevenue } from '@/lib/admin/analytics'
-import { useMemo } from 'react'
+import { getPetsitterDocSignedUrl } from '@/lib/supabase/uploads'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 function AdminTablePage({ title, variant, children }: { title: string; variant: 'admin'; children: React.ReactNode }) {
@@ -108,27 +111,109 @@ export function AdminReferentsPage() {
 }
 
 export function AdminPetSittersPage() {
-  const { petSitterProfile, allUsers } = useApp()
+  const { allUsers, allPetsitterProfiles, setPetsitterVerified, isSupabaseMode } = useApp()
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
   const sitters = allUsers.filter(u => u.role === 'petsitter')
+
+  const profileFor = (userId: string) => allPetsitterProfiles.find(p => p.userId === userId)
+
+  const openIdDocument = async (path?: string) => {
+    if (!path) return
+    if (!isSupabaseMode) {
+      setActionError('Consultation du document disponible uniquement avec Supabase.')
+      return
+    }
+    const { url, error } = await getPetsitterDocSignedUrl(path)
+    if (error || !url) {
+      setActionError(error || 'Impossible d\'ouvrir le document.')
+      return
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const toggleVerified = async (userId: string, verified: boolean) => {
+    setBusyId(userId)
+    setActionError(null)
+    const err = await setPetsitterVerified(userId, verified)
+    if (err) setActionError(err)
+    setBusyId(null)
+  }
+
   return (
     <AdminTablePage title="Gestion Pet-Sitters" variant="admin">
+      <p className="text-sm text-slate-600 px-4 pt-4 pb-2">
+        Vérifiez la pièce d&apos;identité puis cliquez sur <strong>Valider le compte</strong>.
+        Un pet-sitter non validé ne peut pas accepter de missions.
+      </p>
+      {actionError && (
+        <p className="text-sm text-red-600 px-4 pb-2">{actionError}</p>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100">
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Nom</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Email</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Zone</th>
-            <th className="text-left py-3 px-4 font-semibold text-slate-600">Disponibilités</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Pièce d&apos;identité</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {sitters.map(s => (
-              <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="py-3 px-4 font-medium">{s.firstName} {s.lastName}</td>
-                <td className="py-3 px-4 text-slate-600">{petSitterProfile?.serviceArea || '—'}</td>
-                <td className="py-3 px-4 text-slate-600">{petSitterProfile?.availableHours || '—'}</td>
-                <td className="py-3 px-4"><Badge variant={petSitterProfile?.verified ? 'success' : 'warning'}>{petSitterProfile?.verified ? 'Vérifié' : 'En attente'}</Badge></td>
+            {sitters.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 px-4 text-center text-slate-500">Aucun pet-sitter inscrit.</td>
               </tr>
-            ))}
+            ) : sitters.map(s => {
+              const profile = profileFor(s.id)
+              const verified = profile?.verified ?? false
+              return (
+                <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
+                  <td className="py-3 px-4 font-medium">{s.firstName} {s.lastName}</td>
+                  <td className="py-3 px-4 text-slate-600">{profile?.email || s.email}</td>
+                  <td className="py-3 px-4 text-slate-600">{profile?.serviceArea || '—'}</td>
+                  <td className="py-3 px-4">
+                    {profile?.idDocument ? (
+                      <Button variant="ghost" size="sm" icon={Eye} onClick={() => openIdDocument(profile.idDocument)}>
+                        Voir
+                      </Button>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    <Badge variant={verified ? 'success' : 'warning'}>
+                      {verified ? 'Validé' : 'En attente'}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex flex-wrap gap-2">
+                      {!verified ? (
+                        <Button
+                          size="sm"
+                          icon={CheckCircle}
+                          disabled={busyId === s.id || !profile}
+                          onClick={() => toggleVerified(s.id, true)}
+                        >
+                          Valider le compte
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={XCircle}
+                          disabled={busyId === s.id}
+                          onClick={() => toggleVerified(s.id, false)}
+                        >
+                          Révoquer
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

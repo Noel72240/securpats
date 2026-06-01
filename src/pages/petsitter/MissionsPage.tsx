@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, X, Eye, Briefcase } from 'lucide-react'
+import { Check, X, Eye, Briefcase, AlertTriangle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, Modal, EmptyState } from '@/components/ui/Card'
@@ -8,9 +8,17 @@ import { formatDateTime } from '@/lib/utils'
 import type { Mission } from '@/types'
 
 export default function MissionsPage() {
-  const { missions, updateMissionStatus } = useApp()
+  const { missions, updateMissionStatus, petSitterProfile } = useApp()
   const [selected, setSelected] = useState<Mission | null>(null)
   const [filter, setFilter] = useState<string>('all')
+  const [actionError, setActionError] = useState<string | null>(null)
+  const canManageMissions = petSitterProfile?.verified === true
+
+  const handleStatus = (id: string, status: Mission['status']) => {
+    setActionError(null)
+    const err = updateMissionStatus(id, status)
+    if (err) setActionError(err)
+  }
 
   const filtered = filter === 'all' ? missions : missions.filter(m => m.status === filter)
 
@@ -25,6 +33,22 @@ export default function MissionsPage() {
   return (
     <DashboardLayout variant="petsitter" title="Missions">
       <div className="space-y-6">
+        {!canManageMissions && (
+          <Card className="!p-4 bg-amber-50 border-amber-200">
+            <div className="flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-900">
+                Votre compte est en cours de validation. Vous pourrez accepter ou refuser des missions
+                une fois que l&apos;équipe SécurPats aura validé votre dossier.
+              </p>
+            </div>
+          </Card>
+        )}
+        {actionError && (
+          <p className="text-sm text-red-600 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" /> {actionError}
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           {['all', 'pending', 'accepted', 'declined', 'completed'].map(f => (
             <button
@@ -55,14 +79,14 @@ export default function MissionsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" icon={Eye} onClick={() => setSelected(m)}>Détails</Button>
-                    {m.status === 'pending' && (
+                    {m.status === 'pending' && canManageMissions && (
                       <>
-                        <Button size="sm" icon={Check} onClick={() => updateMissionStatus(m.id, 'accepted')}>Accepter</Button>
-                        <Button variant="outline" size="sm" icon={X} onClick={() => updateMissionStatus(m.id, 'declined')}>Refuser</Button>
+                        <Button size="sm" icon={Check} onClick={() => handleStatus(m.id, 'accepted')}>Accepter</Button>
+                        <Button variant="outline" size="sm" icon={X} onClick={() => handleStatus(m.id, 'declined')}>Refuser</Button>
                       </>
                     )}
-                    {m.status === 'accepted' && (
-                      <Button size="sm" variant="secondary" onClick={() => updateMissionStatus(m.id, 'completed')}>Terminer</Button>
+                    {m.status === 'accepted' && canManageMissions && (
+                      <Button size="sm" variant="secondary" onClick={() => handleStatus(m.id, 'completed')}>Terminer</Button>
                     )}
                   </div>
                 </div>

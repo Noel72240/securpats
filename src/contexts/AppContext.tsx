@@ -29,6 +29,7 @@ interface AppState {
   invoices: Invoice[]
   missions: Mission[]
   petSitterProfile: PetSitterProfile | null
+  allPetsitterProfiles: PetSitterProfile[]
   activities: Activity[]
   allUsers: User[]
   registeredUsers: User[]
@@ -84,7 +85,8 @@ interface AppContextType extends AppState {
   addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => Promise<string | null>
   deleteDocument: (id: string) => void
   declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
-  updateMissionStatus: (id: string, status: Mission['status']) => void
+  updateMissionStatus: (id: string, status: Mission['status']) => string | null
+  setPetsitterVerified: (userId: string, verified: boolean) => Promise<string | null>
   updateSubscription: (plan: OwnerSubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
   cancelSubscription: () => void
@@ -130,6 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [invoices, setInvoices] = useState<Invoice[]>(saved.invoices ?? mockInvoices)
   const [missions, setMissions] = useState<Mission[]>(saved.missions ?? mockMissions)
   const [petSitterProfile, setPetSitterProfile] = useState<PetSitterProfile | null>(saved.petSitterProfile ?? mockPetSitter)
+  const [allPetsitterProfiles, setAllPetsitterProfiles] = useState<PetSitterProfile[]>([])
   const [activities, setActivities] = useState<Activity[]>(saved.activities ?? mockActivities)
   const [registeredUsers, setRegisteredUsers] = useState<User[]>(saved.registeredUsers ?? [])
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(saved.siteSettings ?? defaultSiteSettings)
@@ -138,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dataSetters = useMemo(() => ({
     setPets, setReferents, setDocuments, setSubscription, setInvoices,
-    setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile,
+    setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile, setAllPetsitterProfiles,
   }), [])
 
   const syncOwnerSubscriptionInBackground = useCallback(async (user: User) => {
@@ -763,15 +766,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { ok: true, emailsSent: 0, emailConfigured: false }
   }, [currentUser, pets, referents, addActivity])
 
-  const updateMissionStatus = useCallback((id: string, status: Mission['status']) => {
-    if (supabaseMode) {
-      db.updateMissionStatus(id, status).then(({ mission }) => {
-        if (mission) setMissions(prev => prev.map(m => m.id === id ? mission : m))
-      })
-    } else {
-      setMissions(prev => prev.map(m => m.id === id ? { ...m, status } : m))
+  const updateMissionStatus = useCallback((id: string, status: Mission['status']): string | null => {
+    if (currentUser?.role === 'petsitter' && !petSitterProfile?.verified) {
+      if (status === 'accepted' || status === 'declined' || status === 'completed') {
+        return 'Votre compte doit être validé par SécurPats avant de gérer des missions.'
+      }
     }
-  }, [])
+
+    const applyLocal = (mission: Mission) => {
+      setMissions(prev => prev.map(m => m.id === id ? mission : m))
+    }
+
+    if (supabaseMode) {
+      const petsitterId = status === 'accepted' && currentUser?.role === 'petsitter' ? currentUser.id : undefined
+      void db.updateMissionStatus(id, status, petsitterId ? { petsitterId } : undefined).then(({ mission, error }) => {
+        if (error) console.error('[missions]', error)
+        if (mission) applyLocal(mission)
+      })
+      return null
+    }
+
+    setMissions(prev => prev.map(m => {
+      if (m.id !== id) return m
+      const next = { ...m, status }
+      if (status === 'accepted' && currentUser?.role === 'petsitter') {
+        next.petsitterId = currentUser.id
+      }
+      return next
+    }))
+    return null
+  }, [currentUser, petSitterProfile?.verified])
+
+  const setPetsitterVerifiedAdmin = useCallback(async (userId: string, verified: boolean): Promise<string | null> => {
+    if (supabaseMode) {
+      const { profile, error } = await db.setPetsitterVerified(userId, verified)
+      if (error) return error
+      if (profile) {
+        setAllPetsitterProfiles(prev => prev.map(p => p.userId === userId ? profile : p))
+        if (currentUser?.id === userId) setPetSitterProfile(profile)
+      }
+      return null
+    }
+
+    setAllPetsitterProfiles(prev => prev.map(p => (p.userId === userId ? { ...p, verified } : p)))
+    if (currentUser?.id === userId) {
+      setPetSitterProfile(prev => (prev ? { ...prev, verified } : prev))
+    }
+    return null
+  }, [currentUser?.id])
 
   const syncSubscriptionFromStripe = useCallback(async (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => {
     if (!currentUser) return
@@ -895,12 +937,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentUser, pets, referents, documents, subscription, invoices,
-      missions, petSitterProfile, activities, allUsers, registeredUsers, siteSettings,
+      missions, petSitterProfile, allPetsitterProfiles, activities, allUsers, registeredUsers, siteSettings,
       authLoading, isSupabaseMode: supabaseMode,
       login, logout, register, registerPetsitter, completePetsitterIdentity,
       exportUserData, deleteAccount, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
-      addDocument, deleteDocument, declareEmergency, updateMissionStatus,
+      addDocument, deleteDocument, declareEmergency, updateMissionStatus, setPetsitterVerified: setPetsitterVerifiedAdmin,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,
       updateSiteSettings, resetSiteSettings, addTestimonial, updateTestimonial, deleteTestimonial,
     }}>

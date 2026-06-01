@@ -37,3 +37,12 @@ export async function getDocumentSignedUrl(storagePath: string, expiresIn = 3600
   if (error) return { url: null as string | null, error: error.message }
   return { url: data.signedUrl, error: null }
 }
+
+export async function getPetsitterDocSignedUrl(storagePath: string, expiresIn = 3600) {
+  const { getSupabase } = await import('./client')
+  const { data, error } = await getSupabase().storage
+    .from(STORAGE_BUCKETS.petsitter)
+    .createSignedUrl(storagePath, expiresIn)
+  if (error) return { url: null as string | null, error: error.message }
+  return { url: data.signedUrl, error: null }
+}

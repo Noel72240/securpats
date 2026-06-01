@@ -262,8 +262,16 @@ export async function createMission(mission: Omit<Mission, 'id' | 'createdAt'>) 
   return { mission: missionFromRow(data), error: null }
 }
 
-export async function updateMissionStatus(id: string, status: Mission['status']) {
-  const { data, error } = await getSupabase().from('missions').update({ status }).eq('id', id).select().single()
+export async function updateMissionStatus(
+  id: string,
+  status: Mission['status'],
+  options?: { petsitterId?: string },
+) {
+  const patch: { status: Mission['status']; petsitter_id?: string } = { status }
+  if (status === 'accepted' && options?.petsitterId) {
+    patch.petsitter_id = options.petsitterId
+  }
+  const { data, error } = await getSupabase().from('missions').update(patch).eq('id', id).select().single()
   if (error) return { mission: null as Mission | null, error: error.message }
   return { mission: missionFromRow(data), error: null }
 }
@@ -274,6 +282,23 @@ export async function fetchPetsitterProfile(userId: string) {
   const { data, error } = await getSupabase().from('petsitter_profiles').select('*').eq('user_id', userId).maybeSingle()
   if (error) return { profile: null as PetSitterProfile | null, error: error.message }
   return { profile: data ? petsitterFromRow(data) : null, error: null }
+}
+
+export async function fetchAllPetsitterProfiles() {
+  const { data, error } = await getSupabase().from('petsitter_profiles').select('*').order('email')
+  if (error) return { profiles: [] as PetSitterProfile[], error: error.message }
+  return { profiles: data.map(petsitterFromRow), error: null }
+}
+
+export async function setPetsitterVerified(userId: string, verified: boolean) {
+  const { data, error } = await getSupabase()
+    .from('petsitter_profiles')
+    .update({ verified })
+    .eq('user_id', userId)
+    .select()
+    .single()
+  if (error) return { profile: null as PetSitterProfile | null, error: error.message }
+  return { profile: petsitterFromRow(data), error: null }
 }
 
 export async function upsertPetsitterProfile(userId: string, profile: Partial<PetSitterProfile>) {
@@ -377,7 +402,7 @@ export async function loadOwnerData(ownerId: string) {
 }
 
 export async function loadAdminData() {
-  const [profiles, pets, referents, documents, missions, siteSettings, invoices] = await Promise.all([
+  const [profiles, pets, referents, documents, missions, siteSettings, invoices, petsitters] = await Promise.all([
     fetchAllProfiles(),
     fetchAllPets(),
     fetchAllReferents(),
@@ -385,6 +410,7 @@ export async function loadAdminData() {
     fetchAllMissions(),
     fetchSiteSettings(),
     fetchAllInvoices(),
+    fetchAllPetsitterProfiles(),
   ])
   return {
     allUsers: profiles.users,
@@ -394,6 +420,7 @@ export async function loadAdminData() {
     missions: missions.missions,
     siteSettings: siteSettings.settings,
     invoices: invoices.invoices,
+    petsitterProfiles: petsitters.profiles,
   }
 }
 
