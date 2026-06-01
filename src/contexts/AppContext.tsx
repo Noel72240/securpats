@@ -18,6 +18,7 @@ import { isOwnerSubscriptionActive, isPetsitterVipActive } from '@/lib/subscript
 import { reconcileSubscriptionAccess } from '@/lib/stripe/client'
 import { uploadPetSitterDocFile } from '@/lib/supabase/uploads'
 import { validatePetsitterIdFile } from '@/lib/petsitter/validation'
+import { formatPetsitterDbError } from '@/lib/petsitter/db-errors'
 
 interface AppState {
   currentUser: User | null
@@ -372,7 +373,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
 
     if (profileErr || !profile) {
-      return { error: profileErr || 'Profil pet-sitter non enregistré.' }
+      return { error: profileErr ? formatPetsitterDbError(profileErr) : 'Profil pet-sitter non enregistré.' }
     }
 
     setPetSitterProfile(profile)
