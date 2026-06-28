@@ -17,7 +17,7 @@ export function MaintenanceBanner() {
     <div
       role="status"
       className={cn(
-        'px-4 py-2.5 text-center text-sm font-medium',
+        'no-print px-4 py-2.5 text-center text-sm font-medium',
         isDev
           ? 'bg-amber-500 text-amber-950'
           : 'bg-orange-600 text-white',

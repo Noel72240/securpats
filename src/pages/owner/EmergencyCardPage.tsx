@@ -15,8 +15,8 @@ export default function EmergencyCardPage() {
     <DashboardLayout variant="owner" title="Fiche imprimable">
       <div className="max-w-3xl mx-auto">
         <p className="text-sm text-slate-600 mb-6 no-print">
-          Votre QR code foyer est généré automatiquement. Imprimez cette fiche et conservez-la visible :
-          elle regroupe votre nom, tous vos animaux et vos référents.
+          Carte format identité (85,6 × 54 mm) : votre nom, QR code foyer, animaux et référents.
+          Imprimez-la puis plastifiez-la ou glissez-la dans votre portefeuille.
         </p>
         {!currentUser.qrToken ? (
           <Card>
