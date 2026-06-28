@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const auth = await verifyAdmin(req.headers.authorization)
-  if (!auth.valid) {
+  if (auth.valid === false) {
     return res.status(403).json({ error: auth.error })
   }
 
