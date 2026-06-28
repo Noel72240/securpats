@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Dog, Users, FileText, QrCode, CreditCard,
   AlertTriangle, LogOut, Menu, X, ChevronLeft, Shield, Calendar, Briefcase,
-  BarChart3, Settings, Globe, Lock,
+  BarChart3, Settings, Globe, Lock, IdCard,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -26,6 +26,7 @@ const ownerNav: NavItem[] = [
   { to: '/app/urgence', label: 'Déclarer urgence', icon: AlertTriangle },
   { to: '/app/missions', label: 'Mes urgences', icon: Briefcase },
   { to: '/app/abonnement', label: 'Abonnement', icon: CreditCard },
+  { to: '/app/profil', label: 'Fiche identité', icon: IdCard },
   { to: '/app/donnees-personnelles', label: 'Mes données', icon: Lock },
 ]
 

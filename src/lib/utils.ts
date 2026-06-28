@@ -18,6 +18,19 @@ export function calculateAge(birthDate: string): string {
   return `${years} an${years > 1 ? 's' : ''} et ${months} mois`
 }
 
+/** Âge en années complètes (propriétaires, référents, etc.) */
+export function formatHumanAge(birthDate?: string): string {
+  if (!birthDate) return '—'
+  const birth = new Date(birthDate)
+  if (Number.isNaN(birth.getTime())) return '—'
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--
+  if (age < 0) return '—'
+  return `${age} an${age > 1 ? 's' : ''}`
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`

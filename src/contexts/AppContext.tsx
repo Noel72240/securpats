@@ -98,6 +98,7 @@ interface AppContextType extends AppState {
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
   cancelSubscription: () => void
   updatePetSitterProfile: (profile: Partial<PetSitterProfile>) => void
+  updateOwnerProfile: (updates: db.OwnerProfilePatch) => Promise<string | null>
   addActivity: (type: string, message: string) => void
   updateSiteSettings: (updates: Partial<SiteSettings>) => void
   resetSiteSettings: () => void
@@ -1047,6 +1048,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser])
 
+  const updateOwnerProfile = useCallback(async (updates: db.OwnerProfilePatch): Promise<string | null> => {
+    if (!currentUser) return 'Session expirée.'
+    if (currentUser.role !== 'owner') return 'Réservé aux propriétaires.'
+
+    if (supabaseMode) {
+      const { user, error } = await db.patchProfile(currentUser.id, updates)
+      if (error) return error
+      if (user) setCurrentUser(user)
+      return null
+    }
+
+    const updated = { ...currentUser, ...updates }
+    setCurrentUser(updated)
+    setRegisteredUsers(prev => prev.map(u => (u.id === currentUser.id ? { ...u, ...updates } : u)))
+    return null
+  }, [currentUser])
+
   const persistSiteSettings = useCallback((settings: SiteSettings) => {
     if (supabaseMode) db.updateSiteSettings(settings)
     setSiteSettings(settings)
@@ -1118,7 +1136,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addReferent, updateReferent, deleteReferent, reorderReferents,
       addDocument, deleteDocument, declareEmergency, updateMissionStatus, deleteMission, cancelMission, deleteActivity,
       setPetsitterVerified: setPetsitterVerifiedAdmin,
-      updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, addActivity,
+      updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, updateOwnerProfile, addActivity,
       updateSiteSettings, resetSiteSettings, addTestimonial, updateTestimonial, deleteTestimonial,
     }}>
       {children}

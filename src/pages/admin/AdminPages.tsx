@@ -2,14 +2,51 @@ import { useMemo, useState } from 'react'
 import { CheckCircle, Eye, Trash2, XCircle, AlertTriangle } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
-import { Card, Badge } from '@/components/ui/Card'
+import { Card, Badge, Modal } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatHumanAge } from '@/lib/utils'
 import { adminStats } from '@/lib/mock/data'
 import { buildMonthlyRevenue } from '@/lib/admin/analytics'
 import { getPetsitterDocSignedUrl } from '@/lib/supabase/uploads'
 import { subscriptionPlanLabel, subscriptionPlanVariant, userRoleLabel } from '@/lib/admin/plan-labels'
+import type { User } from '@/types'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+function OwnerIdentityModal({ user, onClose }: { user: User | null; onClose: () => void }) {
+  if (!user) return null
+  return (
+    <Modal open={!!user} onClose={onClose} title="Fiche identité">
+      <dl className="space-y-4 text-sm">
+        <div>
+          <dt className="text-slate-500 font-medium">Nom complet</dt>
+          <dd className="text-slate-900 font-semibold mt-0.5">{user.firstName} {user.lastName}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500 font-medium">Email</dt>
+          <dd className="text-slate-900 mt-0.5">{user.email}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500 font-medium">Téléphone</dt>
+          <dd className="text-slate-900 mt-0.5">{user.phone || '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500 font-medium">Adresse</dt>
+          <dd className="text-slate-900 mt-0.5 whitespace-pre-line">{user.address || '—'}</dd>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <dt className="text-slate-500 font-medium">Date de naissance</dt>
+            <dd className="text-slate-900 mt-0.5">{user.birthDate ? formatDate(user.birthDate) : '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-500 font-medium">Âge</dt>
+            <dd className="text-slate-900 mt-0.5">{formatHumanAge(user.birthDate)}</dd>
+          </div>
+        </div>
+      </dl>
+    </Modal>
+  )
+}
 
 function AdminTablePage({ title, variant, children }: { title: string; variant: 'admin'; children: React.ReactNode }) {
   return (
@@ -23,6 +60,7 @@ export function AdminUsersPage() {
   const { allUsers, deleteUserAsAdmin, currentUser } = useApp()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [identityUser, setIdentityUser] = useState<User | null>(null)
 
   const handleDelete = async (user: { id: string; firstName: string; lastName: string; email: string; role: string }) => {
     const label = `${user.firstName} ${user.lastName} (${user.email})`
@@ -65,26 +103,34 @@ export function AdminUsersPage() {
                 <td className="py-3 px-4">{u.twoFactorEnabled ? '✓' : '—'}</td>
                 <td className="py-3 px-4 text-slate-500">{formatDate(u.createdAt)}</td>
                 <td className="py-3 px-4">
-                  {u.role === 'admin' || u.id === currentUser?.id ? (
-                    <span className="text-slate-400 text-xs">—</span>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      icon={Trash2}
-                      disabled={busyId === u.id}
-                      className="!text-red-600 !border-red-200 hover:!bg-red-50"
-                      onClick={() => void handleDelete(u)}
-                    >
-                      {busyId === u.id ? '…' : 'Supprimer'}
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {u.role === 'owner' && (
+                      <Button variant="ghost" size="sm" icon={Eye} onClick={() => setIdentityUser(u)}>
+                        Fiche
+                      </Button>
+                    )}
+                    {u.role === 'admin' || u.id === currentUser?.id ? (
+                      u.role !== 'owner' && <span className="text-slate-400 text-xs">—</span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={Trash2}
+                        disabled={busyId === u.id}
+                        className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                        onClick={() => void handleDelete(u)}
+                      >
+                        {busyId === u.id ? '…' : 'Supprimer'}
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <OwnerIdentityModal user={identityUser} onClose={() => setIdentityUser(null)} />
     </AdminTablePage>
   )
 }

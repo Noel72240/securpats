@@ -17,6 +17,8 @@ export function profileToUser(row: Tables<'profiles'>): User {
     firstName: row.first_name,
     lastName: row.last_name,
     phone: row.phone,
+    address: row.address ?? '',
+    birthDate: row.birth_date ?? undefined,
     role: row.role,
     avatar: row.avatar_url ?? undefined,
     createdAt: row.created_at.split('T')[0],
@@ -45,6 +47,16 @@ export function userToProfileInsert(
     consent_version: user.consentVersion ?? null,
     marketing_opt_in: user.marketingOptIn ?? false,
   }
+}
+
+export function userToProfileUpdate(updates: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate'>>): TablesUpdate<'profiles'> {
+  const patch: TablesUpdate<'profiles'> = {}
+  if (updates.firstName !== undefined) patch.first_name = updates.firstName
+  if (updates.lastName !== undefined) patch.last_name = updates.lastName
+  if (updates.phone !== undefined) patch.phone = updates.phone
+  if (updates.address !== undefined) patch.address = updates.address
+  if (updates.birthDate !== undefined) patch.birth_date = updates.birthDate || null
+  return patch
 }
 
 // ─── Pets ───────────────────────────────────────────────────

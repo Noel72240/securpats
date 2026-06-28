@@ -10,11 +10,35 @@ import {
   activityFromRow,
   siteSettingsFromJson,
   siteSettingsToJson,
+  profileToUser,
+  userToProfileUpdate,
 } from './mappers'
-import type { Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings } from '@/types'
+import type { Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings, User } from '@/types'
 import type { Tables, TablesUpdate } from './database.types'
 import { defaultSiteSettings } from '@/lib/mock/data'
 import { generateQrToken } from '@/lib/utils'
+
+// ─── Profiles ───────────────────────────────────────────────
+
+export type OwnerProfilePatch = Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate'>>
+
+export async function patchProfile(userId: string, updates: OwnerProfilePatch) {
+  const patch = userToProfileUpdate(updates)
+  if (Object.keys(patch).length === 0) {
+    const { data, error } = await getSupabase().from('profiles').select('*').eq('id', userId).single()
+    if (error) return { user: null as User | null, error: error.message }
+    return { user: profileToUser(data), error: null }
+  }
+
+  const { data, error } = await getSupabase()
+    .from('profiles')
+    .update(patch)
+    .eq('id', userId)
+    .select()
+    .single()
+  if (error) return { user: null as User | null, error: error.message }
+  return { user: profileToUser(data), error: null }
+}
 
 // ─── Pets ───────────────────────────────────────────────────
 

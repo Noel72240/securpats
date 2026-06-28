@@ -12,6 +12,7 @@ import RescuePage from '@/pages/public/RescuePage'
 import DeveloppeurPage from '@/pages/public/DeveloppeurPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
+import OwnerProfilePage from '@/pages/owner/OwnerProfilePage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { PawDecorations } from '@/components/decor/PawDecorations'
@@ -137,6 +138,7 @@ function AppRoutes() {
       <Route path="/app/abonnement" element={<OwnerRoute requireSubscription={false}><SubscriptionPage /></OwnerRoute>} />
       <Route path="/app/abonnement/succes" element={<OwnerRoute requireSubscription={false}><SubscriptionSuccessPage /></OwnerRoute>} />
       <Route path="/app/donnees-personnelles" element={<OwnerRoute requireSubscription={false}><PrivacyDataPage /></OwnerRoute>} />
+      <Route path="/app/profil" element={<OwnerRoute requireSubscription={false}><OwnerProfilePage /></OwnerRoute>} />
 
       {/* Pet-Sitter — espace séparé */}
       <Route path="/pet-sitter/connexion" element={<PetSitterLoginPage />} />

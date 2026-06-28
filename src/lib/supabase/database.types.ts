@@ -30,6 +30,8 @@ export type Database = {
           first_name: string
           last_name: string
           phone: string
+          address: string
+          birth_date: string | null
           role: UserRole
           avatar_url: string | null
           two_factor_enabled: boolean
@@ -44,6 +46,8 @@ export type Database = {
           first_name: string
           last_name: string
           phone?: string
+          address?: string
+          birth_date?: string | null
           role?: UserRole
           avatar_url?: string | null
           two_factor_enabled?: boolean
