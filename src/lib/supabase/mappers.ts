@@ -26,6 +26,7 @@ export function profileToUser(row: Tables<'profiles'>): User {
     consentAcceptedAt: row.consent_accepted_at ?? undefined,
     consentVersion: row.consent_version ?? undefined,
     marketingOptIn: row.marketing_opt_in ?? undefined,
+    qrToken: row.qr_token ?? undefined,
   }
 }
 
@@ -49,13 +50,14 @@ export function userToProfileInsert(
   }
 }
 
-export function userToProfileUpdate(updates: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate'>>): TablesUpdate<'profiles'> {
+export function userToProfileUpdate(updates: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate' | 'qrToken'>>): TablesUpdate<'profiles'> {
   const patch: TablesUpdate<'profiles'> = {}
   if (updates.firstName !== undefined) patch.first_name = updates.firstName
   if (updates.lastName !== undefined) patch.last_name = updates.lastName
   if (updates.phone !== undefined) patch.phone = updates.phone
   if (updates.address !== undefined) patch.address = updates.address
   if (updates.birthDate !== undefined) patch.birth_date = updates.birthDate || null
+  if (updates.qrToken !== undefined) patch.qr_token = updates.qrToken || null
   return patch
 }
 

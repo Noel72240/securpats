@@ -8,7 +8,7 @@ import {
   mockInvoices, mockMissions, mockPetSitter, mockActivities,
   defaultSiteSettings,
 } from '@/lib/mock/data'
-import { generateId, generateQrToken } from '@/lib/utils'
+import { generateId, generateQrToken, buildOwnerQrToken } from '@/lib/utils'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
 import { missionFromRow } from '@/lib/supabase/mappers'
@@ -170,6 +170,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [dataSetters])
 
+  const syncOwnerQrToken = useCallback(async (user: User): Promise<User> => {
+    if (user.role !== 'owner' || user.qrToken) return user
+    if (supabaseMode) {
+      const { user: updated, error } = await db.ensureOwnerQrToken(user)
+      if (error) console.error('[owner qr]', error)
+      return updated ?? user
+    }
+    const qrToken = buildOwnerQrToken(user.firstName, user.id)
+    setRegisteredUsers(prev => prev.map(u => (u.id === user.id ? { ...u, qrToken } : u)))
+    return { ...user, qrToken }
+  }, [])
+
   // Init Supabase session + site public
   useEffect(() => {
     if (!supabaseMode) {
@@ -192,9 +204,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
 
         if (user) {
-          setCurrentUser(user)
-          await hydrateUserData(user, dataSetters)
-          void syncOwnerSubscriptionInBackground(user)
+          const withQr = await syncOwnerQrToken(user)
+          setCurrentUser(withQr)
+          await hydrateUserData(withQr, dataSetters)
+          void syncOwnerSubscriptionInBackground(withQr)
         }
       } catch (err) {
         console.error('[Supabase] Init session:', err)
@@ -205,9 +218,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!cancelled) {
         unsubscribe = onAuthStateChange(async (user) => {
           if (user) {
-            setCurrentUser(user)
-            await hydrateUserData(user, dataSetters)
-            void syncOwnerSubscriptionInBackground(user)
+            const withQr = await syncOwnerQrToken(user)
+            setCurrentUser(withQr)
+            await hydrateUserData(withQr, dataSetters)
+            void syncOwnerSubscriptionInBackground(withQr)
           } else {
             setCurrentUser(null)
             clearUserData(dataSetters)
@@ -223,7 +237,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(safetyTimer)
       unsubscribe?.()
     }
-  }, [dataSetters, syncOwnerSubscriptionInBackground])
+  }, [dataSetters, syncOwnerSubscriptionInBackground, syncOwnerQrToken])
 
   // Missions en temps réel pour les pet-sitters (retrait immédiat si un collègue accepte)
   useEffect(() => {
@@ -292,19 +306,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (supabaseMode) {
       const { user, error } = await signIn(email, password)
       if (error || !user) return null
-      setCurrentUser(user)
-      await hydrateUserData(user, dataSetters)
-      void syncOwnerSubscriptionInBackground(user)
-      return user
+      const withQr = await syncOwnerQrToken(user)
+      setCurrentUser(withQr)
+      await hydrateUserData(withQr, dataSetters)
+      void syncOwnerSubscriptionInBackground(withQr)
+      return withQr
     }
 
     const user = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase())
     if (user) {
-      setCurrentUser(user)
-      return user
+      const withQr = await syncOwnerQrToken(user)
+      setCurrentUser(withQr)
+      return withQr
     }
     return null
-  }, [allUsers, dataSetters, syncOwnerSubscriptionInBackground])
+  }, [allUsers, dataSetters, syncOwnerSubscriptionInBackground, syncOwnerQrToken])
 
   const logout = useCallback(async () => {
     if (supabaseMode) await signOut()
@@ -351,7 +367,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         return { error: error || 'Inscription échouée. Réessayez.' }
       }
-      setCurrentUser(user)
+      const withQr = user.role === 'owner' ? await syncOwnerQrToken(user) : user
+      setCurrentUser(withQr)
       return { error: null }
     }
 
@@ -359,13 +376,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { error: 'Un compte existe déjà avec cet email.' }
     }
     const isAdmin = data.email.toLowerCase() === adminEmail.toLowerCase()
+    const userId = generateId('user')
     const newUser: User = {
-      id: generateId('user'),
+      id: userId,
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,
       role: isAdmin ? 'admin' : 'owner',
+      qrToken: isAdmin ? undefined : buildOwnerQrToken(data.firstName, userId),
       createdAt: new Date().toISOString().split('T')[0],
       twoFactorEnabled: false,
       consentAcceptedAt: consentAt,
@@ -375,7 +394,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRegisteredUsers(prev => [...prev, newUser])
     setCurrentUser(newUser)
     return { error: null }
-  }, [allUsers])
+  }, [allUsers, syncOwnerQrToken])
 
   const finishPetsitterProfileSetup = useCallback(async (
     user: User,

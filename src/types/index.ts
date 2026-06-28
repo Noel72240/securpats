@@ -16,6 +16,8 @@ export interface User {
   consentAcceptedAt?: string
   consentVersion?: string
   marketingOptIn?: boolean
+  /** QR unique du foyer (fiche famille imprimable) */
+  qrToken?: string
 }
 
 export interface Pet {

@@ -16,11 +16,11 @@ import {
 import type { Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings, User } from '@/types'
 import type { Tables, TablesUpdate } from './database.types'
 import { defaultSiteSettings } from '@/lib/mock/data'
-import { generateQrToken } from '@/lib/utils'
+import { generateQrToken, buildOwnerQrToken } from '@/lib/utils'
 
 // ─── Profiles ───────────────────────────────────────────────
 
-export type OwnerProfilePatch = Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate'>>
+export type OwnerProfilePatch = Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate' | 'qrToken'>>
 
 export async function patchProfile(userId: string, updates: OwnerProfilePatch) {
   const patch = userToProfileUpdate(updates)
@@ -38,6 +38,50 @@ export async function patchProfile(userId: string, updates: OwnerProfilePatch) {
     .single()
   if (error) return { user: null as User | null, error: error.message }
   return { user: profileToUser(data), error: null }
+}
+
+export async function ensureOwnerQrToken(user: User) {
+  if (user.role !== 'owner' || user.qrToken) {
+    return { user, error: null as string | null }
+  }
+  const qrToken = buildOwnerQrToken(user.firstName, user.id)
+  return patchProfile(user.id, { qrToken })
+}
+
+export type OwnerRescueBundle = {
+  owner: { first_name: string; last_name: string }
+  pets: Array<{
+    name: string
+    species: string
+    breed: string
+    sex: string
+    birth_date: string
+    weight: number
+    photo: string | null
+    allergies: string
+    treatments: string
+    special_instructions: string
+    diet: string
+    vet_name: string
+    vet_phone: string
+    vet_address: string
+    identification_number: string
+    qr_token: string
+  }>
+  referents: Array<{
+    priority: number
+    first_name: string
+    last_name: string
+    phone: string
+    email: string
+    address: string
+  }>
+}
+
+export async function fetchOwnerRescueBundle(token: string) {
+  const { data, error } = await getSupabase().rpc('get_owner_rescue_bundle', { token })
+  if (error || !data) return { bundle: null as OwnerRescueBundle | null, error: error?.message ?? 'Fiche introuvable' }
+  return { bundle: data as OwnerRescueBundle, error: null }
 }
 
 // ─── Pets ───────────────────────────────────────────────────

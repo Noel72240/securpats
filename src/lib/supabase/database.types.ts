@@ -38,6 +38,7 @@ export type Database = {
           consent_accepted_at: string | null
           consent_version: string | null
           marketing_opt_in: boolean | null
+          qr_token: string | null
           created_at: string
         },
         {
@@ -54,6 +55,7 @@ export type Database = {
           consent_accepted_at?: string | null
           consent_version?: string | null
           marketing_opt_in?: boolean | null
+          qr_token?: string | null
           created_at?: string
         }
       >
@@ -321,6 +323,10 @@ export type Database = {
       get_referents_by_qr_token: {
         Args: { token: string }
         Returns: Database['public']['Tables']['referents']['Row'][]
+      }
+      get_owner_rescue_bundle: {
+        Args: { token: string }
+        Returns: Json
       }
       is_admin: {
         Args: Record<string, never>

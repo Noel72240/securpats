@@ -63,6 +63,18 @@ export function generateQrToken(name: string): string {
   return `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+/** Token QR unique du foyer propriétaire */
+export function buildOwnerQrToken(firstName: string, userId: string): string {
+  const slug = firstName
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'proprietaire'
+  return `famille-${slug}-${userId.replace(/-/g, '').slice(0, 8)}`
+}
+
 export function getRescueUrl(token: string): string {
   // En navigateur : URL du site actuel → le QR mène toujours à /secours (fiche publique)
   if (typeof window !== 'undefined') {
@@ -70,4 +82,13 @@ export function getRescueUrl(token: string): string {
   }
   const envBase = (import.meta.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')
   return `${envBase}/secours/${encodeURIComponent(token)}`
+}
+
+/** URL publique de la fiche famille (propriétaire + animaux + référents) */
+export function getOwnerRescueUrl(token: string): string {
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/famille/${encodeURIComponent(token)}`
+  }
+  const envBase = (import.meta.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')
+  return `${envBase}/famille/${encodeURIComponent(token)}`
 }

@@ -211,6 +211,14 @@ body {
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
+  body { background: white !important; }
+  .owner-print-sheet {
+    border: 1px solid #e2e8f0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+  }
+  .pet-print-block { page-break-inside: avoid; }
 }
 
 .print-only { display: none; }

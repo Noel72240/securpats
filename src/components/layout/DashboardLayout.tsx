@@ -22,7 +22,7 @@ const ownerNav: NavItem[] = [
   { to: '/app/referents', label: 'Référents', icon: Users },
   { to: '/app/documents', label: 'Documents', icon: FileText },
   { to: '/app/qr-code', label: 'QR Code', icon: QrCode },
-  { to: '/app/carte-urgence', label: 'Carte d\'urgence', icon: CreditCard },
+  { to: '/app/carte-urgence', label: 'Fiche imprimable', icon: CreditCard },
   { to: '/app/urgence', label: 'Déclarer urgence', icon: AlertTriangle },
   { to: '/app/missions', label: 'Mes urgences', icon: Briefcase },
   { to: '/app/abonnement', label: 'Abonnement', icon: CreditCard },

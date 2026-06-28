@@ -1,29 +1,32 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { Download, Copy, Check, QrCode } from 'lucide-react'
+import { Download, Copy, Check, QrCode, CreditCard } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, EmptyState } from '@/components/ui/Card'
 import { Select } from '@/components/ui/Input'
-import { useOwnerPets } from '@/contexts/AppContext'
-import { getRescueUrl } from '@/lib/utils'
+import { useApp, useOwnerPets } from '@/contexts/AppContext'
+import { getRescueUrl, getOwnerRescueUrl } from '@/lib/utils'
 
 export default function QRCodePage() {
+  const { currentUser } = useApp()
   const pets = useOwnerPets()
   const [selectedId, setSelectedId] = useState(pets[0]?.id || '')
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'owner' | 'pet' | null>(null)
 
   const pet = pets.find(p => p.id === selectedId)
-  const url = pet ? getRescueUrl(pet.qrToken) : ''
+  const ownerUrl = currentUser?.qrToken ? getOwnerRescueUrl(currentUser.qrToken) : ''
+  const petUrl = pet ? getRescueUrl(pet.qrToken) : ''
 
-  const copyUrl = () => {
+  const copyUrl = (kind: 'owner' | 'pet', url: string) => {
     navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setCopied(kind)
+    setTimeout(() => setCopied(null), 2000)
   }
 
-  const downloadPNG = () => {
-    const svg = document.getElementById('qr-code-svg')
+  const downloadOwnerPNG = () => {
+    const svg = document.getElementById('qr-owner-svg')
     if (!svg) return
     const svgData = new XMLSerializer().serializeToString(svg)
     const canvas = document.createElement('canvas')
@@ -34,54 +37,79 @@ export default function QRCodePage() {
       canvas.height = 512
       ctx?.drawImage(img, 0, 0, 512, 512)
       const a = document.createElement('a')
-      a.download = `qr-${pet?.name || 'animal'}.png`
+      a.download = `qr-foyer-${currentUser?.lastName || 'securpats'}.png`
       a.href = canvas.toDataURL('image/png')
       a.click()
     }
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)))
   }
 
-  const downloadPDF = () => {
-    alert('Export PDF simulé — sera connecté à une librairie PDF lors de l\'intégration.')
-  }
-
-  if (pets.length === 0) {
+  if (!currentUser?.qrToken && pets.length === 0) {
     return (
       <DashboardLayout variant="owner" title="QR Code d'urgence">
-        <Card><EmptyState icon={QrCode} title="Aucun animal" description="Ajoutez un animal pour générer son QR Code." /></Card>
+        <Card><EmptyState icon={QrCode} title="QR code indisponible" description="Votre QR foyer sera généré à la connexion." /></Card>
       </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout variant="owner" title="QR Code d'urgence">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <Select
-          label="Sélectionner un animal"
-          value={selectedId}
-          onChange={e => setSelectedId(e.target.value)}
-          options={pets.map(p => ({ value: p.id, label: p.name }))}
-        />
-
-        {pet && (
-          <>
+      <div className="max-w-2xl mx-auto space-y-8">
+        {ownerUrl && (
+          <section className="space-y-4">
+            <div>
+              <h2 className="font-bold text-slate-900">QR Code du foyer</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Un seul QR pour {currentUser?.firstName} {currentUser?.lastName} — animaux et référents inclus.
+              </p>
+            </div>
             <Card padding="lg" className="text-center">
               <div className="inline-block p-6 bg-white rounded-2xl border-2 border-brand-100 shadow-sm">
-                <QRCodeSVG id="qr-code-svg" value={url} size={200} level="H" includeMargin />
+                <QRCodeSVG id="qr-owner-svg" value={ownerUrl} size={200} level="H" includeMargin />
               </div>
-              <p className="mt-4 font-semibold text-slate-900">{pet.name}</p>
-              <p className="text-sm text-slate-500 mt-1 break-all">{url}</p>
-              <p className="text-xs text-brand-600 mt-2">Ce QR ouvre directement la fiche de secours publique (sans connexion).</p>
+              <p className="mt-4 font-semibold text-slate-900">{currentUser?.firstName} {currentUser?.lastName}</p>
+              <p className="text-xs text-brand-600 mt-2">Ouvre la fiche famille complète (sans connexion).</p>
             </Card>
-
             <div className="flex flex-wrap gap-3 justify-center">
-              <Button icon={Download} onClick={downloadPNG}>Télécharger PNG</Button>
-              <Button variant="outline" icon={Download} onClick={downloadPDF}>Télécharger PDF</Button>
-              <Button variant="secondary" icon={copied ? Check : Copy} onClick={copyUrl}>
-                {copied ? 'Copié !' : 'Copier l\'URL'}
+              <Button icon={Download} onClick={downloadOwnerPNG}>Télécharger PNG</Button>
+              <Button variant="secondary" icon={copied === 'owner' ? Check : Copy} onClick={() => copyUrl('owner', ownerUrl)}>
+                {copied === 'owner' ? 'Copié !' : 'Copier l\'URL'}
               </Button>
+              <Link to="/app/carte-urgence">
+                <Button variant="outline" icon={CreditCard}>Fiche imprimable</Button>
+              </Link>
             </div>
-          </>
+          </section>
+        )}
+
+        {pets.length > 0 && (
+          <section className="space-y-4 border-t border-slate-100 pt-8">
+            <div>
+              <h2 className="font-bold text-slate-900">QR Code par animal</h2>
+              <p className="text-sm text-slate-500 mt-1">Fiche de secours individuelle (optionnel).</p>
+            </div>
+            <Select
+              label="Sélectionner un animal"
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+              options={pets.map(p => ({ value: p.id, label: p.name }))}
+            />
+            {pet && (
+              <>
+                <Card padding="lg" className="text-center">
+                  <div className="inline-block p-6 bg-white rounded-2xl border border-slate-200">
+                    <QRCodeSVG value={petUrl} size={160} level="H" includeMargin />
+                  </div>
+                  <p className="mt-4 font-semibold text-slate-900">{pet.name}</p>
+                </Card>
+                <div className="flex justify-center">
+                  <Button variant="outline" icon={copied === 'pet' ? Check : Copy} onClick={() => copyUrl('pet', petUrl)}>
+                    {copied === 'pet' ? 'Copié !' : 'Copier l\'URL animal'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </section>
         )}
       </div>
     </DashboardLayout>

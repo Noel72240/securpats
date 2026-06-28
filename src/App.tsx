@@ -9,6 +9,7 @@ import ContactPage from '@/pages/public/ContactPage'
 import LoginPage from '@/pages/public/LoginPage'
 import RegisterPage from '@/pages/public/RegisterPage'
 import RescuePage from '@/pages/public/RescuePage'
+import OwnerFamilyRescuePage from '@/pages/public/OwnerFamilyRescuePage'
 import DeveloppeurPage from '@/pages/public/DeveloppeurPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
@@ -113,6 +114,7 @@ function AppRoutes() {
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
       <Route path="/secours/:token" element={<RescuePage />} />
+      <Route path="/famille/:token" element={<OwnerFamilyRescuePage />} />
       <Route path="/cgu" element={<CGUPage />} />
       <Route path="/confidentialite" element={<PrivacyPage />} />
       <Route path="/rgpd" element={<RGPDPage />} />
