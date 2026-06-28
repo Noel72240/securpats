@@ -37,7 +37,11 @@ export default function OwnerProfilePage() {
     })
     setSaving(false)
     if (err) {
-      setError(err)
+      setError(
+        err.includes('address') && err.includes('schema cache')
+          ? 'La base de données doit être mise à jour. Dans Supabase → SQL Editor, exécutez la migration 014_owner_profile_identity.sql, puis réessayez.'
+          : err,
+      )
       return
     }
     setSuccess(true)

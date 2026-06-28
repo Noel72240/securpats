@@ -1,16 +1,98 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle, Eye, Trash2, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle, Eye, Trash2, XCircle, AlertTriangle, Dog } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, Modal } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
-import { formatDate, formatHumanAge } from '@/lib/utils'
+import { formatDate, formatHumanAge, calculateAge } from '@/lib/utils'
 import { adminStats } from '@/lib/mock/data'
 import { buildMonthlyRevenue } from '@/lib/admin/analytics'
 import { getPetsitterDocSignedUrl } from '@/lib/supabase/uploads'
 import { subscriptionPlanLabel, subscriptionPlanVariant, userRoleLabel } from '@/lib/admin/plan-labels'
-import type { User } from '@/types'
+import type { User, Pet } from '@/types'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-slate-500 font-medium">{label}</dt>
+      <dd className="text-slate-900 mt-0.5 whitespace-pre-line">{value || '—'}</dd>
+    </div>
+  )
+}
+
+function PetDetailModal({
+  pet,
+  owner,
+  onClose,
+}: {
+  pet: Pet | null
+  owner: User | undefined
+  onClose: () => void
+}) {
+  if (!pet) return null
+  return (
+    <Modal open={!!pet} onClose={onClose} title={`Fiche — ${pet.name}`}>
+      <div className="space-y-6 text-sm max-h-[70vh] overflow-y-auto pr-1">
+        <div className="flex gap-4 items-start">
+          {pet.photo ? (
+            <img src={pet.photo} alt={pet.name} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="w-20 h-20 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+              <Dog className="w-10 h-10 text-brand-400" />
+            </div>
+          )}
+          <div>
+            <p className="text-lg font-bold text-slate-900">{pet.name}</p>
+            <p className="text-slate-600">{pet.species} — {pet.breed}</p>
+            <p className="text-slate-500 mt-1">{pet.sex}</p>
+          </div>
+        </div>
+
+        <dl className="grid sm:grid-cols-2 gap-4">
+          <DetailField label="Date de naissance" value={pet.birthDate ? formatDate(pet.birthDate) : undefined} />
+          <DetailField label="Âge" value={pet.birthDate ? calculateAge(pet.birthDate) : undefined} />
+          <DetailField label="Poids" value={pet.weight ? `${pet.weight} kg` : undefined} />
+          <DetailField label="Couleur" value={pet.color} />
+          <DetailField label="N° identification" value={pet.identificationNumber} />
+          <DetailField label="Inscrit le" value={formatDate(pet.createdAt)} />
+        </dl>
+
+        <div className="border-t border-slate-100 pt-4">
+          <h4 className="font-semibold text-slate-900 mb-3">Santé & soins</h4>
+          <dl className="space-y-3">
+            <DetailField label="Traitements" value={pet.treatments} />
+            <DetailField label="Allergies" value={pet.allergies} />
+            <DetailField label="Alimentation" value={pet.diet} />
+            <DetailField label="Consignes particulières" value={pet.specialInstructions} />
+          </dl>
+        </div>
+
+        <div className="border-t border-slate-100 pt-4">
+          <h4 className="font-semibold text-slate-900 mb-3">Vétérinaire référent</h4>
+          <dl className="space-y-3">
+            <DetailField label="Nom" value={pet.vetName} />
+            <DetailField label="Téléphone" value={pet.vetPhone} />
+            <DetailField label="Adresse" value={pet.vetAddress} />
+          </dl>
+        </div>
+
+        <div className="border-t border-slate-100 pt-4">
+          <h4 className="font-semibold text-slate-900 mb-3">Propriétaire</h4>
+          <dl className="space-y-3">
+            <DetailField label="Nom" value={owner ? `${owner.firstName} ${owner.lastName}` : undefined} />
+            <DetailField label="Email" value={owner?.email} />
+            <DetailField label="Téléphone" value={owner?.phone} />
+          </dl>
+        </div>
+
+        <div className="border-t border-slate-100 pt-4">
+          <DetailField label="QR Token" value={<span className="font-mono text-xs break-all">{pet.qrToken}</span>} />
+        </div>
+      </div>
+    </Modal>
+  )
+}
 
 function OwnerIdentityModal({ user, onClose }: { user: User | null; onClose: () => void }) {
   if (!user) return null
@@ -137,8 +219,14 @@ export function AdminUsersPage() {
 
 export function AdminPetsPage() {
   const { pets, allUsers } = useApp()
+  const [detailPet, setDetailPet] = useState<Pet | null>(null)
+  const detailOwner = detailPet ? allUsers.find(u => u.id === detailPet.ownerId) : undefined
+
   return (
     <AdminTablePage title="Gestion animaux" variant="admin">
+      <p className="text-sm text-slate-600 px-4 pt-4 pb-2">
+        Consultez la fiche complète de chaque animal (santé, vétérinaire, propriétaire).
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100">
@@ -146,9 +234,14 @@ export function AdminPetsPage() {
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Espèce</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Propriétaire</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">QR Token</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {pets.map(p => {
+            {pets.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-8 px-4 text-center text-slate-500">Aucun animal enregistré.</td>
+              </tr>
+            ) : pets.map(p => {
               const owner = allUsers.find(u => u.id === p.ownerId)
               return (
                 <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50">
@@ -156,12 +249,18 @@ export function AdminPetsPage() {
                   <td className="py-3 px-4 text-slate-600">{p.species} — {p.breed}</td>
                   <td className="py-3 px-4">{owner ? `${owner.firstName} ${owner.lastName}` : '—'}</td>
                   <td className="py-3 px-4 text-xs font-mono text-slate-400">{p.qrToken}</td>
+                  <td className="py-3 px-4">
+                    <Button variant="ghost" size="sm" icon={Eye} onClick={() => setDetailPet(p)}>
+                      Détails
+                    </Button>
+                  </td>
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
+      <PetDetailModal pet={detailPet} owner={detailOwner} onClose={() => setDetailPet(null)} />
     </AdminTablePage>
   )
 }
