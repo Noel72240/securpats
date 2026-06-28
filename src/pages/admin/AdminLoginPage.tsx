@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, KeyRound, Loader2, ArrowRight } from 'lucide-react'
+import { Mail, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { BrandLogo } from '@/components/brand/BrandLogo'
@@ -10,6 +10,7 @@ const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@securpats.fr'
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login, logout, currentUser } = useApp()
@@ -81,14 +82,21 @@ export default function AdminLoginPage() {
                 <div className="relative">
                   <input
                     id="admin-password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-4 py-3.5 pr-11 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition"
                   />
-                  <KeyRound className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
             </div>
