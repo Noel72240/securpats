@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyRequestUser } from '../lib/verify-auth.js'
-import { stripePostForm } from '../lib/stripe-api.js'
-import { arePaymentsBlockedOnServer } from '../lib/site-settings.js'
+import { verifyRequestUser } from '../../server/lib/verify-auth.js'
+import { stripePostForm } from '../../server/lib/stripe-api.js'
+import { arePaymentsBlockedOnServer } from '../../server/lib/site-settings.js'
 
 type CheckoutSessionResponse = {
   id: string

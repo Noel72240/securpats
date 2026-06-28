@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
-import { stripeGet } from '../lib/stripe-api.js'
-import { upsertOwnerSubscription, PLAN_PRICES } from '../lib/supabase-admin.js'
+import { getSubscriptionPeriodEnd } from '../../server/lib/stripe-helpers.js'
+import { stripeGet } from '../../server/lib/stripe-api.js'
+import { upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
 
 type Plan = keyof typeof PLAN_PRICES
 

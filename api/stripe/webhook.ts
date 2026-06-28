@@ -1,9 +1,9 @@
 import type Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { insertOwnerInvoice, upsertOwnerSubscription, PLAN_PRICES } from '../lib/supabase-admin.js'
-import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../lib/stripe-helpers.js'
-import { getStripeClient } from '../lib/stripe-client.js'
-import { stripeGet } from '../lib/stripe-api.js'
+import { insertOwnerInvoice, upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
+import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../../server/lib/stripe-helpers.js'
+import { getStripeClient } from '../../server/lib/stripe-client.js'
+import { stripeGet } from '../../server/lib/stripe-api.js'
 
 export const config = {
   api: { bodyParser: false },

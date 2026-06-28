@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { stripePostForm } from '../lib/stripe-api.js'
+import { stripePostForm } from '../../server/lib/stripe-api.js'
 
 type PortalSessionResponse = { url: string | null }
 

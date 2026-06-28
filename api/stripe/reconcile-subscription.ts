@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyRequestUser } from '../lib/verify-auth.js'
-import { getSupabaseAdmin, upsertOwnerSubscription, PLAN_PRICES } from '../lib/supabase-admin.js'
+import { verifyRequestUser } from '../../server/lib/verify-auth.js'
+import { getSupabaseAdmin, upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
 
 function addMonths(dateStr: string, months: number): string {
   const d = new Date(dateStr)

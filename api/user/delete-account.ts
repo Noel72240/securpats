@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { verifyRequestUser } from '../lib/verify-auth.js'
+import { verifyRequestUser } from '../../server/lib/verify-auth.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -29,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   })
 
   try {
-    const { deleteUserData } = await import('../lib/delete-user-data.js')
+    const { deleteUserData } = await import('../../server/lib/delete-user-data.js')
     await deleteUserData(admin, auth.userId)
     return res.status(200).json({ success: true })
   } catch (err) {

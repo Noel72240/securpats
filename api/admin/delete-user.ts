@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { verifyAdmin } from '../lib/verify-admin.js'
-import { deleteUserData } from '../lib/delete-user-data.js'
+import { verifyAdmin } from '../../server/lib/verify-admin.js'
+import { deleteUserData } from '../../server/lib/delete-user-data.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
