@@ -6,10 +6,58 @@ import { useApp, useOwnerPets, useOwnerReferents } from '@/contexts/AppContext'
 import { getOwnerRescueUrl } from '@/lib/utils'
 import type { Pet } from '@/types'
 
-function clip(text: string, max: number): string {
-  const t = text.trim()
-  if (!t) return ''
-  return t.length <= max ? t : `${t.slice(0, max - 1)}…`
+type CardDensity = 'comfortable' | 'normal' | 'compact'
+
+type PetDetailLine = {
+  key: string
+  text: string
+  variant?: 'alert'
+}
+
+const QR_SIZE: Record<CardDensity, number> = {
+  comfortable: 50,
+  normal: 46,
+  compact: 40,
+}
+
+function getPetDetailLines(pet: Pet): PetDetailLine[] {
+  const lines: PetDetailLine[] = []
+
+  if (pet.allergies && pet.allergies !== 'Aucune connue') {
+    lines.push({ key: 'allergies', text: `⚠ Allergies : ${pet.allergies}`, variant: 'alert' })
+  }
+  if (pet.treatments?.trim()) {
+    lines.push({ key: 'treatments', text: `Traitement : ${pet.treatments.trim()}` })
+  }
+  if (pet.specialInstructions?.trim()) {
+    lines.push({ key: 'instructions', text: `Consignes : ${pet.specialInstructions.trim()}` })
+  }
+  if (pet.diet?.trim()) {
+    lines.push({ key: 'diet', text: `Alimentation : ${pet.diet.trim()}` })
+  }
+
+  const vetParts = [pet.vetName?.trim(), pet.vetPhone?.trim()].filter(Boolean)
+  if (vetParts.length > 0) {
+    lines.push({ key: 'vet', text: `Vét. : ${vetParts.join(' — ')}` })
+  }
+
+  return lines
+}
+
+function getCardDensity(
+  pet: Pet | undefined,
+  petLines: PetDetailLine[],
+  referentCount: number,
+  extraPets: number,
+): CardDensity {
+  let score = referentCount + petLines.length
+  if (pet?.identificationNumber) score += 0.5
+  if (pet?.breed) score += 0.5
+  if (extraPets > 0) score += 1
+
+  if (score <= 4) return 'comfortable'
+  if (score <= 7) return 'normal'
+  return 'compact'
 }
 
 function PetPhoto({ pet, className }: { pet: Pet; className?: string }) {
@@ -31,7 +79,10 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
   const ownerName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : ''
   const ownerQrUrl = currentUser?.qrToken ? getOwnerRescueUrl(currentUser.qrToken) : ''
   const primaryPet = pets[0]
-  const refsOnCard = referents.slice(0, 2)
+  const petDetailLines = primaryPet ? getPetDetailLines(primaryPet) : []
+  const sortedReferents = [...referents].sort((a, b) => a.priority - b.priority)
+  const density = getCardDensity(primaryPet, petDetailLines, sortedReferents.length, pets.length - 1)
+  const stackIdentity = petDetailLines.length >= 2 || density === 'compact'
 
   return (
     <div className="owner-id-card-print-root">
@@ -39,14 +90,18 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
         <div className="owner-id-card-actions no-print">
           <Button icon={Download} onClick={() => window.print()}>Imprimer la carte</Button>
           <p className="text-xs text-slate-500 text-center mt-3 max-w-md mx-auto">
-            Format carte d&apos;identité ISO (85,6 × 54 mm). À l&apos;impression, choisissez
-            «&nbsp;Taille réelle&nbsp;» et désactivez les marges pour un rendu exact.
+            Format carte d&apos;identité ISO (85,6 × 54 mm). Le contenu s&apos;adapte
+            automatiquement selon vos animaux et référents. À l&apos;impression, choisissez
+            «&nbsp;Taille réelle&nbsp;» et désactivez les marges.
           </p>
         </div>
       )}
 
       <div className="owner-id-card-wrap">
-        <article className="owner-id-card" aria-label="Carte d'urgence SécurPats">
+        <article
+          className={`owner-id-card owner-id-card--${density}`}
+          aria-label="Carte d'urgence SécurPats"
+        >
           <header className="owner-id-card__banner">
             <img src={DEFAULT_LOGO_ICON} alt="" className="owner-id-card__banner-logo" />
             <span>SÉCURPATS — URGENCE ANIMALE</span>
@@ -64,7 +119,9 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
 
             <div className="owner-id-card__main">
               <div className="owner-id-card__head">
-                <div className="owner-id-card__identity">
+                <div
+                  className={`owner-id-card__identity${stackIdentity ? ' owner-id-card__identity--stacked' : ''}`}
+                >
                   <div className="owner-id-card__owner-block">
                     <p className="owner-id-card__label">Propriétaire</p>
                     <p className="owner-id-card__name">{ownerName || '—'}</p>
@@ -83,13 +140,24 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
                       </p>
                       {primaryPet.identificationNumber && (
                         <p className="owner-id-card__pet-id">
-                          N°&nbsp;{clip(primaryPet.identificationNumber, 20)}
+                          N°&nbsp;{primaryPet.identificationNumber}
                         </p>
                       )}
-                      {primaryPet.allergies && primaryPet.allergies !== 'Aucune connue' && (
-                        <p className="owner-id-card__alert">
-                          ⚠ Allergies : {clip(primaryPet.allergies, 22)}
-                        </p>
+                      {petDetailLines.length > 0 && (
+                        <ul className="owner-id-card__pet-details">
+                          {petDetailLines.map(line => (
+                            <li
+                              key={line.key}
+                              className={
+                                line.variant === 'alert'
+                                  ? 'owner-id-card__alert'
+                                  : 'owner-id-card__pet-detail'
+                              }
+                            >
+                              {line.text}
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                   )}
@@ -98,29 +166,31 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
                 {ownerQrUrl && (
                   <div className="owner-id-card__qr" aria-hidden>
                     <div className="owner-id-card__qr-frame">
-                      <QRCodeSVG value={ownerQrUrl} size={50} level="H" includeMargin={false} />
+                      <QRCodeSVG
+                        value={ownerQrUrl}
+                        size={QR_SIZE[density]}
+                        level="H"
+                        includeMargin={false}
+                      />
                     </div>
                     <span className="owner-id-card__qr-hint">Scanner</span>
                   </div>
                 )}
               </div>
 
-              {refsOnCard.length > 0 && (
+              {sortedReferents.length > 0 && (
                 <section className="owner-id-card__refs-box">
                   <p className="owner-id-card__section-title">Référents</p>
                   <ul className="owner-id-card__list">
-                    {refsOnCard.map(r => (
+                    {sortedReferents.map(r => (
                       <li key={r.id}>
                         <span className="owner-id-card__ref-num">{r.priority}</span>
                         <span className="owner-id-card__ref-name">
-                          {clip(`${r.firstName} ${r.lastName}`, 16)}
+                          {`${r.firstName} ${r.lastName}`.trim()}
                         </span>
                         <span className="owner-id-card__ref-phone">{r.phone}</span>
                       </li>
                     ))}
-                    {referents.length > 2 && (
-                      <li className="owner-id-card__more">+{referents.length - 2} autre(s)</li>
-                    )}
                   </ul>
                 </section>
               )}
