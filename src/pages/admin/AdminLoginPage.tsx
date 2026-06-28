@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
-import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 
 const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@securpats.fr'
@@ -123,20 +122,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-8 space-y-1 text-center text-xs text-slate-500 leading-relaxed">
-            {isSupabaseConfigured() ? (
-              <>
-                <p>Compte unique Supabase : le même identifiant fonctionne sur tous vos appareils.</p>
-                <p>Créez l'utilisateur dans Supabase (Authentication → Users), puis définissez <code className="text-slate-400">role = admin</code> dans la table <code className="text-slate-400">profiles</code>.</p>
-              </>
-            ) : (
-              <>
-                <p>Mode local : connectez-vous avec l'email configuré dans <code className="text-slate-400">VITE_ADMIN_EMAIL</code>.</p>
-                <p>Avec Supabase, créez l'utilisateur admin dans Authentication → Users.</p>
-              </>
-            )}
-          </div>
         </div>
       </div>
     </div>
