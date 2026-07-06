@@ -13,6 +13,14 @@
   <url><loc>https://www.securpats.fr/referents-urgence-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.securpats.fr/garde-animal-urgence</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.securpats.fr/protection-animal-urgence</loc><changefreq>monthly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://www.securpats.fr/accident-animal-urgence</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/deces-proprietaire-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/personne-agee-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/violence-conjugale-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/hospitalisation-psychiatrique-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/incarceration-garde-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/voyage-interrompu-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.securpats.fr/catastrophe-naturelle-animal</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.securpats.fr/mentions-legales</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://www.securpats.fr/cgu</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://www.securpats.fr/confidentialite</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>

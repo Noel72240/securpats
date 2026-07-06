@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { PageSEO } from '@/components/seo/PageSEO'
-import { SEO_NAV_LINKS } from '@/lib/seo/content'
 import { HeroVisual } from '@/components/home/HeroVisual'
 import { FounderPresentation } from '@/components/home/FounderPresentation'
+import { EmergencyScenariosSection } from '@/components/home/EmergencyScenariosSection'
 
 const features = [
   { icon: PawPrint, title: 'Fiches animaux complètes', desc: 'Photo, traitements, allergies, alimentation et consignes en un seul endroit.' },
@@ -182,30 +182,7 @@ export default function HomePage() {
       </section>
       )}
 
-      {/* Guides SEO — hospitalisation & urgence */}
-      <section className="py-12 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-10">
-            <h2 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-3">
-              Hospitalisé(e) ? Qui s&apos;occupe de votre animal ?
-            </h2>
-            <p className="text-slate-600">
-              SécurPats répond à la question que se posent des milliers de propriétaires : que devient mon chien ou mon chat si je suis hospitalisé(e) en urgence ?
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-5xl mx-auto">
-            {SEO_NAV_LINKS.map(link => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-800 transition-colors text-left"
-              >
-                {link.label} →
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <EmergencyScenariosSection />
 
       {/* CTA */}
       <section className="py-12 sm:py-20 lg:py-28">

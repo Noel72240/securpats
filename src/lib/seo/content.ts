@@ -1,3 +1,5 @@
+import { SCENARIO_SEO_PAGES } from './scenario-pages'
+
 export type SeoSection = {
   h2: string
   paragraphs: string[]
@@ -377,6 +379,7 @@ export const SEO_PAGES: SeoPage[] = [
     ],
     relatedPaths: ['/hospitalisation-animal', '/tarifs', '/fonctionnement'],
   },
+  ...SCENARIO_SEO_PAGES,
 ]
 
 export function getSeoPageByPath(path: string): SeoPage | undefined {
