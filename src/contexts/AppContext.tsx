@@ -2,13 +2,13 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, t
 import type { User, Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings, SiteTestimonial } from '@/types'
 import type { OwnerSubscriptionPlan } from '@/lib/stripe/plans'
 import { PLAN_PRICES } from '@/types'
-import { notifyReferentsEmergency } from '@/lib/emergency/notify'
+import { notifyReferentsEmergency, type NotifyReferentResult } from '@/lib/emergency/notify'
 import {
   systemUsers, mockPets, mockReferents, mockDocuments,
   mockInvoices, mockMissions, mockPetSitter, mockActivities,
   defaultSiteSettings,
 } from '@/lib/mock/data'
-import { generateId, generateQrToken, buildOwnerQrToken } from '@/lib/utils'
+import { generateId, generateQrToken, buildOwnerQrToken, getOwnerRescueUrl } from '@/lib/utils'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
 import { missionFromRow } from '@/lib/supabase/mappers'
@@ -88,7 +88,15 @@ interface AppContextType extends AppState {
   reorderReferents: (ids: string[]) => void
   addDocument: (doc: Omit<PetDocument, 'id' | 'ownerId' | 'uploadedAt'>, storagePath?: string) => Promise<string | null>
   deleteDocument: (id: string) => void
-  declareEmergency: (petId: string, description: string) => Promise<{ ok: boolean; emailsSent: number; error?: string; emailConfigured?: boolean; results?: { email: string; sent: boolean; error?: string }[] }>
+  declareEmergency: (petId: string, description: string) => Promise<{
+    ok: boolean
+    emailsSent: number
+    smsSent: number
+    error?: string
+    emailConfigured?: boolean
+    smsConfigured?: boolean
+    results?: NotifyReferentResult[]
+  }>
   updateMissionStatus: (id: string, status: Mission['status']) => Promise<string | null>
   deleteMission: (id: string) => Promise<string | null>
   cancelMission: (id: string) => Promise<string | null>
@@ -806,9 +814,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const declareEmergency = useCallback(async (petId: string, description: string) => {
-    if (!currentUser) return { ok: false, emailsSent: 0, error: 'Non connecté' }
+    if (!currentUser) return { ok: false, emailsSent: 0, smsSent: 0, error: 'Non connecté' }
     const pet = pets.find(p => p.id === petId)
-    if (!pet) return { ok: false, emailsSent: 0, error: 'Animal introuvable' }
+    if (!pet) return { ok: false, emailsSent: 0, smsSent: 0, error: 'Animal introuvable' }
 
     const ownerReferents = referents
       .filter(r => r.ownerId === currentUser.id)
@@ -835,38 +843,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addActivity('urgence', `Urgence déclarée pour ${pet.name}`)
 
     if (supabaseMode && ownerReferents.length > 0) {
+      const vetParts = [pet.vetName?.trim(), pet.vetPhone?.trim()].filter(Boolean)
+      const allergies = pet.allergies && pet.allergies !== 'Aucune connue' ? pet.allergies : undefined
+      const rescueUrl = currentUser.qrToken ? getOwnerRescueUrl(currentUser.qrToken) : undefined
+
       const notify = await notifyReferentsEmergency({
         userId: currentUser.id,
         ownerEmail: currentUser.email,
+        ownerName: `${currentUser.firstName} ${currentUser.lastName}`.trim(),
+        ownerPhone: currentUser.phone || undefined,
         petName: pet.name,
+        petSpecies: [pet.species, pet.breed].filter(Boolean).join(' · ') || undefined,
+        petAllergies: allergies,
+        vetLine: vetParts.length > 0 ? vetParts.join(' — ') : undefined,
         description,
+        rescueUrl,
         referents: ownerReferents.map(r => ({
           firstName: r.firstName,
           lastName: r.lastName,
           email: r.email,
           phone: r.phone,
+          priority: r.priority,
         })),
       })
 
-      if (!notify.emailConfigured) {
+      const channelsConfigured = notify.emailConfigured || notify.smsConfigured
+      const anySent = notify.emailsSent > 0 || notify.smsSent > 0
+
+      if (!channelsConfigured) {
         return {
           ok: true,
           emailsSent: 0,
-          emailConfigured: false,
-          error: notify.error || 'Emails non configurés (ajoutez RESEND_API_KEY sur Vercel). Les référents doivent être contactés par téléphone.',
+          smsSent: 0,
+          emailConfigured: notify.emailConfigured,
+          smsConfigured: notify.smsConfigured,
+          error: notify.error || 'Notifications non configurées sur le serveur (RESEND_API_KEY ou Twilio). Contactez vos référents par téléphone.',
         }
       }
 
       return {
         ok: true,
         emailsSent: notify.emailsSent,
-        emailConfigured: true,
-        error: notify.emailsSent === 0 ? (notify.error || 'Aucun email envoyé — vérifiez les adresses de vos référents') : undefined,
+        smsSent: notify.smsSent,
+        emailConfigured: notify.emailConfigured,
+        smsConfigured: notify.smsConfigured,
+        error: anySent ? undefined : (notify.error || 'Aucune notification envoyée — vérifiez emails et téléphones de vos référents'),
         results: notify.results,
       }
     }
 
-    return { ok: true, emailsSent: 0, emailConfigured: false }
+    return { ok: true, emailsSent: 0, smsSent: 0, emailConfigured: false, smsConfigured: false }
   }, [currentUser, pets, referents, addActivity])
 
   const updateMissionStatus = useCallback(async (id: string, status: Mission['status']): Promise<string | null> => {
