@@ -10,6 +10,7 @@ import { useApp } from '@/contexts/AppContext'
 import { PageSEO } from '@/components/seo/PageSEO'
 import { SEO_NAV_LINKS } from '@/lib/seo/content'
 import { HeroVisual } from '@/components/home/HeroVisual'
+import { FounderPresentation } from '@/components/home/FounderPresentation'
 
 const features = [
   { icon: PawPrint, title: 'Fiches animaux complètes', desc: 'Photo, traitements, allergies, alimentation et consignes en un seul endroit.' },
@@ -79,6 +80,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <FounderPresentation />
 
       {/* Why */}
       <section className="py-12 sm:py-20 lg:py-28 bg-white">
