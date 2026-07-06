@@ -15,10 +15,10 @@ export function FounderPresentation() {
     <section className="py-12 sm:py-16 lg:py-20 bg-white border-y border-slate-100">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-12">
-          <p className="text-sm font-semibold uppercase tracking-wide text-brand-600 mb-2">
+          <p className="text-base sm:text-lg font-pacifico text-brand-600 mb-3">
             Présentation fondatrice
           </p>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-pacifico text-slate-900">
             L&apos;histoire de SécurPats
           </h2>
         </div>
@@ -34,12 +34,12 @@ export function FounderPresentation() {
               />
             </div>
             <p className="mt-4 text-center lg:text-left">
-              <span className="block font-bold text-slate-900 text-lg">Johanna Hayer</span>
-              <span className="block text-sm text-brand-700 font-medium">Fondatrice et dirigeante de SécurPats</span>
+              <span className="block font-pacifico text-slate-900 text-2xl sm:text-3xl">Johanna Hayer</span>
+              <span className="block font-pacifico text-brand-700 text-lg sm:text-xl mt-1">Fondatrice et dirigeante de SécurPats</span>
             </p>
           </div>
 
-          <div className="space-y-4 text-slate-600 text-[15px] sm:text-base leading-relaxed">
+          <div className="space-y-5 sm:space-y-6 text-slate-700 text-lg sm:text-xl lg:text-2xl leading-relaxed font-pacifico">
             {paragraphs.map((text, i) => (
               <p key={i}>{text}</p>
             ))}
