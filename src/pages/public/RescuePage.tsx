@@ -5,6 +5,7 @@ import { getRescueUrl } from '@/lib/utils'
 import { Badge } from '@/components/ui/Card'
 import { calculateAge } from '@/lib/utils'
 import { useParams } from 'react-router-dom'
+import { EmergencyTriggerPanel } from '@/components/emergency/EmergencyTriggerPanel'
 
 export default function RescuePage() {
   const { token } = useParams()
@@ -99,6 +100,13 @@ export default function RescuePage() {
             ))
           )}
         </div>
+
+        <EmergencyTriggerPanel
+          tokenType="pet"
+          token={token || ''}
+          petName={pet.name}
+          referentsCount={petReferents.length}
+        />
 
         <div className="bg-white rounded-2xl shadow-sm border p-4">
           <div className="flex items-center gap-2 font-semibold text-slate-900 mb-2">

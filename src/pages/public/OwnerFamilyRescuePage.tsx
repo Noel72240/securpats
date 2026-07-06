@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { useOwnerRescue } from '@/hooks/useOwnerRescue'
 import { calculateAge, getOwnerRescueUrl } from '@/lib/utils'
 import { Badge } from '@/components/ui/Card'
+import { EmergencyTriggerPanel } from '@/components/emergency/EmergencyTriggerPanel'
 
 export default function OwnerFamilyRescuePage() {
   const { token } = useParams()
@@ -100,6 +101,13 @@ export default function OwnerFamilyRescuePage() {
             )}
           </div>
         ))}
+
+        <EmergencyTriggerPanel
+          tokenType="owner"
+          token={token || ''}
+          petName={bundle.pets[0]?.name}
+          referentsCount={bundle.referents.length}
+        />
 
         <div className="bg-white rounded-2xl shadow-sm border p-4">
           <h3 className="font-semibold text-slate-900 mb-3">Référents prioritaires</h3>

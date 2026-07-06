@@ -2,13 +2,13 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, t
 import type { User, Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSitterProfile, Activity, SiteSettings, SiteTestimonial } from '@/types'
 import type { OwnerSubscriptionPlan } from '@/lib/stripe/plans'
 import { PLAN_PRICES } from '@/types'
-import { notifyReferentsEmergency, type NotifyReferentResult } from '@/lib/emergency/notify'
+import { triggerEmergencyFromOwner } from '@/lib/emergency/alert'
 import {
   systemUsers, mockPets, mockReferents, mockDocuments,
   mockInvoices, mockMissions, mockPetSitter, mockActivities,
   defaultSiteSettings,
 } from '@/lib/mock/data'
-import { generateId, generateQrToken, buildOwnerQrToken, getOwnerRescueUrl } from '@/lib/utils'
+import { generateId, generateQrToken, buildOwnerQrToken } from '@/lib/utils'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
 import { missionFromRow } from '@/lib/supabase/mappers'
@@ -92,10 +92,11 @@ interface AppContextType extends AppState {
     ok: boolean
     emailsSent: number
     smsSent: number
+    referentsCount?: number
+    pendingConfirmation?: boolean
     error?: string
     emailConfigured?: boolean
     smsConfigured?: boolean
-    results?: NotifyReferentResult[]
   }>
   updateMissionStatus: (id: string, status: Mission['status']) => Promise<string | null>
   deleteMission: (id: string) => Promise<string | null>
@@ -822,7 +823,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .filter(r => r.ownerId === currentUser.id)
       .sort((a, b) => a.priority - b.priority)
 
-    const missionData: Omit<Mission, 'id' | 'createdAt'> = {
+    if (ownerReferents.length === 0) {
+      return { ok: false, emailsSent: 0, smsSent: 0, error: 'Aucun référent enregistré' }
+    }
+
+    if (supabaseMode) {
+      const trigger = await triggerEmergencyFromOwner({
+        userId: currentUser.id,
+        ownerEmail: currentUser.email,
+        petId,
+        description,
+      })
+
+      if (!trigger.ok) {
+        return { ok: false, emailsSent: 0, smsSent: 0, error: trigger.error }
+      }
+
+      addActivity('urgence', `Demande de confirmation envoyée aux référents pour ${pet.name}`)
+
+      const anySent = (trigger.emailsSent ?? 0) > 0 || (trigger.smsSent ?? 0) > 0
+
+      return {
+        ok: true,
+        emailsSent: trigger.emailsSent ?? 0,
+        smsSent: trigger.smsSent ?? 0,
+        referentsCount: trigger.referentsCount,
+        pendingConfirmation: true,
+        emailConfigured: trigger.emailConfigured,
+        smsConfigured: trigger.smsConfigured,
+        error: anySent ? undefined : (trigger.error || 'Aucune notification envoyée — vérifiez les coordonnées de vos référents'),
+      }
+    }
+
+    setMissions(prev => [{
       petId,
       petName: pet.name,
       ownerId: currentUser.id,
@@ -831,66 +864,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       status: 'pending',
       description,
       address: ownerReferents.find(r => r.priority === 1)?.address || '',
-    }
-
-    if (supabaseMode) {
-      const { mission } = await db.createMission(missionData)
-      if (mission) setMissions(prev => [mission, ...prev])
-    } else {
-      setMissions(prev => [{ ...missionData, id: generateId('mission'), createdAt: new Date().toISOString() }, ...prev])
-    }
-
+      id: generateId('mission'),
+      createdAt: new Date().toISOString(),
+    }, ...prev])
     addActivity('urgence', `Urgence déclarée pour ${pet.name}`)
-
-    if (supabaseMode && ownerReferents.length > 0) {
-      const vetParts = [pet.vetName?.trim(), pet.vetPhone?.trim()].filter(Boolean)
-      const allergies = pet.allergies && pet.allergies !== 'Aucune connue' ? pet.allergies : undefined
-      const rescueUrl = currentUser.qrToken ? getOwnerRescueUrl(currentUser.qrToken) : undefined
-
-      const notify = await notifyReferentsEmergency({
-        userId: currentUser.id,
-        ownerEmail: currentUser.email,
-        ownerName: `${currentUser.firstName} ${currentUser.lastName}`.trim(),
-        ownerPhone: currentUser.phone || undefined,
-        petName: pet.name,
-        petSpecies: [pet.species, pet.breed].filter(Boolean).join(' · ') || undefined,
-        petAllergies: allergies,
-        vetLine: vetParts.length > 0 ? vetParts.join(' — ') : undefined,
-        description,
-        rescueUrl,
-        referents: ownerReferents.map(r => ({
-          firstName: r.firstName,
-          lastName: r.lastName,
-          email: r.email,
-          phone: r.phone,
-          priority: r.priority,
-        })),
-      })
-
-      const channelsConfigured = notify.emailConfigured || notify.smsConfigured
-      const anySent = notify.emailsSent > 0 || notify.smsSent > 0
-
-      if (!channelsConfigured) {
-        return {
-          ok: true,
-          emailsSent: 0,
-          smsSent: 0,
-          emailConfigured: notify.emailConfigured,
-          smsConfigured: notify.smsConfigured,
-          error: notify.error || 'Notifications non configurées sur le serveur (RESEND_API_KEY ou Twilio). Contactez vos référents par téléphone.',
-        }
-      }
-
-      return {
-        ok: true,
-        emailsSent: notify.emailsSent,
-        smsSent: notify.smsSent,
-        emailConfigured: notify.emailConfigured,
-        smsConfigured: notify.smsConfigured,
-        error: anySent ? undefined : (notify.error || 'Aucune notification envoyée — vérifiez emails et téléphones de vos référents'),
-        results: notify.results,
-      }
-    }
 
     return { ok: true, emailsSent: 0, smsSent: 0, emailConfigured: false, smsConfigured: false }
   }, [currentUser, pets, referents, addActivity])
