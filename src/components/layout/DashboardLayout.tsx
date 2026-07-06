@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Dog, Users, FileText, QrCode, CreditCard,
   AlertTriangle, LogOut, Menu, X, ChevronLeft, Shield, Calendar, Briefcase,
-  BarChart3, Settings, Globe, Lock, IdCard,
+  BarChart3, Settings, Globe, Lock, IdCard, Wrench,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -40,6 +40,7 @@ const petsitterNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { to: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
+  { to: '/admin/contenu-site?tab=maintenance', label: 'Maintenance', icon: Wrench },
   { to: '/admin/contenu-site', label: 'Contenu du site', icon: Globe },
   { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
   { to: '/admin/animaux', label: 'Animaux', icon: Dog },
@@ -88,8 +89,16 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {nav.map(item => {
-          const isActive = location.pathname === item.to ||
-            (item.to !== '/app' && item.to !== '/admin' && item.to !== '/pet-sitter' && location.pathname.startsWith(item.to))
+          const [itemPath, itemQuery = ''] = item.to.split('?')
+          let isActive: boolean
+          if (itemQuery) {
+            isActive = location.pathname === itemPath && location.search.includes(itemQuery)
+          } else if (itemPath === '/admin/contenu-site') {
+            isActive = location.pathname === itemPath && !location.search.includes('tab=maintenance')
+          } else {
+            isActive = location.pathname === item.to ||
+              (item.to !== '/app' && item.to !== '/admin' && item.to !== '/pet-sitter' && location.pathname.startsWith(itemPath))
+          }
           return (
             <Link
               key={item.to}

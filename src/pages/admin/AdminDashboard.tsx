@@ -3,6 +3,7 @@ import { Users, Dog, Briefcase, CreditCard, Globe, ArrowRight } from 'lucide-rea
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatCard, Card, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { AdminMaintenanceControl } from '@/components/admin/AdminMaintenanceControl'
 import { useApp } from '@/contexts/AppContext'
 import { buildMonthlyRevenue, totalPaidRevenue } from '@/lib/admin/analytics'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
@@ -38,6 +39,8 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Back-office SécurPats</h2>
           <p className="text-slate-600">Vue d'ensemble de la plateforme.</p>
         </div>
+
+        <AdminMaintenanceControl />
 
         <Card className="bg-purple-50 border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">

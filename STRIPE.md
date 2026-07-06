@@ -21,7 +21,7 @@
 Copier `.env.example` → `.env` et renseigner :
 
 ```env
-VITE_APP_URL=https://votre-domaine.vercel.app
+VITE_APP_URL=https://www.securpats.fr
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
 VITE_STRIPE_PRICE_MONTHLY=price_...
 VITE_STRIPE_PRICE_YEARLY=price_...
@@ -33,8 +33,9 @@ Sur **Vercel** : Project Settings → Environment Variables (mêmes clés).
 
 ### 3. Webhook Stripe
 
-1. Stripe → **Developers** → **Webhooks** → **Add endpoint**
-2. URL : `https://votre-domaine.vercel.app/api/stripe/webhook`
+1. Stripe → **Developers** → **Webhooks** → **Add endpoint** (ou modifier l’endpoint existant)
+2. URL : **`https://www.securpats.fr/api/stripe/webhook`**
+   - Utilisez bien le sous-domaine **`www`** : `securpats.fr` (sans www) renvoie une redirection 307 que Stripe ne traite pas comme un succès.
 3. Événements à écouter :
    - `checkout.session.completed`
    - `customer.subscription.updated`

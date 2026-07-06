@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Save, RotateCcw, Mail, Phone, MapPin, Image, Home, MessageSquare,
   Plus, Trash2, Edit, CheckCircle, Building2, Wrench,
@@ -10,9 +11,10 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { useApp } from '@/contexts/AppContext'
 import { defaultSiteSettings } from '@/lib/mock/data'
 import { cn } from '@/lib/utils'
+import { AdminMaintenanceControl } from '@/components/admin/AdminMaintenanceControl'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadSiteAssetFile } from '@/lib/supabase/uploads'
-import type { SiteSettings, SiteTestimonial, SiteMaintenanceMode } from '@/types'
+import type { SiteSettings, SiteTestimonial } from '@/types'
 
 type Tab = 'contact' | 'home' | 'testimonials' | 'legal' | 'maintenance'
 
@@ -81,7 +83,10 @@ const emptyTestimonial: Omit<SiteTestimonial, 'id'> = {
 
 export default function AdminSiteContentPage() {
   const { siteSettings, updateSiteSettings, resetSiteSettings, addTestimonial, updateTestimonial, deleteTestimonial } = useApp()
-  const [tab, setTab] = useState<Tab>('contact')
+  const [searchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const initialTab: Tab = tabFromUrl === 'maintenance' ? 'maintenance' : 'contact'
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [draft, setDraft] = useState<SiteSettings>(siteSettings)
   const [saved, setSaved] = useState(false)
   const [testimonialModal, setTestimonialModal] = useState<{ open: boolean; editing: SiteTestimonial | null; form: Omit<SiteTestimonial, 'id'> }>({
@@ -91,6 +96,10 @@ export default function AdminSiteContentPage() {
   useEffect(() => {
     setDraft(siteSettings)
   }, [siteSettings])
+
+  useEffect(() => {
+    if (tabFromUrl === 'maintenance') setTab('maintenance')
+  }, [tabFromUrl])
 
   const handleSave = () => {
     updateSiteSettings(draft)
@@ -263,104 +272,9 @@ export default function AdminSiteContentPage() {
           <Card padding="lg">
             <CardHeader
               title="Bannière maintenance / développement"
-              subtitle="Affiche une alerte sur tout le site et peut suspendre les paiements Stripe"
+              subtitle="Les changements sont enregistrés automatiquement"
             />
-            <div className="space-y-6">
-              <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border border-slate-200 hover:bg-slate-50">
-                <input
-                  type="checkbox"
-                  className="mt-1 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-                  checked={draft.maintenance.enabled}
-                  onChange={e => setDraft({
-                    ...draft,
-                    maintenance: { ...draft.maintenance, enabled: e.target.checked },
-                  })}
-                />
-                <div>
-                  <p className="font-semibold text-slate-900">Activer la bannière</p>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Visible sur le site public et les espaces connectés (propriétaire, pet-sitter, admin).
-                  </p>
-                </div>
-              </label>
-
-              <div>
-                <p className="text-sm font-medium text-slate-700 mb-3">Type de bannière</p>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {([
-                    { id: 'development' as SiteMaintenanceMode, label: 'En cours de développement', desc: 'Bannière jaune — site en préparation' },
-                    { id: 'maintenance' as SiteMaintenanceMode, label: 'Maintenance', desc: 'Bannière orange — indisponibilité temporaire' },
-                  ]).map(opt => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setDraft({
-                        ...draft,
-                        maintenance: { ...draft.maintenance, mode: opt.id },
-                      })}
-                      className={cn(
-                        'text-left p-4 rounded-xl border-2 transition-colors',
-                        draft.maintenance.mode === opt.id
-                          ? 'border-purple-500 bg-purple-50'
-                          : 'border-slate-200 hover:border-slate-300',
-                      )}
-                    >
-                      <p className="font-semibold text-slate-900">{opt.label}</p>
-                      <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Textarea
-                label="Message affiché"
-                rows={3}
-                value={draft.maintenance.message}
-                onChange={e => setDraft({
-                  ...draft,
-                  maintenance: { ...draft.maintenance, message: e.target.value },
-                })}
-                placeholder="Ex. : Nous mettons à jour la plateforme. Les paiements reprendront très bientôt."
-              />
-
-              <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border border-slate-200 hover:bg-slate-50">
-                <input
-                  type="checkbox"
-                  className="mt-1 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-                  checked={draft.maintenance.blockPayments}
-                  onChange={e => setDraft({
-                    ...draft,
-                    maintenance: { ...draft.maintenance, blockPayments: e.target.checked },
-                  })}
-                />
-                <div>
-                  <p className="font-semibold text-slate-900">Bloquer les paiements Stripe</p>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Empêche la création de sessions de paiement (checkout). Les abonnements déjà actifs restent gérables via le portail Stripe.
-                  </p>
-                </div>
-              </label>
-
-              {draft.maintenance.enabled && (
-                <div className={cn(
-                  'p-4 rounded-xl text-sm',
-                  draft.maintenance.mode === 'development'
-                    ? 'bg-amber-50 border border-amber-200 text-amber-900'
-                    : 'bg-orange-50 border border-orange-200 text-orange-900',
-                )}>
-                  <p className="font-semibold">Aperçu de la bannière</p>
-                  <p className="mt-1">
-                    {draft.maintenance.mode === 'development' ? 'Site en cours de développement' : 'Maintenance en cours'}
-                    {draft.maintenance.message && ` — ${draft.maintenance.message}`}
-                    {draft.maintenance.blockPayments && ' · Paiements suspendus'}
-                  </p>
-                </div>
-              )}
-
-              <p className="text-xs text-slate-500">
-                Pensez à cliquer sur « Enregistrer » pour appliquer les changements sur le site en production.
-              </p>
-            </div>
+            <AdminMaintenanceControl variant="full" />
           </Card>
         )}
       </div>
