@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus, Users, GripVertical, Edit, Trash2, Phone, Mail, MapPin } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
@@ -99,7 +100,13 @@ export default function ReferentsPage() {
           {!editing && (
             <label className="flex items-start gap-2 text-sm text-slate-600">
               <input type="checkbox" checked={referentConsent} onChange={e => setReferentConsent(e.target.checked)} className="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-              Je certifie avoir obtenu le consentement de cette personne pour enregistrer et afficher ses coordonnées sur la fiche de secours (RGPD) *
+              <span>
+                Je certifie avoir obtenu au préalable l&apos;accord de cette personne pour communiquer ses données
+                (nom, téléphone, email) à SécurPats, et l&apos;avoir informée que ces informations seront utilisées
+                exclusivement pour la protection de l&apos;animal en cas d&apos;urgence (
+                <Link to="/rgpd" target="_blank" className="text-brand-600 hover:underline">RGPD</Link>
+                ) *
+              </span>
             </label>
           )}
           <Button onClick={handleSave} className="w-full" disabled={!editing && !referentConsent}>{editing ? 'Enregistrer' : 'Ajouter'}</Button>

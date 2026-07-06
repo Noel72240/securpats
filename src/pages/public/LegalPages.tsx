@@ -293,8 +293,22 @@ export function RGPDPage() {
       <H2>Consentement</H2>
       <p>
         L&apos;inscription requiert l&apos;acceptation explicite des CGU et de la politique de confidentialité.
-        La date et la version du consentement sont enregistrées. Les référents tiers doivent avoir donné
-        leur accord avant d&apos;être enregistrés.
+        La date et la version du consentement sont enregistrées.
+      </p>
+      <p>
+        Lorsqu&apos;un propriétaire enregistre un ou plusieurs référents d&apos;urgence, il certifie avoir obtenu
+        au préalable leur accord pour communiquer leurs données personnelles (nom, numéro de téléphone et,
+        le cas échéant, adresse e-mail) à {l.siteName}. Il certifie également les avoir informés que ces
+        informations seront utilisées exclusivement dans le cadre de la protection et de la prise en charge
+        de l&apos;animal en cas d&apos;urgence.
+      </p>
+      <p>
+        Lorsque le fonctionnement du service le nécessite, les coordonnées des référents d&apos;un même animal
+        peuvent être visibles entre eux afin de faciliter leur coordination lors d&apos;une situation d&apos;urgence.
+      </p>
+      <p>
+        Le propriétaire demeure responsable de l&apos;exactitude des informations renseignées ainsi que de
+        l&apos;obtention de l&apos;accord des référents avant leur enregistrement sur {l.siteName}.
       </p>
 
       <H2>Minimisation et fiche secours</H2>
