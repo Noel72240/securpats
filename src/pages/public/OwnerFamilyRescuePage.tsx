@@ -5,6 +5,7 @@ import { useOwnerRescue } from '@/hooks/useOwnerRescue'
 import { calculateAge, getOwnerRescueUrl } from '@/lib/utils'
 import { Badge } from '@/components/ui/Card'
 import { EmergencyTriggerPanel } from '@/components/emergency/EmergencyTriggerPanel'
+import { SecurPatsUrgencyPhone } from '@/components/emergency/SecurPatsUrgencyPhone'
 
 export default function OwnerFamilyRescuePage() {
   const { token } = useParams()
@@ -45,6 +46,8 @@ export default function OwnerFamilyRescuePage() {
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
+        <SecurPatsUrgencyPhone />
+
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center">
           <p className="text-sm text-slate-500 mb-1">Propriétaire</p>
           <h1 className="text-2xl font-extrabold text-slate-900">{ownerName || '—'}</h1>
@@ -128,7 +131,10 @@ export default function OwnerFamilyRescuePage() {
           )}
         </div>
 
-        <p className="text-xs text-slate-400 text-center py-2">SécurPats — Protection animale d&apos;urgence</p>
+        <div className="text-center py-2 space-y-2">
+          <SecurPatsUrgencyPhone compact />
+          <p className="text-xs text-slate-400">SécurPats — Protection animale d&apos;urgence</p>
+        </div>
       </div>
     </div>
   )

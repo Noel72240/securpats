@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Card'
 import { calculateAge } from '@/lib/utils'
 import { useParams } from 'react-router-dom'
 import { EmergencyTriggerPanel } from '@/components/emergency/EmergencyTriggerPanel'
+import { SecurPatsUrgencyPhone } from '@/components/emergency/SecurPatsUrgencyPhone'
 
 export default function RescuePage() {
   const { token } = useParams()
@@ -44,6 +45,8 @@ export default function RescuePage() {
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
+        <SecurPatsUrgencyPhone />
+
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 text-center">
           {pet.photo && (
             <img src={pet.photo} alt={pet.name} className="w-24 h-24 rounded-2xl object-cover mx-auto mb-4 border-4 border-white shadow-md" />
@@ -117,9 +120,10 @@ export default function RescuePage() {
           <p className="text-xs text-slate-500 flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{pet.vetAddress}</p>
         </div>
 
-        <div className="text-center py-4">
+        <div className="text-center py-4 space-y-2">
           <QRCodeSVG value={getRescueUrl(pet.qrToken)} size={80} level="H" className="mx-auto" />
-          <p className="text-xs text-slate-400 mt-2">SécurPats — Protection animale d'urgence</p>
+          <SecurPatsUrgencyPhone compact />
+          <p className="text-xs text-slate-400">SécurPats — Protection animale d'urgence</p>
         </div>
       </div>
     </div>

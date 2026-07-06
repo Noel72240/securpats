@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { DEFAULT_LOGO_ICON } from '@/components/brand/BrandLogo'
 import { useApp, useOwnerPets, useOwnerReferents } from '@/contexts/AppContext'
 import { getOwnerRescueUrl } from '@/lib/utils'
+import { SECURPATS_URGENCY_PHONE_DISPLAY } from '@/lib/brand/contact'
 import type { Pet } from '@/types'
 
 type CardDensity = 'comfortable' | 'normal' | 'compact'
@@ -199,7 +200,7 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
 
           <footer className="owner-id-card__footer">
             <img src={DEFAULT_LOGO_ICON} alt="" className="owner-id-card__footer-logo" />
-            <span>securpats.fr</span>
+            <span>securpats.fr · {SECURPATS_URGENCY_PHONE_DISPLAY}</span>
           </footer>
         </article>
       </div>
