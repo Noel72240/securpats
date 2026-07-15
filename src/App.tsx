@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider, useApp, useHasActiveSubscription, useHasPetsitterVip } from '@/contexts/AppContext'
+import { ShopCartProvider } from '@/lib/shop/cart'
 
 import HomePage from '@/pages/public/HomePage'
 import HowItWorksPage from '@/pages/public/HowItWorksPage'
@@ -12,6 +13,10 @@ import RescuePage from '@/pages/public/RescuePage'
 import OwnerFamilyRescuePage from '@/pages/public/OwnerFamilyRescuePage'
 import EmergencyConfirmPage from '@/pages/public/EmergencyConfirmPage'
 import DeveloppeurPage from '@/pages/public/DeveloppeurPage'
+import ShopPage from '@/pages/shop/ShopPage'
+import ShopProductPage from '@/pages/shop/ShopProductPage'
+import ShopCartPage from '@/pages/shop/ShopCartPage'
+import ShopSuccessPage from '@/pages/shop/ShopSuccessPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import OwnerProfilePage from '@/pages/owner/OwnerProfilePage'
@@ -110,6 +115,10 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/fonctionnement" element={<HowItWorksPage />} />
       <Route path="/tarifs" element={<PricingPage />} />
+      <Route path="/boutique" element={<ShopPage />} />
+      <Route path="/boutique/panier" element={<ShopCartPage />} />
+      <Route path="/boutique/succes" element={<ShopSuccessPage />} />
+      <Route path="/boutique/:slug" element={<ShopProductPage />} />
       <Route path="/faq" element={<FAQPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/connexion" element={<LoginPage />} />
@@ -175,12 +184,14 @@ function AppRoutes() {
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <PawDecorations />
-        <AppRoutes />
-        <CookieBanner />
-      </BrowserRouter>
+      <ShopCartProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <PawDecorations />
+          <AppRoutes />
+          <CookieBanner />
+        </BrowserRouter>
+      </ShopCartProvider>
     </AppProvider>
   )
 }

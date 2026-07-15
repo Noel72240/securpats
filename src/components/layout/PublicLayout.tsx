@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ShoppingBag } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -8,10 +8,12 @@ import { BrandLogo } from '@/components/brand/BrandLogo'
 import { DeveloperCredit } from '@/components/legal/DeveloperCredit'
 import { SEO_NAV_LINKS } from '@/lib/seo/content'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
+import { useShopCart } from '@/lib/shop/cart'
 
 const navLinks = [
   { to: '/', label: 'Accueil' },
   { to: '/fonctionnement', label: 'Fonctionnement' },
+  { to: '/boutique', label: 'Boutique' },
   { to: '/tarifs', label: 'Tarifs' },
   { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Contact' },
@@ -21,6 +23,8 @@ export function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
   const { currentUser } = useApp()
+  const { itemCount } = useShopCart()
+  const boutiqueActive = location.pathname.startsWith('/boutique')
 
   return (
     <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
@@ -35,9 +39,13 @@ export function PublicHeader() {
                 to={link.to}
                 className={cn(
                   'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                  location.pathname === link.to
-                    ? 'text-brand-700 bg-brand-50'
-                    : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
+                  link.to === '/boutique'
+                    ? boutiqueActive
+                      ? 'text-brand-700 bg-brand-50'
+                      : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
+                    : location.pathname === link.to
+                      ? 'text-brand-700 bg-brand-50'
+                      : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
                 )}
               >
                 {link.label}
@@ -46,6 +54,21 @@ export function PublicHeader() {
           </nav>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link
+              to="/boutique/panier"
+              className={cn(
+                'relative p-2 rounded-lg transition-colors',
+                boutiqueActive ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:bg-slate-50',
+              )}
+              aria-label="Panier"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-brand-700 text-white text-[10px] font-bold">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
             {currentUser ? (
               <Link to={currentUser.role === 'admin' ? '/admin' : currentUser.role === 'petsitter' ? '/pet-sitter' : '/app'}>
                 <Button variant="primary" size="sm">Mon espace</Button>
@@ -67,12 +90,22 @@ export function PublicHeader() {
             )}
           </div>
 
-          <button
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-1 lg:hidden">
+            <Link to="/boutique/panier" className="relative p-2 rounded-lg hover:bg-slate-100" aria-label="Panier">
+              <ShoppingBag className="w-5 h-5 text-slate-700" />
+              {itemCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center bg-brand-700 text-white text-[9px] font-bold">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+            <button
+              className="p-2 rounded-lg hover:bg-slate-100"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -86,7 +119,9 @@ export function PublicHeader() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'block px-4 py-3 rounded-xl text-sm font-medium',
-                  location.pathname === link.to ? 'bg-brand-50 text-brand-700' : 'text-slate-600'
+                  (link.to === '/boutique' ? boutiqueActive : location.pathname === link.to)
+                    ? 'bg-brand-50 text-brand-700'
+                    : 'text-slate-600'
                 )}
               >
                 {link.label}
