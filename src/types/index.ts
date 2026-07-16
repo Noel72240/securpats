@@ -240,6 +240,11 @@ export interface SiteSettings {
     heroImageAlt: string
     ctaTitle: string
     ctaSubtitle: string
+    /** Affiche la section vidéo sur l'accueil */
+    videoEnabled: boolean
+    videoTitle: string
+    /** URL YouTube, Vimeo ou fichier .mp4 */
+    videoUrl: string
   }
   footer: {
     description: string

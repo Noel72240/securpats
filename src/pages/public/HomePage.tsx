@@ -10,6 +10,7 @@ import { useApp } from '@/contexts/AppContext'
 import { PageSEO } from '@/components/seo/PageSEO'
 import { HeroVisual } from '@/components/home/HeroVisual'
 import { FounderPresentation } from '@/components/home/FounderPresentation'
+import { HomeVideoSection } from '@/components/home/HomeVideoSection'
 import { EmergencyScenariosSection } from '@/components/home/EmergencyScenariosSection'
 
 const features = [
@@ -82,6 +83,12 @@ export default function HomePage() {
       </section>
 
       <FounderPresentation />
+
+      <HomeVideoSection
+        enabled={home.videoEnabled !== false}
+        title={home.videoTitle || 'Découvrez SécurPats en vidéo'}
+        videoUrl={home.videoUrl || ''}
+      />
 
       {/* Why */}
       <section className="py-12 sm:py-20 lg:py-28 bg-white">

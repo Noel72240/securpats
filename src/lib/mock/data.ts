@@ -69,6 +69,9 @@ export const defaultSiteSettings: SiteSettings = {
     heroImageAlt: 'Votre compagnon',
     ctaTitle: 'Protégez vos compagnons dès aujourd\'hui',
     ctaSubtitle: 'Abonnement à partir de 4,99 €/mois — renouvellement automatique.',
+    videoEnabled: true,
+    videoTitle: 'Découvrez SécurPats en vidéo',
+    videoUrl: '',
   },
   footer: {
     description: 'La plateforme qui garantit qu\'aucun animal ne soit laissé sans prise en charge en cas d\'urgence.',

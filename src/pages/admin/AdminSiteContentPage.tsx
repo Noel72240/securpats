@@ -206,6 +206,34 @@ export default function AdminSiteContentPage() {
               <Textarea label="Sous-titre" rows={3} value={draft.home.subtitle} onChange={e => setDraft({ ...draft, home: { ...draft.home, subtitle: e.target.value } })} />
               <ImageField label="Image hero (grande photo d'accueil)" value={draft.home.heroImage} onChange={v => setDraft({ ...draft, home: { ...draft.home, heroImage: v } })} previewClass="w-full h-48" />
               <Input label="Texte alternatif image" value={draft.home.heroImageAlt} onChange={e => setDraft({ ...draft, home: { ...draft.home, heroImageAlt: e.target.value } })} />
+
+              <hr className="border-slate-100 my-6" />
+              <h3 className="text-sm font-semibold text-slate-900">Vidéo d’accueil</h3>
+              <p className="text-xs text-slate-500 -mt-2">
+                Emplacement prévu sur la page d’accueil. Collez une URL YouTube, Vimeo ou un lien .mp4 quand la vidéo est prête.
+              </p>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={draft.home.videoEnabled !== false}
+                  onChange={e => setDraft({ ...draft, home: { ...draft.home, videoEnabled: e.target.checked } })}
+                  className="w-5 h-5 rounded border-slate-300 text-brand-600"
+                />
+                <span className="text-sm text-slate-800">Afficher la section vidéo</span>
+              </label>
+              <Input
+                label="Titre de la section"
+                value={draft.home.videoTitle ?? ''}
+                onChange={e => setDraft({ ...draft, home: { ...draft.home, videoTitle: e.target.value } })}
+                placeholder="Découvrez SécurPats en vidéo"
+              />
+              <Input
+                label="URL de la vidéo"
+                value={draft.home.videoUrl ?? ''}
+                onChange={e => setDraft({ ...draft, home: { ...draft.home, videoUrl: e.target.value } })}
+                placeholder="https://www.youtube.com/watch?v=… ou https://…/video.mp4"
+              />
+
               <hr className="border-slate-100 my-6" />
               <Input label="Titre bandeau CTA" value={draft.home.ctaTitle} onChange={e => setDraft({ ...draft, home: { ...draft.home, ctaTitle: e.target.value } })} />
               <Textarea label="Sous-titre bandeau CTA" rows={2} value={draft.home.ctaSubtitle} onChange={e => setDraft({ ...draft, home: { ...draft.home, ctaSubtitle: e.target.value } })} />
