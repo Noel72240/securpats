@@ -1,20 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Save, ScrollText, CheckCircle2, Users } from 'lucide-react'
+import { Save, ScrollText, CheckCircle2, Users, Download, Printer, FolderOpen } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input, Textarea } from '@/components/ui/Input'
 import { SignaturePad } from '@/components/ui/SignaturePad'
-import { useApp, useOwnerPets, useOwnerReferents } from '@/contexts/AppContext'
+import { useApp, useOwnerPets, useOwnerReferents, useOwnerDocuments } from '@/contexts/AppContext'
 import {
   emptyAdvanceDirectives,
   fetchAdvanceDirectives,
   upsertAdvanceDirectives,
 } from '@/lib/directives/api'
 import type { AdvanceDirectives } from '@/lib/directives/types'
+import {
+  DIRECTIVES_DOC_NAME,
+  buildDirectivesDocumentHtml,
+  directivesFileName,
+  directivesHtmlToFile,
+  downloadDirectivesHtml,
+  printDirectivesHtml,
+} from '@/lib/directives/document'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
 import { formatDate } from '@/lib/utils'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { uploadDocumentFile } from '@/lib/supabase/uploads'
 
 type FormState = Omit<AdvanceDirectives, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
 
@@ -54,14 +64,67 @@ function GuardianFields({
 }
 
 export default function DirectivesAnticipeesPage() {
-  const { currentUser } = useApp()
+  const { currentUser, addDocument, deleteDocument } = useApp()
   const pets = useOwnerPets()
   const referents = useOwnerReferents()
+  const documents = useOwnerDocuments()
   const [form, setForm] = useState<FormState>(() => emptyAdvanceDirectives(currentUser?.id ?? ''))
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [lastHtml, setLastHtml] = useState<string | null>(null)
+
+  const ownerLabel = `${currentUser?.firstName ?? ''} ${currentUser?.lastName ?? ''}`.trim() || currentUser?.email || 'Propriétaire'
+
+  const petLabelsFor = (petIds: string[]) => {
+    if (petIds.length === 0) return pets.map(p => p.name)
+    return petIds.map(id => pets.find(p => p.id === id)?.name).filter((n): n is string => Boolean(n))
+  }
+
+  const buildHtmlFromForm = (data: FormState & { signedAt: string | null }) =>
+    buildDirectivesDocumentHtml({
+      directives: data as AdvanceDirectives,
+      ownerLabel,
+      petLabels: petLabelsFor(data.petIds),
+    })
+
+  const scrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const main = document.querySelector('main')
+    if (main instanceof HTMLElement) main.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const syncToDocumentsFolder = async (html: string) => {
+    if (!currentUser || !isSupabaseConfigured()) return { error: null as string | null }
+
+    // Remplacer l’ancienne version auto dans le dossier Directives anticipées
+    const previous = documents.filter(
+      d => d.category === 'directives_anticipees' && d.name === DIRECTIVES_DOC_NAME,
+    )
+    for (const doc of previous) {
+      deleteDocument(doc.id)
+    }
+
+    const file = directivesHtmlToFile(html, directivesFileName())
+    const petId = form.petIds[0] || pets[0]?.id
+    if (!petId) {
+      return { error: 'Ajoutez un animal pour classer le document dans vos dossiers.' }
+    }
+
+    const { path, error: upErr } = await uploadDocumentFile(currentUser.id, petId, file)
+    if (upErr || !path) return { error: upErr || 'Échec upload du document' }
+
+    const dbErr = await addDocument({
+      name: DIRECTIVES_DOC_NAME,
+      category: 'directives_anticipees',
+      fileName: file.name,
+      fileSize: file.size,
+      petId,
+    }, path)
+
+    return { error: dbErr }
+  }
 
   useEffect(() => {
     if (!currentUser) return
@@ -70,7 +133,7 @@ export default function DirectivesAnticipeesPage() {
       const { directives, error: err } = await fetchAdvanceDirectives(currentUser.id)
       if (err) setError(err)
       if (directives) {
-        setForm({
+        const nextForm = {
           id: directives.id,
           ownerId: directives.ownerId,
           petIds: directives.petIds,
@@ -96,13 +159,25 @@ export default function DirectivesAnticipeesPage() {
           consentAccepted: directives.consentAccepted,
           consentVersion: directives.consentVersion,
           signedAt: directives.signedAt,
-        })
+        }
+        setForm(nextForm)
+        if (directives.signedAt) {
+          setLastHtml(buildDirectivesDocumentHtml({
+            directives,
+            ownerLabel: `${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || currentUser.email || 'Propriétaire',
+            petLabels: (
+              directives.petIds.length === 0
+                ? pets.map(p => p.name)
+                : directives.petIds.map(id => pets.find(p => p.id === id)?.name).filter((n): n is string => Boolean(n))
+            ),
+          }))
+        }
       } else {
         setForm(emptyAdvanceDirectives(currentUser.id))
       }
       setLoading(false)
     })()
-  }, [currentUser])
+  }, [currentUser, pets])
 
   const patch = (updates: Partial<FormState>) => setForm(prev => ({ ...prev, ...updates }))
 
@@ -151,49 +226,79 @@ export default function DirectivesAnticipeesPage() {
     setSaving(true)
     setError('')
     setSuccess('')
+    const signedAt = new Date().toISOString()
     const payload = {
       ...form,
       ownerId: currentUser.id,
       consentVersion: LEGAL_VERSION,
-      signedAt: new Date().toISOString(),
+      signedAt,
       consentAccepted: true,
     }
     const { directives, error: err } = await upsertAdvanceDirectives(payload)
-    setSaving(false)
     if (err) {
+      setSaving(false)
       setError(err)
+      scrollTop()
       return
     }
-    if (directives) {
-      setForm({
-        id: directives.id,
-        ownerId: directives.ownerId,
-        petIds: directives.petIds,
-        priorityName: directives.priorityName,
-        priorityPhone: directives.priorityPhone,
-        priorityRelation: directives.priorityRelation,
-        backupName: directives.backupName,
-        backupPhone: directives.backupPhone,
-        backupRelation: directives.backupRelation,
-        tertiaryName: directives.tertiaryName,
-        tertiaryPhone: directives.tertiaryPhone,
-        tertiaryRelation: directives.tertiaryRelation,
-        allowPartnerShelter: directives.allowPartnerShelter,
-        allowFosterFamily: directives.allowFosterFamily,
-        peopleToNotify: directives.peopleToNotify,
-        specialInstructions: directives.specialInstructions,
-        medication: directives.medication,
-        feedingHabits: directives.feedingHabits,
-        dailyHabits: directives.dailyHabits,
-        veterinarianInfo: directives.veterinarianInfo,
-        signedFullName: directives.signedFullName,
-        signatureData: directives.signatureData,
-        consentAccepted: directives.consentAccepted,
-        consentVersion: directives.consentVersion,
-        signedAt: directives.signedAt,
-      })
+
+    const savedForm: FormState = directives
+      ? {
+          id: directives.id,
+          ownerId: directives.ownerId,
+          petIds: directives.petIds,
+          priorityName: directives.priorityName,
+          priorityPhone: directives.priorityPhone,
+          priorityRelation: directives.priorityRelation,
+          backupName: directives.backupName,
+          backupPhone: directives.backupPhone,
+          backupRelation: directives.backupRelation,
+          tertiaryName: directives.tertiaryName,
+          tertiaryPhone: directives.tertiaryPhone,
+          tertiaryRelation: directives.tertiaryRelation,
+          allowPartnerShelter: directives.allowPartnerShelter,
+          allowFosterFamily: directives.allowFosterFamily,
+          peopleToNotify: directives.peopleToNotify,
+          specialInstructions: directives.specialInstructions,
+          medication: directives.medication,
+          feedingHabits: directives.feedingHabits,
+          dailyHabits: directives.dailyHabits,
+          veterinarianInfo: directives.veterinarianInfo,
+          signedFullName: directives.signedFullName,
+          signatureData: directives.signatureData,
+          consentAccepted: directives.consentAccepted,
+          consentVersion: directives.consentVersion,
+          signedAt: directives.signedAt,
+        }
+      : { ...payload }
+
+    setForm(savedForm)
+
+    const html = buildHtmlFromForm(savedForm)
+    setLastHtml(html)
+
+    const { error: docErr } = await syncToDocumentsFolder(html)
+    setSaving(false)
+
+    if (docErr) {
+      setSuccess('Directives signées. Attention : le dépôt dans Documents a échoué.')
+      setError(docErr)
+    } else {
+      setSuccess('Directives signées. Document ajouté dans Documents → Directives anticipées.')
+      setError('')
     }
-    setSuccess('Directives anticipées enregistrées et signées électroniquement.')
+    scrollTop()
+  }
+
+  const handleDownload = () => {
+    const html = lastHtml || buildHtmlFromForm(form)
+    downloadDirectivesHtml(html)
+  }
+
+  const handlePrint = () => {
+    const html = lastHtml || buildHtmlFromForm(form)
+    const ok = printDirectivesHtml(html)
+    if (!ok) setError('Autorisez les pop-ups pour imprimer le document.')
   }
 
   return (
@@ -228,7 +333,38 @@ export default function DirectivesAnticipeesPage() {
               <div className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</div>
             )}
             {success && (
-              <div className="text-sm text-brand-800 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3">{success}</div>
+              <Card className="!p-4 border-brand-100 bg-brand-50/50 space-y-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-brand-900">{success}</p>
+                    <p className="text-xs text-brand-800/80 mt-1">
+                      Vous pouvez télécharger ou imprimer le document. Il est aussi dans{' '}
+                      <Link to="/app/documents" className="underline font-medium">Documents</Link>
+                      {' '}(dossier Directives anticipées).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" icon={Download} onClick={handleDownload}>Télécharger</Button>
+                  <Button size="sm" variant="outline" icon={Printer} onClick={handlePrint}>Imprimer</Button>
+                  <Link to="/app/documents">
+                    <Button size="sm" variant="ghost" icon={FolderOpen}>Voir dans Documents</Button>
+                  </Link>
+                </div>
+              </Card>
+            )}
+
+            {!success && form.signedAt && (
+              <Card className="!p-4 flex flex-wrap gap-2 items-center justify-between">
+                <p className="text-sm text-slate-600">
+                  Dernière signature le {formatDate(form.signedAt)} — vous pouvez retélécharger / réimprimer.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" icon={Download} onClick={handleDownload}>Télécharger</Button>
+                  <Button size="sm" variant="outline" icon={Printer} onClick={handlePrint}>Imprimer</Button>
+                </div>
+              </Card>
             )}
 
             <Card padding="lg" className="space-y-4">

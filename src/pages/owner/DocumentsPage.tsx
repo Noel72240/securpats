@@ -128,7 +128,7 @@ export default function DocumentsPage() {
               type="file"
               className="hidden"
               onChange={handleUpload}
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.html,.htm"
             />
             <Button
               icon={Upload}
