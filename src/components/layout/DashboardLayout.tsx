@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Dog, Users, FileText, QrCode, CreditCard,
   AlertTriangle, LogOut, Menu, X, ChevronLeft, Shield, Calendar, Briefcase,
-  BarChart3, Settings, Globe, Lock, IdCard, Wrench, ShoppingBag,
+  BarChart3, Settings, Globe, Lock, IdCard, Wrench, ShoppingBag, Newspaper,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,7 @@ const adminNav: NavItem[] = [
   { to: '/admin/contenu-site?tab=maintenance', label: 'Maintenance', icon: Wrench },
   { to: '/admin/contenu-site', label: 'Contenu du site', icon: Globe },
   { to: '/admin/boutique', label: 'Boutique', icon: ShoppingBag },
+  { to: '/admin/actu', label: 'Gazette / Actu', icon: Newspaper },
   { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
   { to: '/admin/animaux', label: 'Animaux', icon: Dog },
   { to: '/admin/referents', label: 'Référents', icon: Users },

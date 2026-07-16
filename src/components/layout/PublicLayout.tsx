@@ -14,6 +14,7 @@ const navLinks = [
   { to: '/', label: 'Accueil' },
   { to: '/fonctionnement', label: 'Fonctionnement' },
   { to: '/boutique', label: 'Boutique' },
+  { to: '/actu', label: 'Actu' },
   { to: '/tarifs', label: 'Tarifs' },
   { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Contact' },
@@ -25,6 +26,7 @@ export function PublicHeader() {
   const { currentUser } = useApp()
   const { itemCount } = useShopCart()
   const boutiqueActive = location.pathname.startsWith('/boutique')
+  const actuActive = location.pathname.startsWith('/actu')
 
   return (
     <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
@@ -43,6 +45,10 @@ export function PublicHeader() {
                     ? boutiqueActive
                       ? 'text-brand-700 bg-brand-50'
                       : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
+                    : link.to === '/actu'
+                      ? actuActive
+                        ? 'text-brand-700 bg-brand-50'
+                        : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
                     : location.pathname === link.to
                       ? 'text-brand-700 bg-brand-50'
                       : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
@@ -119,7 +125,7 @@ export function PublicHeader() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'block px-4 py-3 rounded-xl text-sm font-medium',
-                  (link.to === '/boutique' ? boutiqueActive : location.pathname === link.to)
+                  (link.to === '/boutique' ? boutiqueActive : link.to === '/actu' ? actuActive : location.pathname === link.to)
                     ? 'bg-brand-50 text-brand-700'
                     : 'text-slate-600'
                 )}

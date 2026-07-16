@@ -8,6 +8,12 @@ export type PageSEOProps = {
   keywords?: string[]
   faqs?: Array<{ question: string; answer: string }>
   article?: boolean
+  articleMeta?: {
+    publishedAt?: string | null
+    modifiedAt?: string | null
+    authorName?: string
+    imageUrl?: string
+  }
 }
 
 function upsertMeta(name: string, content: string, attr: 'name' | 'property' = 'name') {
@@ -41,10 +47,11 @@ function upsertJsonLd(id: string, data: object) {
   el.textContent = JSON.stringify(data)
 }
 
-export function PageSEO({ title, description, path, keywords, faqs, article }: PageSEOProps) {
+export function PageSEO({ title, description, path, keywords, faqs, article, articleMeta }: PageSEOProps) {
   useEffect(() => {
     const url = `${SITE_URL}${path}`
     const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`
+    const ogImage = articleMeta?.imageUrl || DEFAULT_OG_IMAGE
 
     document.title = fullTitle
     upsertMeta('description', description)
@@ -58,22 +65,56 @@ export function PageSEO({ title, description, path, keywords, faqs, article }: P
     upsertMeta('og:type', article ? 'article' : 'website', 'property')
     upsertMeta('og:site_name', SITE_NAME, 'property')
     upsertMeta('og:locale', 'fr_FR', 'property')
-    upsertMeta('og:image', DEFAULT_OG_IMAGE, 'property')
+    upsertMeta('og:image', ogImage, 'property')
+
+    if (article && articleMeta?.publishedAt) {
+      upsertMeta('article:published_time', articleMeta.publishedAt, 'property')
+    }
+    if (article && articleMeta?.modifiedAt) {
+      upsertMeta('article:modified_time', articleMeta.modifiedAt, 'property')
+    }
 
     upsertMeta('twitter:card', 'summary_large_image')
     upsertMeta('twitter:title', fullTitle)
     upsertMeta('twitter:description', description)
+    upsertMeta('twitter:image', ogImage)
 
     upsertJsonLd('securpats-org-schema', ORGANIZATION_SCHEMA)
-    upsertJsonLd('securpats-page-schema', {
-      '@context': 'https://schema.org',
-      '@type': 'WebPage',
-      name: fullTitle,
-      description,
-      url,
-      inLanguage: 'fr-FR',
-      isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
-    })
+
+    if (article) {
+      upsertJsonLd('securpats-page-schema', {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: title,
+        description,
+        url,
+        inLanguage: 'fr-FR',
+        datePublished: articleMeta?.publishedAt || undefined,
+        dateModified: articleMeta?.modifiedAt || articleMeta?.publishedAt || undefined,
+        author: {
+          '@type': 'Organization',
+          name: articleMeta?.authorName || SITE_NAME,
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          logo: { '@type': 'ImageObject', url: DEFAULT_OG_IMAGE },
+        },
+        image: articleMeta?.imageUrl ? [articleMeta.imageUrl] : [DEFAULT_OG_IMAGE],
+        mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+        isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+      })
+    } else {
+      upsertJsonLd('securpats-page-schema', {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: fullTitle,
+        description,
+        url,
+        inLanguage: 'fr-FR',
+        isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+      })
+    }
 
     if (faqs?.length) {
       upsertJsonLd('securpats-faq-schema', {
@@ -103,7 +144,7 @@ export function PageSEO({ title, description, path, keywords, faqs, article }: P
         url: `${SITE_URL}/tarifs`,
       },
     })
-  }, [title, description, path, keywords, faqs, article])
+  }, [title, description, path, keywords, faqs, article, articleMeta?.publishedAt, articleMeta?.modifiedAt, articleMeta?.authorName, articleMeta?.imageUrl])
 
   return null
 }

@@ -51,6 +51,9 @@ import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminSiteContentPage from '@/pages/admin/AdminSiteContentPage'
 import AdminShopPage from '@/pages/admin/AdminShopPage'
+import AdminActuPage from '@/pages/admin/AdminActuPage'
+import ActuPage from '@/pages/actu/ActuPage'
+import ActuArticlePage from '@/pages/actu/ActuArticlePage'
 import {
   AdminUsersPage, AdminPetsPage, AdminReferentsPage, AdminPetSittersPage,
   AdminDocumentsPage, AdminMissionsPage, AdminSubscriptionsPage, AdminStatsPage,
@@ -120,6 +123,8 @@ function AppRoutes() {
       <Route path="/boutique/panier" element={<ShopCartPage />} />
       <Route path="/boutique/succes" element={<ShopSuccessPage />} />
       <Route path="/boutique/:slug" element={<ShopProductPage />} />
+      <Route path="/actu" element={<ActuPage />} />
+      <Route path="/actu/:slug" element={<ActuArticlePage />} />
       <Route path="/faq" element={<FAQPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/connexion" element={<LoginPage />} />
@@ -169,6 +174,7 @@ function AppRoutes() {
       <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
       <Route path="/admin/contenu-site" element={<AdminProtectedRoute><AdminSiteContentPage /></AdminProtectedRoute>} />
       <Route path="/admin/boutique" element={<AdminProtectedRoute><AdminShopPage /></AdminProtectedRoute>} />
+      <Route path="/admin/actu" element={<AdminProtectedRoute><AdminActuPage /></AdminProtectedRoute>} />
       <Route path="/admin/utilisateurs" element={<AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>} />
       <Route path="/admin/animaux" element={<AdminProtectedRoute><AdminPetsPage /></AdminProtectedRoute>} />
       <Route path="/admin/referents" element={<AdminProtectedRoute><AdminReferentsPage /></AdminProtectedRoute>} />

@@ -327,6 +327,42 @@ export type Database = {
           updated_at?: string
         }
       >
+      actu_posts: TableDef<
+        {
+          id: string
+          slug: string
+          title: string
+          excerpt: string
+          body: string
+          cover_image_url: string
+          cover_image_alt: string
+          seo_title: string
+          seo_description: string
+          keywords: string[]
+          author_name: string
+          published: boolean
+          published_at: string | null
+          created_at: string
+          updated_at: string
+        },
+        {
+          id: string
+          slug: string
+          title: string
+          excerpt?: string
+          body?: string
+          cover_image_url?: string
+          cover_image_alt?: string
+          seo_title?: string
+          seo_description?: string
+          keywords?: string[]
+          author_name?: string
+          published?: boolean
+          published_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      >
       contact_messages: TableDef<
         {
           id: string
