@@ -74,6 +74,12 @@ export const defaultSiteSettings: SiteSettings = {
     description: 'La plateforme qui garantit qu\'aucun animal ne soit laissé sans prise en charge en cas d\'urgence.',
   },
   testimonials: [],
+  partners: {
+    enabled: false,
+    title: 'Nos partenaires',
+    subtitle: 'Des acteurs de confiance qui partagent notre engagement pour la protection animale.',
+    items: [],
+  },
 }
 
 export const faqItems = [

@@ -1103,6 +1103,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         footer: updates.footer ? { ...prev.footer, ...updates.footer } : prev.footer,
         maintenance: updates.maintenance ? { ...prev.maintenance, ...updates.maintenance } : prev.maintenance,
         testimonials: updates.testimonials ?? prev.testimonials,
+        partners: updates.partners
+          ? {
+              ...prev.partners,
+              ...updates.partners,
+              items: updates.partners.items ?? prev.partners.items,
+            }
+          : prev.partners,
       }
       if (supabaseMode) db.updateSiteSettings(next)
       return next

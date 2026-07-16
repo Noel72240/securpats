@@ -186,6 +186,22 @@ export interface SiteMaintenanceSettings {
   blockPayments: boolean
 }
 
+export type SitePartner = {
+  id: string
+  name: string
+  description: string
+  logoUrl: string
+  websiteUrl: string
+}
+
+export type SitePartnersSettings = {
+  /** Affiche la page et le lien dans le menu */
+  enabled: boolean
+  title: string
+  subtitle: string
+  items: SitePartner[]
+}
+
 export interface SiteSettings {
   siteName: string
   logoUrl: string
@@ -229,4 +245,5 @@ export interface SiteSettings {
     description: string
   }
   testimonials: SiteTestimonial[]
+  partners: SitePartnersSettings
 }

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ShoppingBag } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { useApp } from '@/contexts/AppContext'
@@ -10,11 +10,12 @@ import { SEO_NAV_LINKS } from '@/lib/seo/content'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
 import { useShopCart } from '@/lib/shop/cart'
 
-const navLinks = [
+const baseNavLinks = [
   { to: '/', label: 'Accueil' },
   { to: '/fonctionnement', label: 'Fonctionnement' },
   { to: '/boutique', label: 'Boutique' },
   { to: '/actu', label: 'Actu' },
+  { to: '/partenaires', label: 'Partenaires' },
   { to: '/tarifs', label: 'Tarifs' },
   { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Contact' },
@@ -23,10 +24,16 @@ const navLinks = [
 export function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
-  const { currentUser } = useApp()
+  const { currentUser, siteSettings } = useApp()
   const { itemCount } = useShopCart()
   const boutiqueActive = location.pathname.startsWith('/boutique')
   const actuActive = location.pathname.startsWith('/actu')
+  const partnersActive = location.pathname.startsWith('/partenaires')
+
+  const navLinks = useMemo(
+    () => baseNavLinks.filter(link => link.to !== '/partenaires' || siteSettings.partners?.enabled),
+    [siteSettings.partners?.enabled],
+  )
 
   return (
     <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
@@ -49,6 +56,10 @@ export function PublicHeader() {
                       ? actuActive
                         ? 'text-brand-700 bg-brand-50'
                         : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
+                      : link.to === '/partenaires'
+                        ? partnersActive
+                          ? 'text-brand-700 bg-brand-50'
+                          : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
                     : location.pathname === link.to
                       ? 'text-brand-700 bg-brand-50'
                       : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/50'
@@ -125,7 +136,7 @@ export function PublicHeader() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'block px-4 py-3 rounded-xl text-sm font-medium',
-                  (link.to === '/boutique' ? boutiqueActive : link.to === '/actu' ? actuActive : location.pathname === link.to)
+                  (link.to === '/boutique' ? boutiqueActive : link.to === '/actu' ? actuActive : link.to === '/partenaires' ? partnersActive : location.pathname === link.to)
                     ? 'bg-brand-50 text-brand-700'
                     : 'text-slate-600'
                 )}
@@ -171,8 +182,11 @@ export function PublicHeader() {
 
 export function PublicFooter() {
   const { siteSettings } = useApp()
-  const { contact, footer, legal } = siteSettings
-
+  const { contact, footer, legal, partners } = siteSettings
+  const navLinks = useMemo(
+    () => baseNavLinks.filter(link => link.to !== '/partenaires' || partners?.enabled),
+    [partners?.enabled],
+  )
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

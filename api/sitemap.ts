@@ -56,6 +56,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const supabase = getSupabaseAdmin()
   if (supabase) {
+    const { data: settingsRow } = await supabase
+      .from('site_settings')
+      .select('settings')
+      .limit(1)
+      .maybeSingle()
+
+    const partnersEnabled = Boolean(
+      settingsRow?.settings
+      && typeof settingsRow.settings === 'object'
+      && 'partners' in (settingsRow.settings as object)
+      && (settingsRow.settings as { partners?: { enabled?: boolean } }).partners?.enabled,
+    )
+    if (partnersEnabled) {
+      parts.push(urlEntry('/partenaires', 'monthly', '0.7'))
+    }
+
     const { data: posts } = await supabase
       .from('actu_posts')
       .select('slug, published_at, updated_at')

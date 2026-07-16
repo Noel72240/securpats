@@ -302,6 +302,11 @@ export function mergeSiteSettings(partial: unknown): SiteSettings {
     footer: { ...defaultSiteSettings.footer, ...p.footer },
     maintenance: { ...defaultSiteSettings.maintenance, ...p.maintenance },
     testimonials: p.testimonials ?? defaultSiteSettings.testimonials,
+    partners: {
+      ...defaultSiteSettings.partners,
+      ...p.partners,
+      items: p.partners?.items ?? defaultSiteSettings.partners.items,
+    },
   }
 }
 
