@@ -1,13 +1,12 @@
 @import "tailwindcss";
-@import "@fontsource/pacifico/400.css";
+@import "@fontsource/outfit/400.css";
 @import "@fontsource/outfit/500.css";
 @import "@fontsource/outfit/600.css";
 @import "@fontsource/outfit/700.css";
 @import "@fontsource/outfit/800.css";
 
 @theme {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-pacifico: "Pacifico", cursive;
+  --font-sans: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-shop: "Outfit", system-ui, sans-serif;
   --color-brand-50: #ecfdf5;
   --color-brand-100: #d1fae5;
@@ -35,7 +34,7 @@ body {
 }
 
 .founder-presentation {
-  font-family: var(--font-pacifico);
+  font-family: var(--font-sans);
 }
 
 @keyframes fade-in-up {
