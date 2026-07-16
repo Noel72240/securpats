@@ -50,6 +50,7 @@ import PetSitterSubscriptionSuccessPage from '@/pages/petsitter/PetSitterSubscri
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminSiteContentPage from '@/pages/admin/AdminSiteContentPage'
+import AdminShopPage from '@/pages/admin/AdminShopPage'
 import {
   AdminUsersPage, AdminPetsPage, AdminReferentsPage, AdminPetSittersPage,
   AdminDocumentsPage, AdminMissionsPage, AdminSubscriptionsPage, AdminStatsPage,
@@ -167,6 +168,7 @@ function AppRoutes() {
       <Route path="/admin/connexion" element={<AdminLoginPage />} />
       <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
       <Route path="/admin/contenu-site" element={<AdminProtectedRoute><AdminSiteContentPage /></AdminProtectedRoute>} />
+      <Route path="/admin/boutique" element={<AdminProtectedRoute><AdminShopPage /></AdminProtectedRoute>} />
       <Route path="/admin/utilisateurs" element={<AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>} />
       <Route path="/admin/animaux" element={<AdminProtectedRoute><AdminPetsPage /></AdminProtectedRoute>} />
       <Route path="/admin/referents" element={<AdminProtectedRoute><AdminReferentsPage /></AdminProtectedRoute>} />

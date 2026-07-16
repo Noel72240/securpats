@@ -2,17 +2,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { verifyRequestUser } from '../../server/lib/verify-auth.js'
 import { stripePostForm } from '../../server/lib/stripe-api.js'
 import { arePaymentsBlockedOnServer } from '../../server/lib/site-settings.js'
-import {
-  SHOP_PRODUCT_PRICES,
-  shippingCentsForSubtotal,
-} from '../../server/lib/shop-catalog.js'
+import { resolveShopLinePrices, shippingCentsForSubtotal } from '../../server/lib/shop-prices.js'
 
 type CheckoutSessionResponse = {
   id: string
   url: string | null
 }
 
-type CartLine = { productId: string; quantity: number }
+type CartLine = { productId: string; quantity: number; size?: string }
 
 async function createShopSession(
   req: VercelRequest,
@@ -24,6 +21,11 @@ async function createShopSession(
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Panier vide' })
+  }
+
+  const resolved = await resolveShopLinePrices(items)
+  if (!resolved.ok) {
+    return res.status(400).json({ error: resolved.error })
   }
 
   const fields: Record<string, string> = {
@@ -46,23 +48,13 @@ async function createShopSession(
   let lineIndex = 0
   let subtotal = 0
 
-  for (const line of items) {
-    const qty = Math.min(Math.max(Number(line.quantity) || 0, 0), 20)
-    if (!qty || !line.productId) continue
-    const product = SHOP_PRODUCT_PRICES[line.productId]
-    if (!product) {
-      return res.status(400).json({ error: `Produit inconnu : ${line.productId}` })
-    }
-    subtotal += product.priceCents * qty
+  for (const line of resolved.lines) {
+    subtotal += line.priceCents * line.quantity
     fields[`line_items[${lineIndex}][price_data][currency]`] = 'eur'
-    fields[`line_items[${lineIndex}][price_data][unit_amount]`] = String(product.priceCents)
-    fields[`line_items[${lineIndex}][price_data][product_data][name]`] = product.name
-    fields[`line_items[${lineIndex}][quantity]`] = String(qty)
+    fields[`line_items[${lineIndex}][price_data][unit_amount]`] = String(line.priceCents)
+    fields[`line_items[${lineIndex}][price_data][product_data][name]`] = line.name
+    fields[`line_items[${lineIndex}][quantity]`] = String(line.quantity)
     lineIndex++
-  }
-
-  if (lineIndex === 0) {
-    return res.status(400).json({ error: 'Aucun article valide' })
   }
 
   const shipping = shippingCentsForSubtotal(subtotal)

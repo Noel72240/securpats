@@ -106,15 +106,18 @@ export default function ShopCartPage() {
                   {items.map(line => {
                     const product = getProductById(line.productId)
                     if (!product) return null
+                    const lineId = `${line.productId}::${line.size || ''}`
                     return (
-                      <Card key={line.productId} className="!p-4">
+                      <Card key={lineId} className="!p-4">
                         <div className="flex gap-4">
                           <div className="w-24 h-24 rounded-xl overflow-hidden bg-brand-50 shrink-0">
-                            <img
-                              src={product.imageUrl}
-                              alt={product.imageAlt}
-                              className="w-full h-full object-cover"
-                            />
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.imageAlt}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : null}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-3">
@@ -125,6 +128,9 @@ export default function ShopCartPage() {
                                 >
                                   {product.name}
                                 </Link>
+                                {line.size && (
+                                  <p className="text-sm text-slate-600 mt-0.5">Taille {line.size}</p>
+                                )}
                                 <p className="text-sm text-slate-500 mt-1">
                                   {formatShopPrice(product.priceCents)} / unité
                                 </p>
@@ -133,7 +139,7 @@ export default function ShopCartPage() {
                                 type="button"
                                 aria-label={`Retirer ${product.name}`}
                                 className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => removeItem(line.productId)}
+                                onClick={() => removeItem(line.productId, line.size)}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -145,7 +151,7 @@ export default function ShopCartPage() {
                                   type="button"
                                   aria-label="Diminuer"
                                   className="p-2 hover:bg-brand-50"
-                                  onClick={() => setQuantity(line.productId, line.quantity - 1)}
+                                  onClick={() => setQuantity(line.productId, line.quantity - 1, line.size)}
                                 >
                                   <Minus className="w-4 h-4" />
                                 </button>
@@ -154,7 +160,7 @@ export default function ShopCartPage() {
                                   type="button"
                                   aria-label="Augmenter"
                                   className="p-2 hover:bg-brand-50"
-                                  onClick={() => setQuantity(line.productId, line.quantity + 1)}
+                                  onClick={() => setQuantity(line.productId, line.quantity + 1, line.size)}
                                 >
                                   <Plus className="w-4 h-4" />
                                 </button>

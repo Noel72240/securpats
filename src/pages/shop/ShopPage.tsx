@@ -8,20 +8,20 @@ import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import {
   SHOP_CATEGORIES,
-  SHOP_PRODUCTS,
   formatShopPrice,
+  getShopProductsCache,
   type ShopCategoryId,
 } from '@/lib/shop/catalog'
 import { useShopCart } from '@/lib/shop/cart'
 
 export default function ShopPage() {
   const [category, setCategory] = useState<ShopCategoryId | 'all'>('all')
-  const { itemCount } = useShopCart()
+  const { itemCount, catalogReady } = useShopCart()
 
-  const products = useMemo(
-    () => (category === 'all' ? SHOP_PRODUCTS : SHOP_PRODUCTS.filter(p => p.category === category)),
-    [category],
-  )
+  const products = useMemo(() => {
+    const catalog = getShopProductsCache()
+    return category === 'all' ? catalog : catalog.filter(p => p.category === category)
+  }, [category, catalogReady])
 
   return (
     <PublicLayout>
@@ -104,37 +104,47 @@ export default function ShopPage() {
               ))}
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map(product => (
-                <Link key={product.id} to={`/boutique/${product.slug}`} className="group">
-                  <Card hover padding="sm" className="h-full overflow-hidden !p-0">
-                    <div className="aspect-[4/3] overflow-hidden bg-brand-50">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.imageAlt}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 mb-1">
-                        {SHOP_CATEGORIES.find(c => c.id === product.category)?.label}
-                      </p>
-                      <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-brand-700 transition-colors">
-                        {product.name}
-                      </h2>
-                      <p className="text-sm text-slate-500 line-clamp-2 mb-4">{product.shortDescription}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-extrabold text-slate-900">
-                          {formatShopPrice(product.priceCents)}
-                        </span>
-                        <span className="text-sm font-semibold text-brand-600">Voir le produit →</span>
+            {!catalogReady ? (
+              <p className="text-slate-500 text-sm py-12 text-center">Chargement de la boutique…</p>
+            ) : products.length === 0 ? (
+              <p className="text-slate-500 text-sm py-12 text-center">Aucun produit disponible pour le moment.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map(product => (
+                  <Link key={product.id} to={`/boutique/${product.slug}`} className="group">
+                    <Card hover padding="sm" className="h-full overflow-hidden !p-0">
+                      <div className="aspect-[4/3] overflow-hidden bg-brand-50">
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.imageAlt}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100" />
+                        )}
                       </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                      <div className="p-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 mb-1">
+                          {SHOP_CATEGORIES.find(c => c.id === product.category)?.label}
+                        </p>
+                        <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-brand-700 transition-colors">
+                          {product.name}
+                        </h2>
+                        <p className="text-sm text-slate-500 line-clamp-2 mb-4">{product.shortDescription}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xl font-extrabold text-slate-900">
+                            {formatShopPrice(product.priceCents)}
+                          </span>
+                          <span className="text-sm font-semibold text-brand-600">Voir le produit →</span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>

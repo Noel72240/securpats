@@ -19,6 +19,10 @@ export async function uploadSiteAssetFile(folder: string, file: File) {
   return uploadFile(STORAGE_BUCKETS.site, path, file, { upsert: true })
 }
 
+export async function uploadShopProductImage(file: File) {
+  return uploadSiteAssetFile('shop', file)
+}
+
 export async function uploadAvatarFile(userId: string, file: File) {
   const path = `${userId}/${safeFileName(file.name)}`
   return uploadFile(STORAGE_BUCKETS.avatars, path, file, { upsert: true })

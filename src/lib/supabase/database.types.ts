@@ -289,6 +289,44 @@ export type Database = {
           updated_at?: string
         }
       >
+      shop_products: TableDef<
+        {
+          id: string
+          slug: string
+          name: string
+          short_description: string
+          description: string
+          price_cents: number
+          category: string
+          image_url: string
+          image_alt: string
+          highlights: string[]
+          sizes_enabled: boolean
+          sizes: string[]
+          active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        },
+        {
+          id: string
+          slug: string
+          name: string
+          short_description?: string
+          description?: string
+          price_cents: number
+          category?: string
+          image_url?: string
+          image_alt?: string
+          highlights?: string[]
+          sizes_enabled?: boolean
+          sizes?: string[]
+          active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      >
       contact_messages: TableDef<
         {
           id: string
