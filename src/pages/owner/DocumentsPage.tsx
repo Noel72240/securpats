@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, EmptyState, Badge } from '@/components/ui/Card'
 import { Select } from '@/components/ui/Input'
 import { useOwnerDocuments, useOwnerPets, useApp } from '@/contexts/AppContext'
-import { DOCUMENT_LABELS, type DocumentCategory } from '@/types'
+import { DOCUMENT_LABELS, DOCUMENT_HINTS, type DocumentCategory } from '@/types'
 import { formatFileSize, formatDate } from '@/lib/utils'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadDocumentFile, getDocumentSignedUrl } from '@/lib/supabase/uploads'
@@ -84,7 +84,12 @@ export default function DocumentsPage() {
 
   const categoryBadge = (cat: DocumentCategory) => {
     const colors: Record<DocumentCategory, 'default' | 'success' | 'warning' | 'info'> = {
-      carnet_sante: 'success', ordonnance: 'info', facture: 'warning', assurance: 'default', divers: 'default',
+      carnet_sante: 'success',
+      ordonnance: 'info',
+      facture: 'warning',
+      assurance: 'default',
+      directives_anticipees: 'info',
+      divers: 'default',
     }
     return <Badge variant={colors[cat]}>{DOCUMENT_LABELS[cat]}</Badge>
   }
@@ -147,12 +152,17 @@ export default function DocumentsPage() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(DOCUMENT_LABELS).map(([key, label]) => {
-            const count = documents.filter(d => d.category === key).length
+            const cat = key as DocumentCategory
+            const count = documents.filter(d => d.category === cat).length
+            const hint = DOCUMENT_HINTS[cat]
             return (
               <Card key={key} hover className="text-center cursor-pointer" onClick={() => setFilter(key)}>
                 <FolderOpen className="w-8 h-8 text-brand-500 mx-auto mb-2" />
                 <p className="font-semibold text-sm text-slate-900">{label}</p>
-                <p className="text-xs text-slate-500">{count} document{count !== 1 ? 's' : ''}</p>
+                {hint && (
+                  <p className="text-[11px] text-slate-500 leading-snug mt-1 px-1">{hint}</p>
+                )}
+                <p className="text-xs text-slate-500 mt-1">{count} document{count !== 1 ? 's' : ''}</p>
               </Card>
             )
           })}
@@ -160,7 +170,7 @@ export default function DocumentsPage() {
 
         {filtered.length === 0 ? (
           <Card>
-            <EmptyState icon={FileText} title="Aucun document" description="Uploadez vos carnets de santé, ordonnances et assurances." />
+            <EmptyState icon={FileText} title="Aucun document" description="Uploadez vos carnets de santé, ordonnances, assurances et directives anticipées." />
           </Card>
         ) : (
           <div className="space-y-2">

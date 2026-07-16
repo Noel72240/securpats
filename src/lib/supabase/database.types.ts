@@ -6,7 +6,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type UserRole = 'owner' | 'petsitter' | 'admin'
-export type DocumentCategory = 'carnet_sante' | 'ordonnance' | 'facture' | 'assurance' | 'divers'
+export type DocumentCategory = 'carnet_sante' | 'ordonnance' | 'facture' | 'assurance' | 'directives_anticipees' | 'divers'
 export type SubscriptionPlan = 'monthly' | 'yearly' | 'petsitter_vip'
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing'
 export type MissionStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled'

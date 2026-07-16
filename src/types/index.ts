@@ -59,6 +59,7 @@ export type DocumentCategory =
   | 'ordonnance'
   | 'facture'
   | 'assurance'
+  | 'directives_anticipees'
   | 'divers'
 
 export interface PetDocument {
@@ -156,7 +157,13 @@ export const DOCUMENT_LABELS: Record<DocumentCategory, string> = {
   ordonnance: 'Ordonnances',
   facture: 'Factures vétérinaires',
   assurance: 'Contrats d\'assurance',
+  directives_anticipees: 'Directives anticipées',
   divers: 'Documents divers',
+}
+
+/** Sous-titres optionnels affichés sous les cases documents. */
+export const DOCUMENT_HINTS: Partial<Record<DocumentCategory, string>> = {
+  directives_anticipees: 'En cas de décès du propriétaire — consignes pour vos animaux',
 }
 
 export const PLAN_PRICES = {
