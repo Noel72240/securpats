@@ -363,6 +363,66 @@ export type Database = {
           updated_at?: string
         }
       >
+      advance_directives: TableDef<
+        {
+          id: string
+          owner_id: string
+          pet_ids: string[]
+          priority_name: string
+          priority_phone: string
+          priority_relation: string
+          backup_name: string
+          backup_phone: string
+          backup_relation: string
+          tertiary_name: string
+          tertiary_phone: string
+          tertiary_relation: string
+          allow_partner_shelter: boolean
+          allow_foster_family: boolean
+          people_to_notify: string
+          special_instructions: string
+          medication: string
+          feeding_habits: string
+          daily_habits: string
+          veterinarian_info: string
+          signed_full_name: string
+          signature_data: string
+          consent_accepted: boolean
+          consent_version: string
+          signed_at: string | null
+          created_at: string
+          updated_at: string
+        },
+        {
+          id?: string
+          owner_id: string
+          pet_ids?: string[]
+          priority_name?: string
+          priority_phone?: string
+          priority_relation?: string
+          backup_name?: string
+          backup_phone?: string
+          backup_relation?: string
+          tertiary_name?: string
+          tertiary_phone?: string
+          tertiary_relation?: string
+          allow_partner_shelter?: boolean
+          allow_foster_family?: boolean
+          people_to_notify?: string
+          special_instructions?: string
+          medication?: string
+          feeding_habits?: string
+          daily_habits?: string
+          veterinarian_info?: string
+          signed_full_name?: string
+          signature_data?: string
+          consent_accepted?: boolean
+          consent_version?: string
+          signed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      >
       contact_messages: TableDef<
         {
           id: string

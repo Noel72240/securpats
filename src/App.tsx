@@ -20,6 +20,7 @@ import ShopSuccessPage from '@/pages/shop/ShopSuccessPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import OwnerProfilePage from '@/pages/owner/OwnerProfilePage'
+import DirectivesAnticipeesPage from '@/pages/owner/DirectivesAnticipeesPage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { PawDecorations } from '@/components/decor/PawDecorations'
@@ -153,6 +154,7 @@ function AppRoutes() {
       <Route path="/app/animaux/:id" element={<OwnerRoute><PetDetailPage /></OwnerRoute>} />
       <Route path="/app/referents" element={<OwnerRoute><ReferentsPage /></OwnerRoute>} />
       <Route path="/app/documents" element={<OwnerRoute><DocumentsPage /></OwnerRoute>} />
+      <Route path="/app/directives" element={<OwnerRoute><DirectivesAnticipeesPage /></OwnerRoute>} />
       <Route path="/app/qr-code" element={<OwnerRoute><QRCodePage /></OwnerRoute>} />
       <Route path="/app/carte-urgence" element={<OwnerRoute><EmergencyCardPage /></OwnerRoute>} />
       <Route path="/app/urgence" element={<OwnerRoute><EmergencyPage /></OwnerRoute>} />

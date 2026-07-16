@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { Upload, FileText, Trash2, FolderOpen, Download } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Upload, FileText, Trash2, FolderOpen, Download, ScrollText } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, EmptyState, Badge } from '@/components/ui/Card'
@@ -149,6 +150,21 @@ export default function DocumentsPage() {
 
         {error && <p className="text-sm text-red-500">{error}</p>}
         {success && <p className="text-sm text-brand-600">{success}</p>}
+
+        <Card className="!p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-brand-100 bg-brand-50/40">
+          <div className="flex items-start gap-3">
+            <ScrollText className="w-6 h-6 text-brand-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-slate-900 text-sm">Directives anticipées (formulaire)</p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Remplissez et signez électroniquement qui doit accueillir vos animaux, les autorisations et les consignes de soin.
+              </p>
+            </div>
+          </div>
+          <Link to="/app/directives">
+            <Button size="sm" variant="outline">Ouvrir le formulaire</Button>
+          </Link>
+        </Card>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(DOCUMENT_LABELS).map(([key, label]) => {
