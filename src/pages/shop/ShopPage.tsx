@@ -13,10 +13,12 @@ import {
   type ShopCategoryId,
 } from '@/lib/shop/catalog'
 import { useShopCart } from '@/lib/shop/cart'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function ShopPage() {
   const [category, setCategory] = useState<ShopCategoryId | 'all'>('all')
   const { itemCount, catalogReady } = useShopCart()
+  const { t } = useI18n()
 
   const products = useMemo(() => {
     const catalog = getShopProductsCache()
@@ -27,8 +29,8 @@ export default function ShopPage() {
     <PublicLayout>
       <div className="font-[family-name:var(--font-shop)]">
         <PageSEO
-          title="Boutique — accessoires animaux"
-          description="Colliers, longes, plaques QR, jouets et kits urgence SécurPats. Accessoires pensés pour la sécurité de votre animal."
+          title={`${t('shop.title')} — SécurPats`}
+          description={t('shop.subtitle')}
           path="/boutique"
         />
 
@@ -39,28 +41,27 @@ export default function ShopPage() {
               <div className="max-w-2xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold mb-4">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Nouvelle boutique SécurPats
+                  {t('shop.badge')}
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
-                  Boutique <span className="text-brand-600">SécurPats</span>
+                  {t('shop.title')} <span className="text-brand-600">SécurPats</span>
                 </h1>
                 <p className="text-lg text-slate-600">
-                  Accessoires premium pour chiens et chats : plaques QR, colliers, longes et jouets
-                  compatibles avec votre fiche de secours.
+                  {t('shop.subtitle')}
                 </p>
                 <div className="flex flex-wrap gap-4 mt-6 text-sm text-slate-600">
                   <span className="inline-flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-brand-500" /> QR relié à la fiche urgence
+                    <Shield className="w-4 h-4 text-brand-500" /> {t('shop.qrLinked')}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <Truck className="w-4 h-4 text-brand-500" /> Livraison offerte dès 40 €
+                    <Truck className="w-4 h-4 text-brand-500" /> {t('shop.freeShipping')}
                   </span>
                 </div>
               </div>
 
               <Link to="/boutique/panier" className="shrink-0">
                 <Button size="lg" icon={ShoppingBag} className="relative">
-                  Voir le panier
+                  {t('shop.viewCart')}
                   {itemCount > 0 && (
                     <span className="absolute -top-2 -right-2 min-w-[1.5rem] h-6 px-1.5 rounded-full bg-white text-brand-700 text-xs font-bold border border-brand-200 flex items-center justify-center">
                       {itemCount}
@@ -85,7 +86,7 @@ export default function ShopPage() {
                     : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-200 hover:text-brand-700',
                 )}
               >
-                Tous
+                {t('shop.all')}
               </button>
               {SHOP_CATEGORIES.map(cat => (
                 <button
@@ -105,9 +106,9 @@ export default function ShopPage() {
             </div>
 
             {!catalogReady ? (
-              <p className="text-slate-500 text-sm py-12 text-center">Chargement de la boutique…</p>
+              <p className="text-slate-500 text-sm py-12 text-center">{t('shop.loading')}</p>
             ) : products.length === 0 ? (
-              <p className="text-slate-500 text-sm py-12 text-center">Aucun produit disponible pour le moment.</p>
+              <p className="text-slate-500 text-sm py-12 text-center">{t('shop.empty')}</p>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map(product => (
@@ -137,7 +138,7 @@ export default function ShopPage() {
                           <span className="text-xl font-extrabold text-slate-900">
                             {formatShopPrice(product.priceCents)}
                           </span>
-                          <span className="text-sm font-semibold text-brand-600">Voir le produit →</span>
+                          <span className="text-sm font-semibold text-brand-600">{t('shop.viewProduct')} →</span>
                         </div>
                       </div>
                     </Card>

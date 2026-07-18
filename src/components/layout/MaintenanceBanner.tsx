@@ -1,17 +1,20 @@
 import { Construction, Wrench } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
-import { getMaintenanceTitle, isMaintenanceBannerVisible } from '@/lib/maintenance'
+import { isMaintenanceBannerVisible } from '@/lib/maintenance'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export function MaintenanceBanner() {
   const { siteSettings } = useApp()
+  const { t, locale } = useI18n()
 
   if (!isMaintenanceBannerVisible(siteSettings)) return null
 
   const { mode, message, blockPayments } = siteSettings.maintenance
   const isDev = mode === 'development'
   const Icon = isDev ? Construction : Wrench
-  const title = getMaintenanceTitle(mode)
+  const title = t(isDev ? 'maintenance.devTitle' : 'maintenance.title')
+  const displayMessage = locale === 'en' ? t('maintenance.message') : (message || t('maintenance.message'))
 
   return (
     <div
@@ -28,9 +31,9 @@ export function MaintenanceBanner() {
           <Icon className="w-4 h-4 flex-shrink-0" aria-hidden />
           {title}
         </span>
-        {message && (
+        {displayMessage && (
           <span className={cn('opacity-90', isDev ? 'text-amber-900' : 'text-orange-50')}>
-            — {message}
+            — {displayMessage}
           </span>
         )}
         {blockPayments && (
@@ -38,7 +41,7 @@ export function MaintenanceBanner() {
             'text-xs px-2 py-0.5 rounded-full',
             isDev ? 'bg-amber-600/30 text-amber-950' : 'bg-orange-700/50 text-orange-50',
           )}>
-            Paiements suspendus
+            {t('maintenance.paymentsSuspended')}
           </span>
         )}
       </div>

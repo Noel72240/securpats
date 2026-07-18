@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle, Eye, Trash2, XCircle, AlertTriangle, Dog } from 'lucide-react'
+import { CheckCircle, Eye, Trash2, XCircle, AlertTriangle, Dog, KeyRound, Copy, Search } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, Modal } from '@/components/ui/Card'
@@ -9,7 +9,9 @@ import { adminStats } from '@/lib/mock/data'
 import { buildMonthlyRevenue } from '@/lib/admin/analytics'
 import { getPetsitterDocSignedUrl } from '@/lib/supabase/uploads'
 import { subscriptionPlanLabel, subscriptionPlanVariant, userRoleLabel } from '@/lib/admin/plan-labels'
+import { adminResetUserPassword } from '@/lib/auth/password-reset'
 import type { User, Pet } from '@/types'
+import { departmentLabel } from '@/lib/geo/french-departments'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
@@ -142,7 +144,33 @@ export function AdminUsersPage() {
   const { allUsers, deleteUserAsAdmin, currentUser } = useApp()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [actionOk, setActionOk] = useState<string | null>(null)
   const [identityUser, setIdentityUser] = useState<User | null>(null)
+  const [resetUser, setResetUser] = useState<User | null>(null)
+  const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [resetBusy, setResetBusy] = useState(false)
+  const [query, setQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'owner' | 'petsitter'>('all')
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return allUsers.filter(u => {
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false
+      if (!q) return true
+      const hay = `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase()
+      return hay.includes(q)
+    })
+  }, [allUsers, query, roleFilter])
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setActionOk(`${label} copié`)
+      setActionError(null)
+    } catch {
+      setActionError(`Impossible de copier ${label.toLowerCase()}`)
+    }
+  }
 
   const handleDelete = async (user: { id: string; firstName: string; lastName: string; email: string; role: string }) => {
     const label = `${user.firstName} ${user.lastName} (${user.email})`
@@ -153,18 +181,66 @@ export function AdminUsersPage() {
 
     setBusyId(user.id)
     setActionError(null)
+    setActionOk(null)
     const err = await deleteUserAsAdmin(user.id)
     if (err) setActionError(err)
+    else setActionOk('Compte supprimé')
     setBusyId(null)
+  }
+
+  const handleResetPassword = async () => {
+    if (!resetUser) return
+    const confirmed = window.confirm(
+      `Définir un nouveau mot de passe temporaire pour ${resetUser.firstName} ${resetUser.lastName} (${resetUser.email}) ?\n\nL’ancien mot de passe ne peut pas être récupéré (il est chiffré).`,
+    )
+    if (!confirmed) return
+
+    setResetBusy(true)
+    setActionError(null)
+    setActionOk(null)
+    const result = await adminResetUserPassword(resetUser.id)
+    setResetBusy(false)
+    if (result.error) {
+      setActionError(result.error)
+      return
+    }
+    setTempPassword(result.temporaryPassword || null)
+    setActionOk(`Nouveau mot de passe généré pour ${result.email}`)
   }
 
   return (
     <AdminTablePage title="Gestion utilisateurs" variant="admin">
-      <p className="text-sm text-slate-600 px-4 pt-4 pb-2">
-        Supprimez les comptes inactifs, doublons ou tests. Les comptes administrateur ne peuvent pas être supprimés ici.
-      </p>
+      <div className="px-4 pt-4 pb-2 space-y-3">
+        <p className="text-sm text-slate-600">
+          Les emails sont visibles ici. Les mots de passe ne sont <strong>jamais récupérables</strong> (chiffrés) :
+          vous pouvez en définir un temporaire pour un propriétaire ou pet-sitter.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Rechercher nom ou email…"
+              className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-sm"
+            />
+          </div>
+          <select
+            value={roleFilter}
+            onChange={e => setRoleFilter(e.target.value as 'all' | 'owner' | 'petsitter')}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+          >
+            <option value="all">Tous les rôles</option>
+            <option value="owner">Propriétaires</option>
+            <option value="petsitter">Pet-sitters</option>
+          </select>
+        </div>
+      </div>
       {actionError && (
         <p className="text-sm text-red-600 px-4 pb-2">{actionError}</p>
+      )}
+      {actionOk && (
+        <p className="text-sm text-brand-700 px-4 pb-2">{actionOk}</p>
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -177,10 +253,22 @@ export function AdminUsersPage() {
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {allUsers.map(u => (
+            {filtered.map(u => (
               <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50">
                 <td className="py-3 px-4 font-medium">{u.firstName} {u.lastName}</td>
-                <td className="py-3 px-4 text-slate-600">{u.email}</td>
+                <td className="py-3 px-4 text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <span className="break-all">{u.email}</span>
+                    <button
+                      type="button"
+                      title="Copier l’email"
+                      className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                      onClick={() => void copyText(u.email, 'Email')}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </td>
                 <td className="py-3 px-4"><Badge variant={u.role === 'admin' ? 'danger' : u.role === 'petsitter' ? 'info' : 'success'}>{userRoleLabel(u.role)}</Badge></td>
                 <td className="py-3 px-4">{u.twoFactorEnabled ? '✓' : '—'}</td>
                 <td className="py-3 px-4 text-slate-500">{formatDate(u.createdAt)}</td>
@@ -191,8 +279,21 @@ export function AdminUsersPage() {
                         Fiche
                       </Button>
                     )}
+                    {(u.role === 'owner' || u.role === 'petsitter') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={KeyRound}
+                        onClick={() => {
+                          setResetUser(u)
+                          setTempPassword(null)
+                        }}
+                      >
+                        Mot de passe
+                      </Button>
+                    )}
                     {u.role === 'admin' || u.id === currentUser?.id ? (
-                      u.role !== 'owner' && <span className="text-slate-400 text-xs">—</span>
+                      u.role !== 'owner' && u.role !== 'petsitter' && <span className="text-slate-400 text-xs">—</span>
                     ) : (
                       <Button
                         variant="outline"
@@ -213,6 +314,53 @@ export function AdminUsersPage() {
         </table>
       </div>
       <OwnerIdentityModal user={identityUser} onClose={() => setIdentityUser(null)} />
+
+      <Modal
+        open={Boolean(resetUser)}
+        onClose={() => {
+          if (resetBusy) return
+          setResetUser(null)
+          setTempPassword(null)
+        }}
+        title="Réinitialiser le mot de passe"
+      >
+        {resetUser && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Compte : <strong>{resetUser.firstName} {resetUser.lastName}</strong>
+              <br />
+              Email : <strong>{resetUser.email}</strong> ({userRoleLabel(resetUser.role)})
+            </p>
+            <p className="text-xs text-slate-500">
+              Impossible d’afficher l’ancien mot de passe. Un mot de passe temporaire sera généré ;
+              communiquez-le au client de façon sécurisée, puis demandez-lui de le changer.
+            </p>
+
+            {tempPassword ? (
+              <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 space-y-3">
+                <p className="text-sm font-semibold text-brand-900">Mot de passe temporaire</p>
+                <code className="block text-lg font-mono tracking-wide text-slate-900 break-all">{tempPassword}</code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  icon={Copy}
+                  onClick={() => void copyText(tempPassword, 'Mot de passe')}
+                >
+                  Copier
+                </Button>
+              </div>
+            ) : (
+              <Button
+                icon={KeyRound}
+                loading={resetBusy}
+                onClick={() => void handleResetPassword()}
+              >
+                Générer un nouveau mot de passe
+              </Button>
+            )}
+          </div>
+        )}
+      </Modal>
     </AdminTablePage>
   )
 }
@@ -358,7 +506,9 @@ export function AdminPetSittersPage() {
                 <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
                   <td className="py-3 px-4 font-medium">{s.firstName} {s.lastName}</td>
                   <td className="py-3 px-4 text-slate-600">{profile?.email || s.email}</td>
-                  <td className="py-3 px-4 text-slate-600">{profile?.serviceArea || '—'}</td>
+                  <td className="py-3 px-4 text-slate-600">
+                    {[departmentLabel(profile?.departmentCode), profile?.serviceArea].filter(Boolean).join(' · ') || '—'}
+                  </td>
                   <td className="py-3 px-4">
                     {profile?.idDocument ? (
                       <Button variant="ghost" size="sm" icon={Eye} onClick={() => openIdDocument(profile.idDocument)}>

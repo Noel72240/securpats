@@ -15,5 +15,7 @@ export function subscriptionPlanVariant(plan: SubscriptionPlan): 'info' | 'succe
 export function userRoleLabel(role: string): string {
   if (role === 'petsitter') return 'Pet-sitter'
   if (role === 'admin') return 'Admin'
+  if (role === 'foster_family') return 'Famille d’accueil'
+  if (role === 'volunteer') return 'Bénévole'
   return 'Propriétaire'
 }

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider, useApp, useHasActiveSubscription, useHasPetsitterVip } from '@/contexts/AppContext'
+import { LanguageProvider } from '@/i18n/LanguageContext'
 import { ShopCartProvider } from '@/lib/shop/cart'
 
 import HomePage from '@/pages/public/HomePage'
@@ -9,6 +10,8 @@ import FAQPage from '@/pages/public/FAQPage'
 import ContactPage from '@/pages/public/ContactPage'
 import LoginPage from '@/pages/public/LoginPage'
 import RegisterPage from '@/pages/public/RegisterPage'
+import ForgotPasswordPage from '@/pages/public/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/public/ResetPasswordPage'
 import RescuePage from '@/pages/public/RescuePage'
 import OwnerFamilyRescuePage from '@/pages/public/OwnerFamilyRescuePage'
 import EmergencyConfirmPage from '@/pages/public/EmergencyConfirmPage'
@@ -21,9 +24,13 @@ import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import OwnerProfilePage from '@/pages/owner/OwnerProfilePage'
 import DirectivesAnticipeesPage from '@/pages/owner/DirectivesAnticipeesPage'
+import OwnerMessagesPage from '@/pages/owner/MessagesPage'
+import FindPetsitterPage from '@/pages/owner/FindPetsitterPage'
 import { CookieBanner } from '@/components/legal/CookieBanner'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { PawDecorations } from '@/components/decor/PawDecorations'
+import { MustChangePasswordGate } from '@/components/auth/MustChangePasswordGate'
+import { AuthHashHandler } from '@/components/auth/AuthHashHandler'
 import { SeoPageView } from '@/pages/public/SeoLandingPage'
 import { SEO_PAGES } from '@/lib/seo/content'
 
@@ -47,6 +54,11 @@ import PetSitterRegisterPage from '@/pages/petsitter/PetSitterRegisterPage'
 import PetSitterLoginPage from '@/pages/petsitter/PetSitterLoginPage'
 import PetSitterSubscriptionPage from '@/pages/petsitter/PetSitterSubscriptionPage'
 import PetSitterSubscriptionSuccessPage from '@/pages/petsitter/PetSitterSubscriptionSuccessPage'
+import PetSitterMessagesPage from '@/pages/petsitter/MessagesPage'
+import {
+  FosterRegisterPage, FosterLoginPage, FosterDashboard, FosterProfilePage, FosterAvailabilityPage,
+  VolunteerRegisterPage, VolunteerLoginPage, VolunteerDashboard, VolunteerProfilePage, VolunteerAvailabilityPage,
+} from '@/pages/caregiver'
 
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
@@ -54,6 +66,7 @@ import AdminSiteContentPage from '@/pages/admin/AdminSiteContentPage'
 import AdminShopPage from '@/pages/admin/AdminShopPage'
 import AdminActuPage from '@/pages/admin/AdminActuPage'
 import AdminPartnersPage from '@/pages/admin/AdminPartnersPage'
+import AdminMessagesPage from '@/pages/admin/AdminMessagesPage'
 import ActuPage from '@/pages/actu/ActuPage'
 import ActuArticlePage from '@/pages/actu/ActuArticlePage'
 import PartnersPage from '@/pages/public/PartnersPage'
@@ -66,7 +79,30 @@ function OwnerProtectedRoute({ children }: { children: React.ReactNode }) {
   const { currentUser } = useApp()
   if (!currentUser) return <Navigate to="/connexion" replace />
   if (currentUser.role === 'petsitter') return <Navigate to="/pet-sitter" replace />
+  if (currentUser.role === 'foster_family') return <Navigate to="/famille-accueil" replace />
+  if (currentUser.role === 'volunteer') return <Navigate to="/benevole" replace />
   if (currentUser.role !== 'owner') return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
+function CaregiverProtectedRoute({
+  children,
+  kind,
+}: {
+  children: React.ReactNode
+  kind: 'foster_family' | 'volunteer'
+}) {
+  const { currentUser, authLoading } = useApp()
+  const loginPath = kind === 'foster_family' ? '/famille-accueil/connexion' : '/benevole/connexion'
+  if (authLoading) return null
+  if (!currentUser) return <Navigate to={loginPath} replace />
+  if (currentUser.role !== kind) {
+    if (currentUser.role === 'owner') return <Navigate to="/app" replace />
+    if (currentUser.role === 'petsitter') return <Navigate to="/pet-sitter" replace />
+    if (currentUser.role === 'foster_family') return <Navigate to="/famille-accueil" replace />
+    if (currentUser.role === 'volunteer') return <Navigate to="/benevole" replace />
+    return <Navigate to="/" replace />
+  }
   return <>{children}</>
 }
 
@@ -133,6 +169,8 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
+      <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+      <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
       <Route path="/secours/:token" element={<RescuePage />} />
       <Route path="/famille/:token" element={<OwnerFamilyRescuePage />} />
       <Route path="/urgence/confirmer/:token" element={<EmergencyConfirmPage />} />
@@ -155,6 +193,8 @@ function AppRoutes() {
       <Route path="/app/referents" element={<OwnerRoute><ReferentsPage /></OwnerRoute>} />
       <Route path="/app/documents" element={<OwnerRoute><DocumentsPage /></OwnerRoute>} />
       <Route path="/app/directives" element={<OwnerRoute><DirectivesAnticipeesPage /></OwnerRoute>} />
+      <Route path="/app/messages" element={<OwnerRoute requireSubscription={false}><OwnerMessagesPage /></OwnerRoute>} />
+      <Route path="/app/pet-sitters" element={<OwnerRoute><FindPetsitterPage /></OwnerRoute>} />
       <Route path="/app/qr-code" element={<OwnerRoute><QRCodePage /></OwnerRoute>} />
       <Route path="/app/carte-urgence" element={<OwnerRoute><EmergencyCardPage /></OwnerRoute>} />
       <Route path="/app/urgence" element={<OwnerRoute><EmergencyPage /></OwnerRoute>} />
@@ -172,11 +212,27 @@ function AppRoutes() {
       <Route path="/pet-sitter" element={<PetSitterIdentityRoute><PetSitterDashboard /></PetSitterIdentityRoute>} />
       <Route path="/pet-sitter/missions" element={<PetSitterIdentityRoute><MissionsPage /></PetSitterIdentityRoute>} />
       <Route path="/pet-sitter/disponibilites" element={<PetSitterIdentityRoute><AvailabilityPage /></PetSitterIdentityRoute>} />
+      <Route path="/pet-sitter/messages" element={<PetSitterIdentityRoute requireVip={false}><PetSitterMessagesPage /></PetSitterIdentityRoute>} />
       <Route path="/pet-sitter/profil" element={<PetSitterIdentityRoute><PetSitterProfilePage /></PetSitterIdentityRoute>} />
+
+      {/* Famille d'accueil */}
+      <Route path="/famille-accueil/connexion" element={<FosterLoginPage />} />
+      <Route path="/famille-accueil/inscription" element={<FosterRegisterPage />} />
+      <Route path="/famille-accueil" element={<CaregiverProtectedRoute kind="foster_family"><FosterDashboard /></CaregiverProtectedRoute>} />
+      <Route path="/famille-accueil/disponibilites" element={<CaregiverProtectedRoute kind="foster_family"><FosterAvailabilityPage /></CaregiverProtectedRoute>} />
+      <Route path="/famille-accueil/profil" element={<CaregiverProtectedRoute kind="foster_family"><FosterProfilePage /></CaregiverProtectedRoute>} />
+
+      {/* Bénévole */}
+      <Route path="/benevole/connexion" element={<VolunteerLoginPage />} />
+      <Route path="/benevole/inscription" element={<VolunteerRegisterPage />} />
+      <Route path="/benevole" element={<CaregiverProtectedRoute kind="volunteer"><VolunteerDashboard /></CaregiverProtectedRoute>} />
+      <Route path="/benevole/disponibilites" element={<CaregiverProtectedRoute kind="volunteer"><VolunteerAvailabilityPage /></CaregiverProtectedRoute>} />
+      <Route path="/benevole/profil" element={<CaregiverProtectedRoute kind="volunteer"><VolunteerProfilePage /></CaregiverProtectedRoute>} />
 
       {/* Admin */}
       <Route path="/admin/connexion" element={<AdminLoginPage />} />
       <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+      <Route path="/admin/messages" element={<AdminProtectedRoute><AdminMessagesPage /></AdminProtectedRoute>} />
       <Route path="/admin/contenu-site" element={<AdminProtectedRoute><AdminSiteContentPage /></AdminProtectedRoute>} />
       <Route path="/admin/boutique" element={<AdminProtectedRoute><AdminShopPage /></AdminProtectedRoute>} />
       <Route path="/admin/actu" element={<AdminProtectedRoute><AdminActuPage /></AdminProtectedRoute>} />
@@ -197,15 +253,20 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <ShopCartProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <PawDecorations />
-          <AppRoutes />
-          <CookieBanner />
-        </BrowserRouter>
-      </ShopCartProvider>
-    </AppProvider>
+    <LanguageProvider>
+      <AppProvider>
+        <ShopCartProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <AuthHashHandler />
+            <PawDecorations />
+            <MustChangePasswordGate>
+              <AppRoutes />
+            </MustChangePasswordGate>
+            <CookieBanner />
+          </BrowserRouter>
+        </ShopCartProvider>
+      </AppProvider>
+    </LanguageProvider>
   )
 }

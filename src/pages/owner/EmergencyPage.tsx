@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { AlertTriangle, Bell, CheckCircle, Send, Mail, Phone, Loader2, MessageSquare, Clock } from 'lucide-react'
+import { AlertTriangle, Bell, CheckCircle, Send, Mail, Phone, Loader2, MessageSquare, Clock, Shield } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Select, Textarea } from '@/components/ui/Input'
 import { useOwnerPets, useOwnerReferents, useApp } from '@/contexts/AppContext'
+import { useI18n } from '@/i18n/LanguageContext'
 
 type NotifyResult = {
   ok: boolean
@@ -18,6 +20,7 @@ type NotifyResult = {
 }
 
 export default function EmergencyPage() {
+  const { t } = useI18n()
   const pets = useOwnerPets()
   const referents = useOwnerReferents()
   const { declareEmergency } = useApp()
@@ -50,11 +53,11 @@ export default function EmergencyPage() {
     const anySent = (notifyResult?.emailsSent ?? 0) > 0 || (notifyResult?.smsSent ?? 0) > 0
 
     return (
-      <DashboardLayout variant="owner" title="Alerte transmise">
+      <DashboardLayout variant="owner" title={t('ownerEmergency.alertSent')}>
         <Card padding="lg" className="max-w-lg mx-auto text-center">
           <CheckCircle className="w-16 h-16 text-brand-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-900 mb-2">
-            Demande envoyée pour {pet?.name}
+            {t('ownerEmergency.sentFor', { pet: pet?.name ?? '' })}
           </h2>
           <p className="text-sm text-slate-600 mb-6">
             Vos référents doivent confirmer leur disponibilité. La procédure d&apos;urgence démarrera
@@ -65,7 +68,7 @@ export default function EmergencyPage() {
             <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
               <Clock className="w-5 h-5 text-amber-600" />
               <span className="text-sm text-amber-900 font-medium">
-                En attente de confirmation d&apos;un référent ({notifyResult?.referentsCount ?? referents.length} contacté(s))
+                {t('ownerEmergency.waiting')} ({notifyResult?.referentsCount ?? referents.length})
               </span>
             </div>
 
@@ -75,8 +78,8 @@ export default function EmergencyPage() {
                   <Mail className={`w-5 h-5 flex-shrink-0 ${notifyResult?.emailsSent ? 'text-brand-600' : 'text-slate-400'}`} />
                   <span className="text-sm">
                     {notifyResult?.emailsSent
-                      ? `${notifyResult.emailsSent} email(s) de confirmation envoyé(s)`
-                      : 'Aucun email envoyé'}
+                      ? `${notifyResult.emailsSent} email(s)`
+                      : t('ownerEmergency.noNotif')}
                   </span>
                 </div>
               </div>
@@ -88,8 +91,8 @@ export default function EmergencyPage() {
                   <MessageSquare className={`w-5 h-5 flex-shrink-0 ${notifyResult?.smsSent ? 'text-brand-600' : 'text-slate-400'}`} />
                   <span className="text-sm">
                     {notifyResult?.smsSent
-                      ? `${notifyResult.smsSent} SMS de confirmation envoyé(s)`
-                      : 'Aucun SMS envoyé'}
+                      ? `${notifyResult.smsSent} SMS`
+                      : t('ownerEmergency.noNotif')}
                   </span>
                 </div>
               </div>
@@ -97,7 +100,7 @@ export default function EmergencyPage() {
 
             {!notifyResult?.emailConfigured && !notifyResult?.smsConfigured && (
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-900">
-                Notifications automatiques non configurées — appelez vos référents directement.
+                {t('ownerEmergency.noNotif')}
               </div>
             )}
 
@@ -108,7 +111,7 @@ export default function EmergencyPage() {
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
               <div className="flex items-center gap-2 text-slate-800 font-medium mb-2">
                 <Bell className="w-4 h-4" />
-                Après confirmation
+                {t('ownerEmergency.afterConfirm')}
               </div>
               <p className="text-sm text-slate-600">
                 Une mission d&apos;urgence sera créée et tous les référents recevront l&apos;alerte complète avec la fiche secours.
@@ -118,7 +121,7 @@ export default function EmergencyPage() {
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
               <div className="flex items-center gap-2 text-amber-800 font-medium mb-2">
                 <Phone className="w-4 h-4" />
-                Contact téléphonique
+                {t('ownerEmergency.phoneContact')}
               </div>
               {referents.map(r => (
                 <p key={r.id} className="text-sm text-amber-900">
@@ -127,10 +130,24 @@ export default function EmergencyPage() {
                 </p>
               ))}
             </div>
+            <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-left">
+              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
+                <Shield className="w-4 h-4" />
+                {t('ownerEmergency.orFind')}
+              </div>
+              <p className="text-sm text-red-900/80 mb-3">
+                Consultez l&apos;annuaire des pet-sitters vérifiés et appelez-les directement.
+              </p>
+              <Link to="/app/pet-sitters">
+                <Button size="sm" className="!bg-red-600 hover:!bg-red-700" icon={Shield}>
+                  {t('ownerEmergency.findCta')}
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <Button className="mt-6" onClick={() => { setDeclared(false); setDescription(''); setNotifyResult(null) }}>
-            Retour
+            {t('commonApp.back')}
           </Button>
         </Card>
       </DashboardLayout>
@@ -138,13 +155,13 @@ export default function EmergencyPage() {
   }
 
   return (
-    <DashboardLayout variant="owner" title="Déclarer une urgence">
+    <DashboardLayout variant="owner" title={t('ownerEmergency.title')}>
       <div className="max-w-lg mx-auto">
         <Card padding="lg" className="border-2 border-red-200">
           <div className="flex items-center gap-3 mb-6 text-red-600">
             <AlertTriangle className="w-8 h-8" />
             <div>
-              <h2 className="text-xl font-bold">Je confirme l&apos;urgence</h2>
+              <h2 className="text-xl font-bold">{t('ownerEmergency.confirmTitle')}</h2>
               <p className="text-sm text-red-500">
                 Vos référents recevront un email/SMS pour confirmer leur disponibilité.
                 La procédure démarre dès qu&apos;un référent valide.
@@ -170,7 +187,7 @@ export default function EmergencyPage() {
             <div className="p-4 bg-slate-50 rounded-xl">
               <p className="text-sm font-medium text-slate-700 mb-2">Référents qui seront sollicités :</p>
               {referents.length === 0 ? (
-                <p className="text-sm text-red-500">Aucun référent enregistré — ajoutez-en dans votre espace.</p>
+                <p className="text-sm text-red-500">{t('ownerEmergency.noReferents')}</p>
               ) : (
                 referents.map(r => (
                   <p key={r.id} className="text-sm text-slate-600">
@@ -190,8 +207,18 @@ export default function EmergencyPage() {
               disabled={!description.trim() || !petId || referentsReachable.length === 0}
               loading={loading}
             >
-              Je confirme l&apos;urgence
+              {t('ownerEmergency.confirmCta')}
             </Button>
+
+            <Link to="/app/pet-sitters" className="block">
+              <Button
+                type="button"
+                className="w-full !bg-orange-500 hover:!bg-orange-600"
+                icon={Shield}
+              >
+                {t('ownerEmergency.orFind')}
+              </Button>
+            </Link>
           </div>
         </Card>
       </div>

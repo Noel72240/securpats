@@ -4,6 +4,7 @@ import {
   loadOwnerData, loadAdminData, loadPublicData,
   fetchPetsitterProfile, fetchAllMissions, fetchSubscriptionByOwner, fetchInvoicesByOwner,
 } from '@/lib/supabase/services'
+import { fetchCaregiverProfile } from '@/lib/caregiver/services'
 
 type Setters = {
   setPets: Dispatch<SetStateAction<import('@/types').Pet[]>>
@@ -16,6 +17,7 @@ type Setters = {
   setRegisteredUsers: Dispatch<SetStateAction<User[]>>
   setSiteSettings: Dispatch<SetStateAction<import('@/types').SiteSettings>>
   setPetSitterProfile: Dispatch<SetStateAction<import('@/types').PetSitterProfile | null>>
+  setCaregiverProfile: Dispatch<SetStateAction<import('@/types').CaregiverProfile | null>>
   setAllPetsitterProfiles: Dispatch<SetStateAction<import('@/types').PetSitterProfile[]>>
   setAllSubscriptions: Dispatch<SetStateAction<import('@/types').Subscription[]>>
 }
@@ -58,6 +60,12 @@ export async function hydrateUserData(user: User, setters: Setters) {
     setters.setMissions(missions.missions)
     setters.setSubscription(subscription.subscription)
     setters.setInvoices(invoices.invoices)
+    return
+  }
+
+  if (user.role === 'foster_family' || user.role === 'volunteer') {
+    const { profile } = await fetchCaregiverProfile(user.id)
+    if (profile) setters.setCaregiverProfile(profile)
   }
 }
 
@@ -75,6 +83,7 @@ export function clearUserData(setters: Setters) {
   setters.setMissions([])
   setters.setActivities([])
   setters.setPetSitterProfile(null)
+  setters.setCaregiverProfile(null)
   setters.setAllPetsitterProfiles([])
   setters.setAllSubscriptions([])
 }

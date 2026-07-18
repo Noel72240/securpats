@@ -5,10 +5,12 @@ import {
 } from 'lucide-react'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { Button } from '@/components/ui/Button'
-import { Input, Textarea } from '@/components/ui/Input'
+import { Input, Textarea, Select } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { PETSITTER_ID_LEGAL_NOTICE, validatePetsitterIdFile } from '@/lib/petsitter/validation'
+import { departmentSelectOptions } from '@/lib/geo/french-departments'
+import { useI18n } from '@/i18n/LanguageContext'
 
 function FileUploadBox({
   label,
@@ -75,6 +77,7 @@ function FileUploadBox({
 export default function PetSitterRegisterPage() {
   const navigate = useNavigate()
   const { currentUser, petSitterProfile, registerPetsitter, completePetsitterIdentity } = useApp()
+  const { t, locale } = useI18n()
 
   const completionMode = Boolean(
     currentUser?.role === 'petsitter' && !petSitterProfile?.idDocument,
@@ -86,6 +89,7 @@ export default function PetSitterRegisterPage() {
     email: currentUser?.email ?? '',
     phone: currentUser?.phone ?? '',
     address: petSitterProfile?.address ?? '',
+    departmentCode: petSitterProfile?.departmentCode ?? '',
     bio: petSitterProfile?.bio ?? '',
     password: '',
     confirm: '',
@@ -128,6 +132,11 @@ export default function PetSitterRegisterPage() {
       return
     }
 
+    if (!form.departmentCode) {
+      setError('Veuillez sélectionner votre département d’intervention.')
+      return
+    }
+
     setLoading(true)
 
     if (completionMode && currentUser) {
@@ -136,6 +145,7 @@ export default function PetSitterRegisterPage() {
         proofFile,
         address: form.address,
         bio: form.bio,
+        departmentCode: form.departmentCode,
         idProcessingAccepted,
       })
       setLoading(false)
@@ -170,6 +180,7 @@ export default function PetSitterRegisterPage() {
       lastName: form.lastName,
       phone: form.phone,
       address: form.address,
+      departmentCode: form.departmentCode,
       bio: form.bio,
       idFile,
       proofFile,
@@ -198,12 +209,10 @@ export default function PetSitterRegisterPage() {
               Abonnement VIP — 9,90 €/mois
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-              {completionMode ? 'Finaliser votre inscription Pet-Sitter' : 'Devenir Pet-Sitter VIP'}
+              {completionMode ? t('petsitterReg.titleComplete') : t('petsitterReg.title')}
             </h1>
             <p className="text-slate-600 text-sm sm:text-base max-w-lg mx-auto">
-              {completionMode
-                ? 'Dernière étape : envoyez votre pièce d\'identité, puis activez votre abonnement VIP (9,90 €/mois).'
-                : 'Rejoignez le réseau SécurPats. Inscription gratuite, puis abonnement VIP à 9,90 €/mois pour accéder à l\'espace et recevoir des missions.'}
+              {t('petsitterReg.subtitle')}
             </p>
           </div>
 
@@ -228,16 +237,23 @@ export default function PetSitterRegisterPage() {
                 </h2>
                 <div className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <Input label="Prénom" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
-                    <Input label="Nom" required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+                    <Input label={t('common.firstName')} required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
+                    <Input label={t('common.lastName')} required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
                   </div>
-                  <Input label="Email" type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-                  <Input label="Téléphone" type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                  <Input label="Adresse complète" required value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Numéro, rue, code postal, ville" />
-                  <Textarea label="Présentation" required rows={4} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="Votre expérience avec les animaux, votre zone d'intervention..." />
+                  <Input label={t('common.email')} type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                  <Input label={t('common.phone')} type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  <Input label={t('petsitterReg.address')} required value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="…" />
+                  <Select
+                    label={t('petsitterReg.department')}
+                    required
+                    value={form.departmentCode}
+                    onChange={e => setForm({ ...form, departmentCode: e.target.value })}
+                    options={departmentSelectOptions(locale, t('petsitterReg.departmentHint'))}
+                  />
+                  <Textarea label={t('petsitterReg.bio')} required rows={4} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="…" />
                   <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                    <Input label="Mot de passe" type="password" required minLength={8} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-                    <Input label="Confirmer le mot de passe" type="password" required value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
+                    <Input label={t('common.password')} type="password" required minLength={8} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+                    <Input label={t('common.confirmPassword')} type="password" required value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
                   </div>
                 </div>
               </Card>
@@ -246,6 +262,13 @@ export default function PetSitterRegisterPage() {
             {completionMode && (
               <Card padding="lg" className="space-y-4">
                 <Input label="Adresse" required value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+                <Select
+                  label={t('petsitterReg.department')}
+                  required
+                  value={form.departmentCode}
+                  onChange={e => setForm({ ...form, departmentCode: e.target.value })}
+                  options={departmentSelectOptions(locale, t('petsitterReg.departmentHint'))}
+                />
                 <Textarea label="Présentation" rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
               </Card>
             )}
@@ -348,14 +371,15 @@ export default function PetSitterRegisterPage() {
               type="submit"
               icon={loading ? Loader2 : UserPlus}
               className="w-full"
+              variant="blue"
               disabled={loading || !!success}
               size="lg"
             >
               {loading
-                ? 'Envoi en cours...'
+                ? t('petsitterReg.creating')
                 : completionMode
-                  ? 'Envoyer ma pièce d\'identité et accéder à mon espace'
-                  : 'S\'inscrire comme Pet-Sitter'}
+                  ? t('petsitterReg.submitComplete')
+                  : t('petsitterReg.submit')}
             </Button>
 
             {!completionMode && (

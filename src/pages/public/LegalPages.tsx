@@ -2,13 +2,20 @@ import { Link } from 'react-router-dom'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { useLegalInfo } from '@/lib/legal/useLegalInfo'
 import { SUBPROCESSORS } from '@/lib/legal/constants'
+import { useI18n } from '@/i18n/LanguageContext'
 
 function LegalPage({ title, children }: { title: string; children: React.ReactNode }) {
+  const { t, locale } = useI18n()
   return (
     <PublicLayout>
       <section className="py-16 lg:py-24">
         <div className="max-w-3xl mx-auto px-4">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
+          {locale === 'en' && (
+            <p className="mb-6 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              {t('legal.notice')}
+            </p>
+          )}
           <div className="space-y-6 text-slate-600 leading-relaxed text-[15px]">{children}</div>
         </div>
       </section>
@@ -30,8 +37,9 @@ function Ul({ items }: { items: string[] }) {
 
 export function MentionsLegalesPage() {
   const l = useLegalInfo()
+  const { t } = useI18n()
   return (
-    <LegalPage title="Mentions légales">
+    <LegalPage title={t('legal.mentions')}>
       <p className="text-sm text-slate-500">Conformément à la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l&apos;économie numérique (LCEN).</p>
       <p className="text-sm text-slate-500">Version {l.legalVersion}</p>
 
@@ -80,8 +88,9 @@ export function MentionsLegalesPage() {
 
 export function CGUPage() {
   const l = useLegalInfo()
+  const { t } = useI18n()
   return (
-    <LegalPage title="Conditions Générales d'Utilisation">
+    <LegalPage title={t('legal.terms')}>
       <p className="text-sm text-slate-500">Dernière mise à jour : {l.legalVersion}</p>
 
       <H2>1. Objet et acceptation</H2>
@@ -166,8 +175,9 @@ export function CGUPage() {
 
 export function PrivacyPage() {
   const l = useLegalInfo()
+  const { t } = useI18n()
   return (
-    <LegalPage title="Politique de confidentialité">
+    <LegalPage title={t('legal.privacy')}>
       <p className="text-sm text-slate-500">Conforme au Règlement (UE) 2016/679 (RGPD) et à la loi Informatique et Libertés. Version {l.legalVersion}.</p>
 
       <H2>1. Responsable de traitement</H2>
@@ -268,8 +278,9 @@ export function PrivacyPage() {
 
 export function RGPDPage() {
   const l = useLegalInfo()
+  const { t } = useI18n()
   return (
-    <LegalPage title="Informations RGPD">
+    <LegalPage title={t('legal.rgpd')}>
       <p className="text-sm text-slate-500">Synthèse de vos droits en matière de protection des données. Version {l.legalVersion}.</p>
 
       <H2>Registre des traitements (extrait)</H2>
@@ -336,8 +347,9 @@ export function RGPDPage() {
 
 export function CookiesPage() {
   const l = useLegalInfo()
+  const { t } = useI18n()
   return (
-    <LegalPage title="Politique cookies">
+    <LegalPage title={t('legal.cookies')}>
       <p className="text-sm text-slate-500">Conforme aux recommandations CNIL et à la directive ePrivacy. Version {l.legalVersion}.</p>
 
       <H2>1. Qu&apos;est-ce qu&apos;un cookie ?</H2>

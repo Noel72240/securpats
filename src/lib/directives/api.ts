@@ -105,13 +105,18 @@ export async function fetchAdvanceDirectives(ownerId: string): Promise<{
     .eq('owner_id', ownerId)
     .maybeSingle()
   if (error) {
-    if (error.message.includes('advance_directives')) {
+    const msg = error.message || ''
+    const missing =
+      msg.includes('advance_directives') ||
+      error.code === 'PGRST205' ||
+      error.code === '42P01'
+    if (missing) {
       return {
         directives: null,
         error: 'Table absente : exécutez supabase/migrations/018_advance_directives.sql dans Supabase.',
       }
     }
-    return { directives: null, error: error.message }
+    return { directives: null, error: msg }
   }
   if (!data) return { directives: null, error: null }
   return { directives: fromRow(data as Row), error: null }

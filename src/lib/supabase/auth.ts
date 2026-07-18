@@ -8,6 +8,21 @@ function resolveRole(email: string): UserRole {
   return email.toLowerCase() === adminEmail ? 'admin' : 'owner'
 }
 
+function appOrigin(): string {
+  const fromEnv = (import.meta.env.VITE_APP_URL || '').replace(/\/$/, '')
+  if (fromEnv) return fromEnv
+  if (typeof window !== 'undefined') return window.location.origin
+  return 'https://www.securpats.fr'
+}
+
+function loginPathForRole(role: UserRole): string {
+  if (role === 'petsitter') return '/pet-sitter/connexion'
+  if (role === 'foster_family') return '/famille-accueil/connexion'
+  if (role === 'volunteer') return '/benevole/connexion'
+  if (role === 'admin') return '/admin/connexion'
+  return '/connexion'
+}
+
 export async function signUp(data: {
   email: string
   password: string
@@ -19,13 +34,72 @@ export async function signUp(data: {
   consentVersion?: string
   marketingOptIn?: boolean
 }) {
-  const supabase = getSupabase()
   const role = data.role ?? resolveRole(data.email)
+
+  // Inscription via API admin : compte déjà confirmé (plus d’attente d’email Supabase)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          role,
+          consentAt: data.consentAt,
+          consentVersion: data.consentVersion,
+          marketingOptIn: data.marketingOptIn ?? false,
+        }),
+      })
+      const payload = (await res.json().catch(() => ({}))) as {
+        error?: string
+        fallback?: boolean
+        userId?: string
+      }
+
+      if (res.ok) {
+        const userId = typeof payload.userId === 'string' ? payload.userId : ''
+        const signedIn = await signIn(data.email, data.password)
+        if (signedIn.user) {
+          return { user: signedIn.user, error: null, needsEmailConfirmation: false }
+        }
+        return {
+          user: null,
+          error: null,
+          needsEmailConfirmation: false,
+          readyToLogin: true as const,
+          userId: userId || undefined,
+        }
+      }
+
+      // Pas de service role / API absente → fallback client Supabase
+      if (res.status !== 503 && !payload.fallback) {
+        return {
+          user: null,
+          error: payload.error || 'Inscription échouée',
+          needsEmailConfirmation: false,
+        }
+      }
+    } catch {
+      // Fallback ci-dessous
+    }
+  }
+
+  if (!isSupabaseConfigured()) {
+    return { user: null, error: 'Supabase non configuré', needsEmailConfirmation: false }
+  }
+
+  const supabase = getSupabase()
+  const emailRedirectTo = `${appOrigin()}${loginPathForRole(role)}?confirmed=1`
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
+      emailRedirectTo,
       data: {
         first_name: data.firstName,
         last_name: data.lastName,
@@ -41,12 +115,10 @@ export async function signUp(data: {
   if (authError) return { user: null, error: authError.message, needsEmailConfirmation: false }
   if (!authData.user) return { user: null, error: 'Inscription échouée', needsEmailConfirmation: false }
 
-  // Confirmation email activée → pas de session : le trigger DB crée déjà le profil
   if (!authData.session) {
     return { user: null, error: null, needsEmailConfirmation: true }
   }
 
-  // Session active : lire le profil créé par le trigger
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
@@ -57,7 +129,6 @@ export async function signUp(data: {
     return { user: profileToUser(profile), error: null, needsEmailConfirmation: false }
   }
 
-  // Secours uniquement avec session (sinon RLS bloque l'insert)
   const { error: upsertError } = await supabase.from('profiles').upsert(
     userToProfileInsert({
       id: authData.user.id,
@@ -93,6 +164,26 @@ export async function signUp(data: {
   }
 
   return { user: profileToUser(profileAfterUpsert), error: null, needsEmailConfirmation: false }
+}
+
+/** Renvoie l’email de confirmation Supabase Auth. */
+export async function resendSignupConfirmation(
+  email: string,
+  loginPath = '/connexion',
+): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) return { error: 'Supabase non configuré' }
+  const trimmed = email.trim()
+  if (!trimmed) return { error: 'Email manquant' }
+
+  const { error } = await getSupabase().auth.resend({
+    type: 'signup',
+    email: trimmed,
+    options: {
+      emailRedirectTo: `${appOrigin()}${loginPath}?confirmed=1`,
+    },
+  })
+  if (error) return { error: error.message }
+  return { error: null }
 }
 
 export async function signIn(email: string, password: string) {

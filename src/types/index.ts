@@ -1,4 +1,6 @@
-export type UserRole = 'owner' | 'petsitter' | 'admin'
+export type UserRole = 'owner' | 'petsitter' | 'admin' | 'foster_family' | 'volunteer'
+
+export type CaregiverKind = 'foster_family' | 'volunteer'
 
 export interface User {
   id: string
@@ -18,6 +20,8 @@ export interface User {
   marketingOptIn?: boolean
   /** QR unique du foyer (fiche famille imprimable) */
   qrToken?: string
+  /** True après reset admin : l’utilisateur doit changer son MDP */
+  mustChangePassword?: boolean
 }
 
 export interface Pet {
@@ -129,10 +133,29 @@ export interface PetSitterProfile {
   availableDays: string[]
   availableHours: string
   serviceArea: string
+  /** Code département FR (ex: 75, 69, 971) */
+  departmentCode?: string
   verified: boolean
   /** Consentement RGPD — traitement pièce d'identité */
   idConsentAt?: string
   idConsentVersion?: string
+}
+
+/** Profil famille d'accueil ou bénévole */
+export interface CaregiverProfile {
+  id: string
+  userId: string
+  kind: CaregiverKind
+  photo?: string
+  bio: string
+  phone: string
+  email: string
+  address: string
+  departmentCode?: string
+  availableDays: string[]
+  availableHours: string
+  serviceArea: string
+  verified: boolean
 }
 
 export interface Activity {

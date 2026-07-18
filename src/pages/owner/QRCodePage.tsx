@@ -8,8 +8,10 @@ import { Card, EmptyState } from '@/components/ui/Card'
 import { Select } from '@/components/ui/Input'
 import { useApp, useOwnerPets } from '@/contexts/AppContext'
 import { getRescueUrl, getOwnerRescueUrl } from '@/lib/utils'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function QRCodePage() {
+  const { t } = useI18n()
   const { currentUser } = useApp()
   const pets = useOwnerPets()
   const [selectedId, setSelectedId] = useState(pets[0]?.id || '')
@@ -46,19 +48,19 @@ export default function QRCodePage() {
 
   if (!currentUser?.qrToken && pets.length === 0) {
     return (
-      <DashboardLayout variant="owner" title="QR Code d'urgence">
-        <Card><EmptyState icon={QrCode} title="QR code indisponible" description="Votre QR foyer sera généré à la connexion." /></Card>
+      <DashboardLayout variant="owner" title={t('ownerQr.title')}>
+        <Card><EmptyState icon={QrCode} title={t('ownerQr.unavailable')} description="Votre QR foyer sera généré à la connexion." /></Card>
       </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout variant="owner" title="QR Code d'urgence">
+    <DashboardLayout variant="owner" title={t('ownerQr.title')}>
       <div className="max-w-2xl mx-auto space-y-8">
         {ownerUrl && (
           <section className="space-y-4">
             <div>
-              <h2 className="font-bold text-slate-900">QR Code du foyer</h2>
+              <h2 className="font-bold text-slate-900">{t('ownerQr.household')}</h2>
               <p className="text-sm text-slate-500 mt-1">
                 Un seul QR pour {currentUser?.firstName} {currentUser?.lastName} — animaux et référents inclus.
               </p>
@@ -71,12 +73,12 @@ export default function QRCodePage() {
               <p className="text-xs text-brand-600 mt-2">Ouvre la fiche famille complète (sans connexion).</p>
             </Card>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Button icon={Download} onClick={downloadOwnerPNG}>Télécharger PNG</Button>
+              <Button icon={Download} onClick={downloadOwnerPNG}>{t('ownerQr.downloadPng')}</Button>
               <Button variant="secondary" icon={copied === 'owner' ? Check : Copy} onClick={() => copyUrl('owner', ownerUrl)}>
-                {copied === 'owner' ? 'Copié !' : 'Copier l\'URL'}
+                {copied === 'owner' ? t('ownerQr.copied') : t('ownerQr.copyUrl')}
               </Button>
               <Link to="/app/carte-urgence">
-                <Button variant="outline" icon={CreditCard}>Fiche imprimable</Button>
+                <Button variant="outline" icon={CreditCard}>{t('ownerQr.printable')}</Button>
               </Link>
             </div>
           </section>
@@ -85,7 +87,7 @@ export default function QRCodePage() {
         {pets.length > 0 && (
           <section className="space-y-4 border-t border-slate-100 pt-8">
             <div>
-              <h2 className="font-bold text-slate-900">QR Code par animal</h2>
+              <h2 className="font-bold text-slate-900">{t('ownerQr.perPet')}</h2>
               <p className="text-sm text-slate-500 mt-1">Fiche de secours individuelle (optionnel).</p>
             </div>
             <Select
@@ -104,7 +106,7 @@ export default function QRCodePage() {
                 </Card>
                 <div className="flex justify-center">
                   <Button variant="outline" icon={copied === 'pet' ? Check : Copy} onClick={() => copyUrl('pet', petUrl)}>
-                    {copied === 'pet' ? 'Copié !' : 'Copier l\'URL animal'}
+                    {copied === 'pet' ? t('ownerQr.copied') : t('ownerQr.copyPetUrl')}
                   </Button>
                 </div>
               </>

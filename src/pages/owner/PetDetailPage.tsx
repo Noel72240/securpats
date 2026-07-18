@@ -5,8 +5,10 @@ import { Card, Badge } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useApp } from '@/contexts/AppContext'
 import { calculateAge } from '@/lib/utils'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function PetDetailPage() {
+  const { t } = useI18n()
   const { id } = useParams()
   const { pets } = useApp()
   const pet = pets.find(p => p.id === id)
@@ -15,7 +17,7 @@ export default function PetDetailPage() {
     return (
       <DashboardLayout variant="owner" title="Animal introuvable">
         <p className="text-slate-600">Cet animal n'existe pas.</p>
-        <Link to="/app/animaux"><Button variant="outline" className="mt-4" icon={ArrowLeft}>Retour</Button></Link>
+        <Link to="/app/animaux"><Button variant="outline" className="mt-4" icon={ArrowLeft}>{t('commonApp.back')}</Button></Link>
       </DashboardLayout>
     )
   }
@@ -31,7 +33,7 @@ export default function PetDetailPage() {
     <DashboardLayout variant="owner" title={pet.name}>
       <div className="space-y-6">
         <Link to="/app/animaux" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-brand-600">
-          <ArrowLeft className="w-4 h-4" /> Retour aux animaux
+          <ArrowLeft className="w-4 h-4" /> {t('commonApp.back')}
         </Link>
 
         <Card padding="lg">
@@ -69,7 +71,7 @@ export default function PetDetailPage() {
                 <s.icon className="w-5 h-5 text-brand-600" />
                 <h3 className="font-semibold text-slate-900">{s.title}</h3>
               </div>
-              <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">{s.content || 'Non renseigné'}</p>
+              <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">{s.content || t('commonApp.notProvided')}</p>
             </Card>
           ))}
         </div>

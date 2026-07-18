@@ -27,6 +27,7 @@ export function profileToUser(row: Tables<'profiles'>): User {
     consentVersion: row.consent_version ?? undefined,
     marketingOptIn: row.marketing_opt_in ?? undefined,
     qrToken: row.qr_token ?? undefined,
+    mustChangePassword: Boolean(row.must_change_password),
   }
 }
 
@@ -269,6 +270,7 @@ export function petsitterFromRow(row: Tables<'petsitter_profiles'>): PetSitterPr
     availableDays: row.available_days,
     availableHours: row.available_hours,
     serviceArea: row.service_area,
+    departmentCode: row.department_code ?? undefined,
     verified: row.verified,
     idConsentAt: row.id_consent_at ?? undefined,
     idConsentVersion: row.id_consent_version ?? undefined,

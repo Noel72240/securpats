@@ -15,16 +15,16 @@ import {
 import type { AdvanceDirectives } from '@/lib/directives/types'
 import {
   DIRECTIVES_DOC_NAME,
-  buildDirectivesDocumentHtml,
-  directivesFileName,
-  directivesHtmlToFile,
-  downloadDirectivesHtml,
-  printDirectivesHtml,
+  buildDirectivesPdf,
+  directivesPdfToFile,
+  downloadDirectivesPdf,
+  printDirectivesPdf,
 } from '@/lib/directives/document'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
 import { formatDate } from '@/lib/utils'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadDocumentFile } from '@/lib/supabase/uploads'
+import { useI18n } from '@/i18n/LanguageContext'
 
 type FormState = Omit<AdvanceDirectives, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
 
@@ -64,6 +64,7 @@ function GuardianFields({
 }
 
 export default function DirectivesAnticipeesPage() {
+  const { t } = useI18n()
   const { currentUser, addDocument, deleteDocument } = useApp()
   const pets = useOwnerPets()
   const referents = useOwnerReferents()
@@ -73,7 +74,7 @@ export default function DirectivesAnticipeesPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [lastHtml, setLastHtml] = useState<string | null>(null)
+  const [lastPdf, setLastPdf] = useState<{ blob: Blob; fileName: string } | null>(null)
 
   const ownerLabel = `${currentUser?.firstName ?? ''} ${currentUser?.lastName ?? ''}`.trim() || currentUser?.email || 'Propriétaire'
 
@@ -82,8 +83,8 @@ export default function DirectivesAnticipeesPage() {
     return petIds.map(id => pets.find(p => p.id === id)?.name).filter((n): n is string => Boolean(n))
   }
 
-  const buildHtmlFromForm = (data: FormState & { signedAt: string | null }) =>
-    buildDirectivesDocumentHtml({
+  const buildPdfFromForm = (data: FormState & { signedAt: string | null }) =>
+    buildDirectivesPdf({
       directives: data as AdvanceDirectives,
       ownerLabel,
       petLabels: petLabelsFor(data.petIds),
@@ -95,10 +96,9 @@ export default function DirectivesAnticipeesPage() {
     if (main instanceof HTMLElement) main.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const syncToDocumentsFolder = async (html: string) => {
+  const syncToDocumentsFolder = async (blob: Blob, fileName: string) => {
     if (!currentUser || !isSupabaseConfigured()) return { error: null as string | null }
 
-    // Remplacer l’ancienne version auto dans le dossier Directives anticipées
     const previous = documents.filter(
       d => d.category === 'directives_anticipees' && d.name === DIRECTIVES_DOC_NAME,
     )
@@ -106,7 +106,7 @@ export default function DirectivesAnticipeesPage() {
       deleteDocument(doc.id)
     }
 
-    const file = directivesHtmlToFile(html, directivesFileName())
+    const file = directivesPdfToFile(blob, fileName)
     const petId = form.petIds[0] || pets[0]?.id
     if (!petId) {
       return { error: 'Ajoutez un animal pour classer le document dans vos dossiers.' }
@@ -127,57 +127,70 @@ export default function DirectivesAnticipeesPage() {
   }
 
   useEffect(() => {
-    if (!currentUser) return
+    if (!currentUser) {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
     void (async () => {
       setLoading(true)
-      const { directives, error: err } = await fetchAdvanceDirectives(currentUser.id)
-      if (err) setError(err)
-      if (directives) {
-        const nextForm = {
-          id: directives.id,
-          ownerId: directives.ownerId,
-          petIds: directives.petIds,
-          priorityName: directives.priorityName,
-          priorityPhone: directives.priorityPhone,
-          priorityRelation: directives.priorityRelation,
-          backupName: directives.backupName,
-          backupPhone: directives.backupPhone,
-          backupRelation: directives.backupRelation,
-          tertiaryName: directives.tertiaryName,
-          tertiaryPhone: directives.tertiaryPhone,
-          tertiaryRelation: directives.tertiaryRelation,
-          allowPartnerShelter: directives.allowPartnerShelter,
-          allowFosterFamily: directives.allowFosterFamily,
-          peopleToNotify: directives.peopleToNotify,
-          specialInstructions: directives.specialInstructions,
-          medication: directives.medication,
-          feedingHabits: directives.feedingHabits,
-          dailyHabits: directives.dailyHabits,
-          veterinarianInfo: directives.veterinarianInfo,
-          signedFullName: directives.signedFullName,
-          signatureData: directives.signatureData,
-          consentAccepted: directives.consentAccepted,
-          consentVersion: directives.consentVersion,
-          signedAt: directives.signedAt,
+      try {
+        const { directives, error: err } = await fetchAdvanceDirectives(currentUser.id)
+        if (cancelled) return
+        if (err) setError(err)
+        if (directives) {
+          setForm({
+            id: directives.id,
+            ownerId: directives.ownerId,
+            petIds: directives.petIds,
+            priorityName: directives.priorityName,
+            priorityPhone: directives.priorityPhone,
+            priorityRelation: directives.priorityRelation,
+            backupName: directives.backupName,
+            backupPhone: directives.backupPhone,
+            backupRelation: directives.backupRelation,
+            tertiaryName: directives.tertiaryName,
+            tertiaryPhone: directives.tertiaryPhone,
+            tertiaryRelation: directives.tertiaryRelation,
+            allowPartnerShelter: directives.allowPartnerShelter,
+            allowFosterFamily: directives.allowFosterFamily,
+            peopleToNotify: directives.peopleToNotify,
+            specialInstructions: directives.specialInstructions,
+            medication: directives.medication,
+            feedingHabits: directives.feedingHabits,
+            dailyHabits: directives.dailyHabits,
+            veterinarianInfo: directives.veterinarianInfo,
+            signedFullName: directives.signedFullName,
+            signatureData: directives.signatureData,
+            consentAccepted: directives.consentAccepted,
+            consentVersion: directives.consentVersion,
+            signedAt: directives.signedAt,
+          })
+          if (directives.signedAt) {
+            void buildDirectivesPdf({
+              directives,
+              ownerLabel: `${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || currentUser.email || 'Propriétaire',
+              petLabels: petLabelsFor(directives.petIds),
+            }).then(pdf => {
+              if (!cancelled) setLastPdf(pdf)
+            }).catch(() => { /* ignore */ })
+          }
+        } else {
+          setForm(emptyAdvanceDirectives(currentUser.id))
         }
-        setForm(nextForm)
-        if (directives.signedAt) {
-          setLastHtml(buildDirectivesDocumentHtml({
-            directives,
-            ownerLabel: `${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || currentUser.email || 'Propriétaire',
-            petLabels: (
-              directives.petIds.length === 0
-                ? pets.map(p => p.name)
-                : directives.petIds.map(id => pets.find(p => p.id === id)?.name).filter((n): n is string => Boolean(n))
-            ),
-          }))
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Erreur de chargement')
         }
-      } else {
-        setForm(emptyAdvanceDirectives(currentUser.id))
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
     })()
-  }, [currentUser, pets])
+    return () => { cancelled = true }
+    // Intentionnellement pas de `pets` : useOwnerPets() renvoie un nouveau tableau à chaque render
+    // et provoquait une boucle infinie « Chargement… ».
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id])
 
   const patch = (updates: Partial<FormState>) => setForm(prev => ({ ...prev, ...updates }))
 
@@ -219,7 +232,7 @@ export default function DirectivesAnticipeesPage() {
       return
     }
     if (!form.signatureData) {
-      setError('Merci de signer dans le cadre prévu.')
+      setError(t('ownerDirectives.mustSign'))
       return
     }
 
@@ -274,35 +287,45 @@ export default function DirectivesAnticipeesPage() {
 
     setForm(savedForm)
 
-    const html = buildHtmlFromForm(savedForm)
-    setLastHtml(html)
+    const pdf = await buildPdfFromForm(savedForm)
+    setLastPdf(pdf)
 
-    const { error: docErr } = await syncToDocumentsFolder(html)
+    const { error: docErr } = await syncToDocumentsFolder(pdf.blob, pdf.fileName)
     setSaving(false)
 
     if (docErr) {
-      setSuccess('Directives signées. Attention : le dépôt dans Documents a échoué.')
+      setSuccess(t('ownerDirectives.signed'))
       setError(docErr)
     } else {
-      setSuccess('Directives signées. Document ajouté dans Documents → Directives anticipées.')
+      setSuccess(t('ownerDirectives.signed'))
       setError('')
     }
     scrollTop()
   }
 
-  const handleDownload = () => {
-    const html = lastHtml || buildHtmlFromForm(form)
-    downloadDirectivesHtml(html)
+  const handleDownload = async () => {
+    try {
+      const pdf = lastPdf || await buildPdfFromForm(form)
+      setLastPdf(pdf)
+      downloadDirectivesPdf(pdf.blob, pdf.fileName)
+    } catch {
+      setError(t('ownerDirectives.pdfError'))
+    }
   }
 
-  const handlePrint = () => {
-    const html = lastHtml || buildHtmlFromForm(form)
-    const ok = printDirectivesHtml(html)
-    if (!ok) setError('Autorisez les pop-ups pour imprimer le document.')
+  const handlePrint = async () => {
+    try {
+      const pdf = lastPdf || await buildPdfFromForm(form)
+      setLastPdf(pdf)
+      const ok = printDirectivesPdf(pdf.blob)
+      if (!ok) setError('Autorisez les pop-ups pour imprimer le document.')
+    } catch {
+      setError(t('ownerDirectives.pdfError'))
+    }
   }
 
   return (
-    <DashboardLayout variant="owner" title="Directives anticipées">
+    <DashboardLayout variant="owner" title={t('ownerDirectives.title')}>
       <div className="max-w-3xl space-y-6">
         <Card padding="lg">
           <div className="flex items-start gap-4 mb-2">
@@ -310,7 +333,7 @@ export default function DirectivesAnticipeesPage() {
               <ScrollText className="w-6 h-6 text-brand-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Directives anticipées</h2>
+              <h2 className="text-xl font-bold text-slate-900">{t('ownerDirectives.title')}</h2>
               <p className="text-sm text-slate-500 mt-1 leading-relaxed">
                 Indiquez à qui confier vos animaux en cas de décès, et vos consignes de soin.
                 Vous validez le document par signature électronique.
@@ -326,7 +349,7 @@ export default function DirectivesAnticipeesPage() {
         </Card>
 
         {loading ? (
-          <p className="text-sm text-slate-500">Chargement…</p>
+          <p className="text-sm text-slate-500">{t('commonApp.loading')}</p>
         ) : (
           <>
             {error && (
@@ -346,10 +369,10 @@ export default function DirectivesAnticipeesPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" icon={Download} onClick={handleDownload}>Télécharger</Button>
-                  <Button size="sm" variant="outline" icon={Printer} onClick={handlePrint}>Imprimer</Button>
+                  <Button size="sm" icon={Download} onClick={() => void handleDownload()}>{t('ownerDirectives.downloadPdf')}</Button>
+                  <Button size="sm" variant="outline" icon={Printer} onClick={() => void handlePrint()}>{t('ownerDirectives.print')}</Button>
                   <Link to="/app/documents">
-                    <Button size="sm" variant="ghost" icon={FolderOpen}>Voir dans Documents</Button>
+                    <Button size="sm" variant="ghost" icon={FolderOpen}>{t('ownerDirectives.seeDocs')}</Button>
                   </Link>
                 </div>
               </Card>
@@ -361,14 +384,14 @@ export default function DirectivesAnticipeesPage() {
                   Dernière signature le {formatDate(form.signedAt)} — vous pouvez retélécharger / réimprimer.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" icon={Download} onClick={handleDownload}>Télécharger</Button>
-                  <Button size="sm" variant="outline" icon={Printer} onClick={handlePrint}>Imprimer</Button>
+                  <Button size="sm" variant="outline" icon={Download} onClick={() => void handleDownload()}>{t('ownerDirectives.downloadPdf')}</Button>
+                  <Button size="sm" variant="outline" icon={Printer} onClick={() => void handlePrint()}>{t('ownerDirectives.print')}</Button>
                 </div>
               </Card>
             )}
 
             <Card padding="lg" className="space-y-4">
-              <h3 className="font-semibold text-slate-900">Animaux concernés</h3>
+              <h3 className="font-semibold text-slate-900">{t('ownerDirectives.pets')}</h3>
               <p className="text-xs text-slate-500 -mt-2">
                 Laissez tout décoché pour appliquer à tous vos animaux, ou cochez ceux concernés.
               </p>
@@ -406,12 +429,12 @@ export default function DirectivesAnticipeesPage() {
             <Card padding="lg" className="space-y-4">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-brand-600" />
-                <h3 className="font-semibold text-slate-900">À qui confier vos animaux</h3>
+                <h3 className="font-semibold text-slate-900">{t('ownerDirectives.who')}</h3>
               </div>
 
               {referents.length > 0 && (
                 <div className="text-xs text-slate-500 space-y-2 p-3 rounded-xl bg-brand-50/50 border border-brand-100">
-                  <p className="font-medium text-brand-800">Remplir depuis un référent SécurPats :</p>
+                  <p className="font-medium text-brand-800">{t('ownerDirectives.fillFrom')} :</p>
                   <div className="flex flex-wrap gap-2">
                     {referents.map(r => (
                       <div key={r.id} className="flex flex-wrap gap-1">
@@ -431,7 +454,7 @@ export default function DirectivesAnticipeesPage() {
               )}
 
               <GuardianFields
-                title="1. Personne prioritaire"
+                title={t('ownerDirectives.person1')}
                 hint="À qui confier en premier vos animaux."
                 name={form.priorityName}
                 phone={form.priorityPhone}
@@ -443,7 +466,7 @@ export default function DirectivesAnticipeesPage() {
                 })}
               />
               <GuardianFields
-                title="2. Si cette personne est indisponible"
+                title={t('ownerDirectives.person2')}
                 hint="Personne de relais si la prioritaire ne répond pas ou est absente."
                 name={form.backupName}
                 phone={form.backupPhone}
@@ -455,7 +478,7 @@ export default function DirectivesAnticipeesPage() {
                 })}
               />
               <GuardianFields
-                title="3. Si cette personne ne peut pas les prendre"
+                title={t('ownerDirectives.person3')}
                 hint="Solution de secours si les deux premières ne peuvent pas accueillir."
                 name={form.tertiaryName}
                 phone={form.tertiaryPhone}
@@ -543,7 +566,7 @@ export default function DirectivesAnticipeesPage() {
             </Card>
 
             <Card padding="lg" className="space-y-4">
-              <h3 className="font-semibold text-slate-900">Signature électronique</h3>
+              <h3 className="font-semibold text-slate-900">{t('ownerDirectives.signature')}</h3>
               <p className="text-sm text-slate-500">
                 En signant, vous confirmez que ces directives expriment votre volonté concernant
                 la prise en charge de vos animaux.
@@ -582,7 +605,7 @@ export default function DirectivesAnticipeesPage() {
                 </span>
               </label>
               <Button icon={Save} loading={saving} onClick={() => void handleSave()}>
-                Enregistrer et signer
+                {t('ownerDirectives.signSave')}
               </Button>
             </Card>
           </>

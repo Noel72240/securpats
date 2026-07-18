@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import { Loader2, type LucideIcon } from 'lucide-react'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'accent'
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'accent' | 'blue' | 'blueOutline'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
   icon?: LucideIcon
@@ -18,6 +18,8 @@ export function Button({
     ghost: 'text-brand-700 hover:bg-brand-50',
     danger: 'bg-red-600 text-white hover:bg-red-700',
     accent: 'bg-accent-500 text-white hover:bg-accent-600 shadow-sm shadow-accent-500/20',
+    blue: 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-600/20 focus:ring-blue-500/40',
+    blueOutline: 'border-2 border-blue-300 text-blue-700 hover:bg-blue-50 focus:ring-blue-500/40',
   }
   const sizes = {
     sm: 'px-3 py-1.5 text-sm gap-1.5',

@@ -10,8 +10,10 @@ import { createSubscriptionCheckout, openCustomerPortal, isStripeConfigured, rec
 import { arePaymentsBlocked } from '@/lib/maintenance'
 import { formatDate } from '@/lib/utils'
 import { PETSITTER_VIP_PLAN } from '@/lib/stripe/petsitter-vip'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function SubscriptionPage() {
+  const { t } = useI18n()
   const { subscription, invoices, currentUser, siteSettings } = useApp()
   const [searchParams] = useSearchParams()
   const canceled = searchParams.get('canceled')
@@ -67,13 +69,13 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <DashboardLayout variant="owner" title="Abonnement">
+    <DashboardLayout variant="owner" title={t('ownerSub.title')}>
       <div className="space-y-8 max-w-4xl">
         {paymentsBlocked && needsPayment && (
           <Card className="bg-orange-50 border-orange-200 !p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-orange-900">Paiements temporairement suspendus</p>
+              <p className="font-semibold text-orange-900">{t('ownerSub.paymentsBlocked')}</p>
               <p className="text-sm text-orange-800 mt-1">
                 {siteSettings.maintenance.message || 'Le site est en maintenance. Les abonnements reprendront très bientôt.'}
               </p>
@@ -83,7 +85,7 @@ export default function SubscriptionPage() {
 
         {needsPayment && (
           <Card className="bg-brand-50 border-brand-200 !p-4">
-            <p className="font-semibold text-slate-900">Activez votre abonnement pour accéder à SécurPats</p>
+            <p className="font-semibold text-slate-900">{t('ownerSub.activate')}</p>
             <p className="text-sm text-slate-600 mt-1">
               Choisissez une formule ci-dessous pour débloquer vos animaux, QR codes, documents et alertes urgence.
             </p>
@@ -93,7 +95,7 @@ export default function SubscriptionPage() {
         {canceled && (
           <Card className="bg-amber-50 border-amber-200 !p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.</p>
+            <p className="text-sm text-amber-800">{t('ownerSub.cancelled')}</p>
           </Card>
         )}
 
@@ -124,7 +126,7 @@ export default function SubscriptionPage() {
             <div className="flex flex-col sm:flex-row justify-between gap-4">
               <div>
                 <h3 className="font-bold text-slate-900 text-lg">
-                  Abonnement {subscription.plan === 'yearly' ? 'annuel' : 'mensuel'} — {subscription.price.toFixed(2).replace('.', ',')} €
+                  {subscription.plan === 'yearly' ? t('ownerDash.planYearly') : t('ownerDash.planMonthly')} — {subscription.price.toFixed(2).replace('.', ',')} €
                 </h3>
                 <p className="text-sm text-slate-600 mt-1">Actif depuis le {formatDate(subscription.startDate)}</p>
                 <p className="text-sm text-slate-600">
@@ -133,13 +135,13 @@ export default function SubscriptionPage() {
                 </p>
               </div>
               <Badge variant={subscription.status === 'active' ? 'success' : 'warning'}>
-                {subscription.status === 'active' ? 'Actif' : subscription.status}
+                {subscription.status === 'active' ? t('commonApp.active') : subscription.status}
               </Badge>
             </div>
             {subscription.stripeCustomerId && stripeReady && (
               <div className="mt-4 pt-4 border-t border-brand-200">
                 <Button variant="outline" size="sm" icon={ExternalLink} onClick={handleManage}>
-                  Gérer / Résilier via Stripe
+                  {t('ownerSub.manage')}
                 </Button>
               </div>
             )}
@@ -150,10 +152,10 @@ export default function SubscriptionPage() {
           <Card className="bg-brand-50 border-brand-100">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
               <div>
-                <h3 className="font-bold text-slate-900 text-lg">Abonnement actif</h3>
+                <h3 className="font-bold text-slate-900 text-lg">{t('ownerSub.currentPlan')}</h3>
                 <p className="text-sm text-slate-600 mt-1">Paiement confirmé via Stripe</p>
               </div>
-              <Badge variant="success">Actif</Badge>
+              <Badge variant="success">{t('commonApp.active')}</Badge>
             </div>
           </Card>
         )}
@@ -162,11 +164,12 @@ export default function SubscriptionPage() {
           {(['monthly', 'yearly'] as const).map(plan => {
             const config = SUBSCRIPTION_PLANS[plan]
             const isCurrent = subscription?.plan === plan && subscription.status === 'active'
+            const priceLabel = `${config.price.toFixed(2).replace('.', ',')} €${config.intervalLabel}`
             return (
               <Card key={plan} padding="lg" className={plan === 'yearly' ? 'border-2 border-brand-500 relative' : ''}>
                 {plan === 'yearly' && (
                   <span className="absolute -top-3 left-4 px-3 py-0.5 bg-accent-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                    <Star className="w-3 h-3" /> Recommandé
+                    <Star className="w-3 h-3" /> {t('ownerSub.recommended')}
                   </span>
                 )}
                 <h3 className="text-lg font-bold text-slate-900">{config.name}</h3>
@@ -194,7 +197,13 @@ export default function SubscriptionPage() {
                   disabled={!!loading || isCurrent || !stripeReady || paymentsBlocked}
                   onClick={() => handleSubscribe(plan)}
                 >
-                  {loading === plan ? 'Redirection Stripe...' : paymentsBlocked && !isCurrent ? 'Paiements suspendus' : isCurrent ? 'Plan actuel' : `S'abonner — ${config.price.toFixed(2).replace('.', ',')} €${config.intervalLabel}`}
+                  {loading === plan
+                    ? t('ownerSub.redirecting')
+                    : paymentsBlocked && !isCurrent
+                      ? t('ownerSub.paymentsSuspended')
+                      : isCurrent
+                        ? t('ownerSub.currentPlan')
+                        : t('ownerSub.subscribe', { price: priceLabel })}
                 </Button>
               </Card>
             )
@@ -204,24 +213,24 @@ export default function SubscriptionPage() {
         <Card className="bg-blue-50 border-blue-200 !p-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="font-semibold text-slate-900">Vous êtes pet-sitter ?</p>
+              <p className="font-semibold text-slate-900">{t('ownerSub.areYouPetsitter')}</p>
               <p className="text-sm text-slate-600 mt-1">
-                L&apos;abonnement propriétaire (4,99 € / 49,99 €) ne concerne pas les pet-sitters.
-                L&apos;offre dédiée est <strong>Pet-Sitter VIP à {PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois</strong>.
+                {t('ownerSub.petsitterHint')}{' '}
+                <strong>Pet-Sitter VIP à {PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois</strong>.
               </p>
             </div>
             <Link to="/pet-sitter/connexion" className="flex-shrink-0">
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
-                Connexion Pet-Sitter
+              <Button variant="blue">
+                {t('ownerSub.petsitterLogin')}
               </Button>
             </Link>
           </div>
         </Card>
 
         <Card>
-          <CardHeader title="Historique des paiements" subtitle="Factures et transactions Stripe" />
+          <CardHeader title={t('ownerSub.history')} subtitle="Factures et transactions Stripe" />
           {invoices.length === 0 ? (
-            <EmptyState icon={Receipt} title="Aucun paiement" description="Vos factures apparaîtront ici après votre premier abonnement." />
+            <EmptyState icon={Receipt} title={t('ownerSub.noPayments')} description="Vos factures apparaîtront ici après votre premier abonnement." />
           ) : (
             <div className="space-y-2">
               {invoices.map(inv => (
@@ -233,7 +242,7 @@ export default function SubscriptionPage() {
                       <p className="text-xs text-slate-500">{formatDate(inv.date)}</p>
                     </div>
                   </div>
-                  <Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>{inv.status === 'paid' ? 'Payé' : inv.status}</Badge>
+                  <Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>{inv.status === 'paid' ? t('ownerSub.paid') : inv.status}</Badge>
                 </div>
               ))}
             </div>

@@ -10,8 +10,10 @@ import { DOCUMENT_LABELS, DOCUMENT_HINTS, type DocumentCategory } from '@/types'
 import { formatFileSize, formatDate } from '@/lib/utils'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadDocumentFile, getDocumentSignedUrl } from '@/lib/supabase/uploads'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function DocumentsPage() {
+  const { t } = useI18n()
   const documents = useOwnerDocuments()
   const pets = useOwnerPets()
   const { currentUser, addDocument, deleteDocument } = useApp()
@@ -96,14 +98,14 @@ export default function DocumentsPage() {
   }
 
   return (
-    <DashboardLayout variant="owner" title="Documents">
+    <DashboardLayout variant="owner" title={t('ownerDocs.title')}>
       <div className="space-y-6">
         <div className="flex flex-col lg:flex-row gap-4 justify-between">
           <Select
             label=""
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            options={[{ value: 'all', label: 'Tous les documents' }, ...Object.entries(DOCUMENT_LABELS).map(([k, v]) => ({ value: k, label: v }))]}
+            options={[{ value: 'all', label: t('ownerDocs.allDocs') }, ...Object.entries(DOCUMENT_LABELS).map(([k, v]) => ({ value: k, label: v }))]}
             className="max-w-xs"
           />
           <div className="flex flex-col sm:flex-row gap-3 items-end">
@@ -137,14 +139,14 @@ export default function DocumentsPage() {
               disabled={pets.length === 0 && isSupabaseConfigured()}
               onClick={() => fileInputRef.current?.click()}
             >
-              Uploader un document
+              {t('ownerDocs.upload')}
             </Button>
           </div>
         </div>
 
         {pets.length === 0 && isSupabaseConfigured() && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            Ajoutez d&apos;abord un animal pour pouvoir uploader des documents.
+            {t('ownerDocs.needPet')}
           </p>
         )}
 
@@ -155,14 +157,14 @@ export default function DocumentsPage() {
           <div className="flex items-start gap-3">
             <ScrollText className="w-6 h-6 text-brand-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-slate-900 text-sm">Directives anticipées (formulaire)</p>
+              <p className="font-semibold text-slate-900 text-sm">{t('ownerDocs.directivesBanner')}</p>
               <p className="text-xs text-slate-600 mt-0.5">
                 Remplissez et signez électroniquement qui doit accueillir vos animaux, les autorisations et les consignes de soin.
               </p>
             </div>
           </div>
           <Link to="/app/directives">
-            <Button size="sm" variant="outline">Ouvrir le formulaire</Button>
+            <Button size="sm" variant="outline">{t('ownerDocs.openForm')}</Button>
           </Link>
         </Card>
 
@@ -186,7 +188,7 @@ export default function DocumentsPage() {
 
         {filtered.length === 0 ? (
           <Card>
-            <EmptyState icon={FileText} title="Aucun document" description="Uploadez vos carnets de santé, ordonnances, assurances et directives anticipées." />
+            <EmptyState icon={FileText} title={t('ownerDocs.emptyTitle')} description={t('ownerDocs.emptyDesc')} />
           </Card>
         ) : (
           <div className="space-y-2">

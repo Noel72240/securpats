@@ -6,8 +6,10 @@ import { Card } from '@/components/ui/Card'
 import { Input, Textarea } from '@/components/ui/Input'
 import { useApp } from '@/contexts/AppContext'
 import { formatHumanAge, formatDate } from '@/lib/utils'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function OwnerProfilePage() {
+  const { t } = useI18n()
   const { currentUser, updateOwnerProfile } = useApp()
   const [form, setForm] = useState({
     firstName: currentUser?.firstName ?? '',
@@ -48,7 +50,7 @@ export default function OwnerProfilePage() {
   }
 
   return (
-    <DashboardLayout variant="owner" title="Fiche identité">
+    <DashboardLayout variant="owner" title={t('ownerProfile.title')}>
       <div className="max-w-2xl space-y-6">
         <Card padding="lg">
           <div className="flex items-center gap-4 mb-6">
@@ -56,7 +58,7 @@ export default function OwnerProfilePage() {
               <IdCard className="w-8 h-8 text-brand-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Ma fiche identité</h2>
+              <h2 className="text-xl font-bold text-slate-900">{t('ownerProfile.heading')}</h2>
               <p className="text-sm text-slate-500">
                 Ces informations sont consultables par l&apos;équipe SécurPats en cas de besoin.
               </p>
@@ -64,7 +66,7 @@ export default function OwnerProfilePage() {
           </div>
 
           {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
-          {success && <p className="text-sm text-brand-600 mb-4">Fiche enregistrée.</p>}
+          {success && <p className="text-sm text-brand-600 mb-4">{t('ownerProfile.saved')}</p>}
 
           <div className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
@@ -113,7 +115,7 @@ export default function OwnerProfilePage() {
 
           <div className="mt-6 flex justify-end">
             <Button icon={Save} onClick={() => void handleSave()} disabled={saving}>
-              {saving ? 'Enregistrement…' : 'Enregistrer'}
+              {saving ? t('commonApp.saving') : t('commonApp.save')}
             </Button>
           </div>
         </Card>
@@ -122,12 +124,12 @@ export default function OwnerProfilePage() {
           <div className="flex items-start gap-3">
             <User className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" />
             <div className="text-sm text-slate-600 space-y-1">
-              <p className="font-medium text-slate-800">Aperçu</p>
+              <p className="font-medium text-slate-800">{t('ownerProfile.preview')}</p>
               <p>{form.firstName} {form.lastName}</p>
               <p>{form.phone || '—'}</p>
               <p className="whitespace-pre-line">{form.address || '—'}</p>
               <p>
-                {form.birthDate ? `${formatDate(form.birthDate)} — ${formatHumanAge(form.birthDate)}` : 'Date de naissance non renseignée'}
+                {form.birthDate ? `${formatDate(form.birthDate)} — ${formatHumanAge(form.birthDate)}` : t('ownerProfile.noDob')}
               </p>
             </div>
           </div>

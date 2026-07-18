@@ -5,12 +5,14 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card, Badge, CardHeader, EmptyState } from '@/components/ui/Card'
 import { useApp, useHasPetsitterVip } from '@/contexts/AppContext'
+import { useI18n } from '@/i18n/LanguageContext'
 import { PETSITTER_VIP_PLAN, isPetsitterVipStripeConfigured } from '@/lib/stripe/petsitter-vip'
 import { createPetsitterVipCheckout, openCustomerPortal, reconcilePetsitterVipAccess, stripeConfig } from '@/lib/stripe/client'
 import { arePaymentsBlocked } from '@/lib/maintenance'
 import { formatDate } from '@/lib/utils'
 
 export default function PetSitterSubscriptionPage() {
+  const { t } = useI18n()
   const { subscription, invoices, currentUser, siteSettings } = useApp()
   const [searchParams] = useSearchParams()
   const canceled = searchParams.get('canceled')
@@ -68,14 +70,16 @@ export default function PetSitterSubscriptionPage() {
     if (result.error) setError(result.error)
   }
 
+  const vipPriceLabel = `${PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois`
+
   return (
-    <DashboardLayout variant="petsitter" title="Abonnement VIP">
+    <DashboardLayout variant="petsitter" title={t('petsitterSub.title')}>
       <div className="space-y-8 max-w-2xl">
         {paymentsBlocked && needsPayment && (
           <Card className="bg-orange-50 border-orange-200 !p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-orange-900">Paiements temporairement suspendus</p>
+              <p className="font-semibold text-orange-900">{t('ownerSub.paymentsBlocked')}</p>
               <p className="text-sm text-orange-800 mt-1">
                 {siteSettings.maintenance.message || 'Le site est en maintenance. Les abonnements reprendront très bientôt.'}
               </p>
@@ -85,9 +89,9 @@ export default function PetSitterSubscriptionPage() {
 
         {needsPayment && (
           <Card className="bg-blue-50 border-blue-200 !p-4">
-            <p className="font-semibold text-slate-900">Devenez Pet-Sitter VIP pour accéder à l&apos;espace</p>
+            <p className="font-semibold text-slate-900">{t('petsitterSub.become')}</p>
             <p className="text-sm text-slate-600 mt-1">
-              Votre pièce d&apos;identité est enregistrée. Activez l&apos;abonnement VIP à {PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois pour recevoir des missions et gérer votre profil.
+              Votre pièce d&apos;identité est enregistrée. Activez l&apos;abonnement VIP à {vipPriceLabel} pour recevoir des missions et gérer votre profil.
             </p>
           </Card>
         )}
@@ -95,7 +99,7 @@ export default function PetSitterSubscriptionPage() {
         {canceled && (
           <Card className="bg-amber-50 border-amber-200 !p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.</p>
+            <p className="text-sm text-amber-800">{t('petsitterSub.cancelled')}</p>
           </Card>
         )}
 
@@ -135,13 +139,13 @@ export default function PetSitterSubscriptionPage() {
                 </p>
               </div>
               <Badge variant={subscription.status === 'active' ? 'success' : 'warning'}>
-                {subscription.status === 'active' ? 'VIP actif' : subscription.status}
+                {subscription.status === 'active' ? t('petsitterSub.vipActive') : subscription.status}
               </Badge>
             </div>
             {subscription.stripeCustomerId && stripeReady && (
               <div className="mt-4 pt-4 border-t border-blue-200">
                 <Button variant="outline" size="sm" icon={ExternalLink} onClick={handleManage}>
-                  Gérer / Résilier via Stripe
+                  {t('petsitterSub.manage')}
                 </Button>
               </div>
             )}
@@ -173,23 +177,24 @@ export default function PetSitterSubscriptionPage() {
             </ul>
             <Button
               className="w-full mt-6"
+              variant="blue"
               icon={loading ? Loader2 : CreditCard}
               disabled={loading || !stripeReady || paymentsBlocked}
               onClick={handleSubscribe}
             >
               {loading
-                ? 'Redirection Stripe...'
+                ? t('ownerSub.redirecting')
                 : paymentsBlocked
-                  ? 'Paiements suspendus'
-                  : `Devenir VIP — ${PETSITTER_VIP_PLAN.price.toFixed(2).replace('.', ',')} €/mois`}
+                  ? t('ownerSub.paymentsSuspended')
+                  : t('petsitterSub.becomeCta', { price: vipPriceLabel })}
             </Button>
           </Card>
         )}
 
         <Card>
-          <CardHeader title="Historique des paiements" subtitle="Factures VIP pet-sitter" />
+          <CardHeader title={t('petsitterSub.history')} subtitle="Factures VIP pet-sitter" />
           {invoices.filter(i => i.plan === 'petsitter_vip').length === 0 ? (
-            <EmptyState icon={Receipt} title="Aucun paiement" description="Vos factures apparaîtront ici après votre abonnement VIP." />
+            <EmptyState icon={Receipt} title={t('petsitterSub.noPayments')} description="Vos factures apparaîtront ici après votre abonnement VIP." />
           ) : (
             <div className="space-y-2">
               {invoices.filter(i => i.plan === 'petsitter_vip').map(inv => (
@@ -201,7 +206,9 @@ export default function PetSitterSubscriptionPage() {
                       <p className="text-xs text-slate-500">{formatDate(inv.date)}</p>
                     </div>
                   </div>
-                  <Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>{inv.status === 'paid' ? 'Payé' : inv.status}</Badge>
+                  <Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>
+                    {inv.status === 'paid' ? t('petsitterSub.paid') : inv.status}
+                  </Badge>
                 </div>
               ))}
             </div>

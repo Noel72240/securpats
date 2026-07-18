@@ -477,6 +477,7 @@ export async function upsertPetsitterProfile(userId: string, profile: Partial<Pe
     available_days: profile.availableDays ?? [],
     available_hours: profile.availableHours ?? '',
     service_area: profile.serviceArea ?? '',
+    department_code: profile.departmentCode ?? null,
     verified: profile.verified ?? false,
     id_consent_at: profile.idConsentAt ?? null,
     id_consent_version: profile.idConsentVersion ?? null,
@@ -498,6 +499,7 @@ export async function patchPetsitterProfile(userId: string, profile: Partial<Pet
   if (profile.availableDays !== undefined) patch.available_days = profile.availableDays
   if (profile.availableHours !== undefined) patch.available_hours = profile.availableHours
   if (profile.serviceArea !== undefined) patch.service_area = profile.serviceArea
+  if (profile.departmentCode !== undefined) patch.department_code = profile.departmentCode || null
   if (profile.verified !== undefined) patch.verified = profile.verified
   if (profile.idConsentAt !== undefined) patch.id_consent_at = profile.idConsentAt ?? null
   if (profile.idConsentVersion !== undefined) patch.id_consent_version = profile.idConsentVersion ?? null
@@ -511,8 +513,34 @@ export async function patchPetsitterProfile(userId: string, profile: Partial<Pet
     .update(patch)
     .eq('user_id', userId)
     .select()
-    .single()
-  if (error) return { profile: null as PetSitterProfile | null, error: error.message }
+    .maybeSingle()
+
+  if (error) {
+    return {
+      profile: null as PetSitterProfile | null,
+      error: error.message || 'Impossible d’enregistrer le profil',
+    }
+  }
+
+  if (!data) {
+    // Aucune ligne mise à jour : tenter un upsert minimal
+    const existing = await fetchPetsitterProfile(userId)
+    if (existing.profile) {
+      return {
+        profile: null as PetSitterProfile | null,
+        error: 'Enregistrement refusé (droits). Reconnectez-vous puis réessayez.',
+      }
+    }
+    const created = await upsertPetsitterProfile(userId, profile)
+    if (created.error) {
+      return {
+        profile: null as PetSitterProfile | null,
+        error: created.error || 'Profil pet-sitter introuvable. Réessayez après reconnexion.',
+      }
+    }
+    return created
+  }
+
   return { profile: petsitterFromRow(data), error: null }
 }
 

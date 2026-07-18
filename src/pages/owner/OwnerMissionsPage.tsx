@@ -6,17 +6,20 @@ import { Button } from '@/components/ui/Button'
 import { Card, Badge, EmptyState } from '@/components/ui/Card'
 import { useApp, useOwnerMissions } from '@/contexts/AppContext'
 import { formatDateTime } from '@/lib/utils'
+import { useI18n } from '@/i18n/LanguageContext'
+import type { TranslationKey } from '@/i18n/LanguageContext'
 import type { Mission } from '@/types'
 
-const statusLabel: Record<Mission['status'], string> = {
-  pending: 'En attente',
-  accepted: 'Acceptée',
-  declined: 'Refusée',
-  completed: 'Terminée',
-  cancelled: 'Annulée',
+const statusKey: Record<Mission['status'], TranslationKey> = {
+  pending: 'commonApp.pending',
+  accepted: 'commonApp.accepted',
+  declined: 'commonApp.declined',
+  completed: 'commonApp.completed',
+  cancelled: 'commonApp.cancelled',
 }
 
 export default function OwnerMissionsPage() {
+  const { t } = useI18n()
   const { deleteMission, cancelMission } = useApp()
   const missions = useOwnerMissions()
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -25,9 +28,7 @@ export default function OwnerMissionsPage() {
   const handleDelete = async (m: Mission) => {
     if (m.status === 'accepted') return
 
-    const confirmed = window.confirm(
-      `Supprimer la demande d'urgence pour ${m.petName} ?\n\nLes pet-sitters ne la verront plus.`,
-    )
+    const confirmed = window.confirm(t('ownerMissions.confirmDelete'))
     if (!confirmed) return
 
     setBusyId(m.id)
@@ -38,11 +39,7 @@ export default function OwnerMissionsPage() {
   }
 
   const handleCancel = async (m: Mission) => {
-    const msg = m.status === 'accepted'
-      ? `Annuler la mission en cours pour ${m.petName} ?\n\nLe pet-sitter sera informé que la mission n'est plus d'actualité.`
-      : `Annuler la demande d'urgence pour ${m.petName} ?`
-
-    if (!window.confirm(msg)) return
+    if (!window.confirm(t('ownerMissions.confirmCancel'))) return
 
     setBusyId(m.id)
     setError(null)
@@ -55,7 +52,7 @@ export default function OwnerMissionsPage() {
   const canDelete = (m: Mission) => m.status === 'pending' || m.status === 'declined' || m.status === 'cancelled'
 
   return (
-    <DashboardLayout variant="owner" title="Mes demandes d'urgence">
+    <DashboardLayout variant="owner" title={t('ownerMissions.title')}>
       <div className="max-w-3xl space-y-6">
         <p className="text-sm text-slate-600">
           Annulez une mission en cours (déjà acceptée par un pet-sitter) ou supprimez les demandes
@@ -72,12 +69,12 @@ export default function OwnerMissionsPage() {
           <Card>
             <EmptyState
               icon={Briefcase}
-              title="Aucune demande"
-              description="Vos urgences déclarées apparaîtront ici."
+              title={t('ownerMissions.emptyTitle')}
+              description={t('ownerMissions.emptyDesc')}
             />
             <div className="text-center pb-4">
               <Link to="/app/urgence">
-                <Button variant="outline" size="sm">Déclarer une urgence</Button>
+                <Button variant="outline" size="sm">{t('ownerMissions.declare')}</Button>
               </Link>
             </div>
           </Card>
@@ -89,14 +86,14 @@ export default function OwnerMissionsPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <p className="font-semibold text-slate-900">{m.petName}</p>
-                      <Badge variant="danger">Urgence</Badge>
+                      <Badge variant="danger">{t('commonApp.emergency')}</Badge>
                       <Badge variant={
                         m.status === 'pending' ? 'warning'
                           : m.status === 'accepted' ? 'success'
                             : m.status === 'cancelled' ? 'default'
                               : 'default'
                       }>
-                        {statusLabel[m.status]}
+                        {t(statusKey[m.status])}
                       </Badge>
                     </div>
                     <p className="text-sm text-slate-500">{formatDateTime(m.createdAt)}</p>
@@ -114,7 +111,7 @@ export default function OwnerMissionsPage() {
                         className="!text-amber-700 !border-amber-200 hover:!bg-amber-50"
                         onClick={() => void handleCancel(m)}
                       >
-                        {busyId === m.id ? '…' : 'Annuler'}
+                        {busyId === m.id ? '…' : t('commonApp.cancel')}
                       </Button>
                     )}
                     {canDelete(m) && (
@@ -126,7 +123,7 @@ export default function OwnerMissionsPage() {
                         className="!text-red-600 !border-red-200 hover:!bg-red-50"
                         onClick={() => void handleDelete(m)}
                       >
-                        Supprimer
+                        {t('commonApp.delete')}
                       </Button>
                     )}
                   </div>

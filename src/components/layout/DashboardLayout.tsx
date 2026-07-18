@@ -3,12 +3,16 @@ import {
   LayoutDashboard, Dog, Users, FileText, QrCode, CreditCard,
   AlertTriangle, LogOut, Menu, X, ChevronLeft, Shield, Calendar, Briefcase,
   BarChart3, Settings, Globe, Lock, IdCard, Wrench, ShoppingBag, Newspaper, Handshake, ScrollText,
+  MessageSquare,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
+import { useSupportUnreadCount } from '@/hooks/useSupportUnreadCount'
+import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher'
+import { useI18n } from '@/i18n/LanguageContext'
 
 interface NavItem {
   to: string
@@ -16,49 +20,9 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
 }
 
-const ownerNav: NavItem[] = [
-  { to: '/app', label: 'Tableau de bord', icon: LayoutDashboard },
-  { to: '/app/animaux', label: 'Mes animaux', icon: Dog },
-  { to: '/app/referents', label: 'Référents', icon: Users },
-  { to: '/app/documents', label: 'Documents', icon: FileText },
-  { to: '/app/directives', label: 'Directives anticipées', icon: ScrollText },
-  { to: '/app/qr-code', label: 'QR Code', icon: QrCode },
-  { to: '/app/carte-urgence', label: 'Fiche imprimable', icon: CreditCard },
-  { to: '/app/urgence', label: 'Déclarer urgence', icon: AlertTriangle },
-  { to: '/app/missions', label: 'Mes urgences', icon: Briefcase },
-  { to: '/app/abonnement', label: 'Abonnement', icon: CreditCard },
-  { to: '/app/profil', label: 'Fiche identité', icon: IdCard },
-  { to: '/app/donnees-personnelles', label: 'Mes données', icon: Lock },
-]
-
-const petsitterNav: NavItem[] = [
-  { to: '/pet-sitter', label: 'Tableau de bord', icon: LayoutDashboard },
-  { to: '/pet-sitter/missions', label: 'Missions', icon: Briefcase },
-  { to: '/pet-sitter/disponibilites', label: 'Disponibilités', icon: Calendar },
-  { to: '/pet-sitter/profil', label: 'Mon profil', icon: Settings },
-  { to: '/pet-sitter/abonnement', label: 'Abonnement VIP', icon: CreditCard },
-]
-
-const adminNav: NavItem[] = [
-  { to: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
-  { to: '/admin/contenu-site?tab=maintenance', label: 'Maintenance', icon: Wrench },
-  { to: '/admin/contenu-site', label: 'Contenu du site', icon: Globe },
-  { to: '/admin/boutique', label: 'Boutique', icon: ShoppingBag },
-  { to: '/admin/actu', label: 'Gazette / Actu', icon: Newspaper },
-  { to: '/admin/partenaires', label: 'Partenaires', icon: Handshake },
-  { to: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
-  { to: '/admin/animaux', label: 'Animaux', icon: Dog },
-  { to: '/admin/referents', label: 'Référents', icon: Users },
-  { to: '/admin/pet-sitters', label: 'Pet-Sitters', icon: Shield },
-  { to: '/admin/documents', label: 'Documents', icon: FileText },
-  { to: '/admin/missions', label: 'Missions', icon: Briefcase },
-  { to: '/admin/abonnements', label: 'Abonnements', icon: CreditCard },
-  { to: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
-]
-
 interface DashboardLayoutProps {
   children: React.ReactNode
-  variant: 'owner' | 'petsitter' | 'admin'
+  variant: 'owner' | 'petsitter' | 'admin' | 'foster' | 'volunteer'
   title?: string
 }
 
@@ -67,27 +31,114 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
   const location = useLocation()
   const navigate = useNavigate()
   const { currentUser, logout } = useApp()
+  const { t } = useI18n()
 
-  const nav = variant === 'owner' ? ownerNav : variant === 'petsitter' ? petsitterNav : adminNav
-  const accentColor = variant === 'admin' ? 'purple' : variant === 'petsitter' ? 'blue' : 'brand'
+  const ownerNav: NavItem[] = useMemo(() => [
+    { to: '/app', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/app/animaux', label: t('dash.myPets'), icon: Dog },
+    { to: '/app/referents', label: t('dash.referents'), icon: Users },
+    { to: '/app/documents', label: t('dash.documents'), icon: FileText },
+    { to: '/app/directives', label: t('dash.directives'), icon: ScrollText },
+    { to: '/app/messages', label: t('dash.messages'), icon: MessageSquare },
+    { to: '/app/qr-code', label: t('dash.qrCode'), icon: QrCode },
+    { to: '/app/carte-urgence', label: t('dash.emergencyCard'), icon: CreditCard },
+    { to: '/app/urgence', label: t('dash.declareEmergency'), icon: AlertTriangle },
+    { to: '/app/pet-sitters', label: t('dash.findPetsitter'), icon: Shield },
+    { to: '/app/missions', label: t('dash.myEmergencies'), icon: Briefcase },
+    { to: '/app/abonnement', label: t('dash.subscription'), icon: CreditCard },
+    { to: '/app/profil', label: t('dash.identity'), icon: IdCard },
+    { to: '/app/donnees-personnelles', label: t('dash.myData'), icon: Lock },
+  ], [t])
+
+  const petsitterNav: NavItem[] = useMemo(() => [
+    { to: '/pet-sitter', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/pet-sitter/missions', label: t('dash.missions'), icon: Briefcase },
+    { to: '/pet-sitter/disponibilites', label: t('dash.availability'), icon: Calendar },
+    { to: '/pet-sitter/messages', label: t('dash.messages'), icon: MessageSquare },
+    { to: '/pet-sitter/profil', label: t('dash.myProfile'), icon: Settings },
+    { to: '/pet-sitter/abonnement', label: t('dash.vipSub'), icon: CreditCard },
+  ], [t])
+
+  const fosterNav: NavItem[] = useMemo(() => [
+    { to: '/famille-accueil', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/famille-accueil/disponibilites', label: t('dash.availability'), icon: Calendar },
+    { to: '/famille-accueil/profil', label: t('dash.myProfile'), icon: Settings },
+  ], [t])
+
+  const volunteerNav: NavItem[] = useMemo(() => [
+    { to: '/benevole', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/benevole/disponibilites', label: t('dash.availability'), icon: Calendar },
+    { to: '/benevole/profil', label: t('dash.myProfile'), icon: Settings },
+  ], [t])
+
+  const adminNav: NavItem[] = useMemo(() => [
+    { to: '/admin', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/admin/messages', label: t('dash.messages'), icon: MessageSquare },
+    { to: '/admin/contenu-site?tab=maintenance', label: t('dash.maintenance'), icon: Wrench },
+    { to: '/admin/contenu-site', label: t('dash.siteContent'), icon: Globe },
+    { to: '/admin/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/admin/actu', label: t('dash.news'), icon: Newspaper },
+    { to: '/admin/partenaires', label: t('dash.partners'), icon: Handshake },
+    { to: '/admin/utilisateurs', label: t('dash.users'), icon: Users },
+    { to: '/admin/animaux', label: t('dash.pets'), icon: Dog },
+    { to: '/admin/referents', label: t('dash.referents'), icon: Users },
+    { to: '/admin/pet-sitters', label: t('dash.petsitters'), icon: Shield },
+    { to: '/admin/documents', label: t('dash.documents'), icon: FileText },
+    { to: '/admin/missions', label: t('dash.missions'), icon: Briefcase },
+    { to: '/admin/abonnements', label: t('dash.subscriptions'), icon: CreditCard },
+    { to: '/admin/statistiques', label: t('dash.stats'), icon: BarChart3 },
+  ], [t])
+
+  const nav =
+    variant === 'owner' ? ownerNav
+      : variant === 'petsitter' ? petsitterNav
+        : variant === 'foster' ? fosterNav
+          : variant === 'volunteer' ? volunteerNav
+            : adminNav
+
+  const accentColor =
+    variant === 'admin' ? 'purple'
+      : variant === 'petsitter' ? 'blue'
+        : variant === 'foster' ? 'teal'
+          : variant === 'volunteer' ? 'amber'
+            : 'brand'
+
+  const unreadCount = useSupportUnreadCount(Boolean(currentUser), variant === 'admin')
+  const messagesPath =
+    variant === 'admin' ? '/admin/messages' : variant === 'petsitter' ? '/pet-sitter/messages' : '/app/messages'
 
   const handleLogout = () => {
     logout()
-    navigate(variant === 'petsitter' ? '/pet-sitter/connexion' : variant === 'admin' ? '/admin/connexion' : '/connexion')
+    navigate(
+      variant === 'petsitter' ? '/pet-sitter/connexion'
+        : variant === 'foster' ? '/famille-accueil/connexion'
+          : variant === 'volunteer' ? '/benevole/connexion'
+            : variant === 'admin' ? '/admin/connexion'
+              : '/connexion',
+    )
   }
 
   const colorClasses = {
     brand: { active: 'bg-brand-600 text-white', hover: 'hover:bg-brand-50 hover:text-brand-700', logo: 'bg-brand-600' },
     blue: { active: 'bg-blue-600 text-white', hover: 'hover:bg-blue-50 hover:text-blue-700', logo: 'bg-blue-600' },
     purple: { active: 'bg-purple-600 text-white', hover: 'hover:bg-purple-50 hover:text-purple-700', logo: 'bg-purple-600' },
+    teal: { active: 'bg-teal-600 text-white', hover: 'hover:bg-teal-50 hover:text-teal-700', logo: 'bg-teal-600' },
+    amber: { active: 'bg-amber-600 text-white', hover: 'hover:bg-amber-50 hover:text-amber-700', logo: 'bg-amber-600' },
   }[accentColor]
+
+  const spaceLabel =
+    variant === 'owner' ? t('dash.ownerSpace')
+      : variant === 'petsitter' ? t('dash.petsitterSpace')
+        : variant === 'foster' ? t('dash.fosterSpace')
+          : variant === 'volunteer' ? t('dash.volunteerSpace')
+            : t('dash.adminSpace')
 
   const Sidebar = () => (
     <div className="flex flex-col h-full">
       <div className="p-4 sm:p-6 border-b border-slate-100">
         <BrandLogo variant="icon" showText={false} imageClassName="h-12 w-12 sm:h-14 sm:w-14" />
         <p className="text-xs text-slate-500 capitalize mt-2 pl-0.5">
-          {variant === 'owner' ? 'Espace propriétaire' : variant === 'petsitter' ? 'Espace Pet-Sitter' : 'Administration'}
+          {spaceLabel}
         </p>
       </div>
 
@@ -101,8 +152,12 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
             isActive = location.pathname === itemPath && !location.search.includes('tab=maintenance')
           } else {
             isActive = location.pathname === item.to ||
-              (item.to !== '/app' && item.to !== '/admin' && item.to !== '/pet-sitter' && location.pathname.startsWith(itemPath))
+              (item.to !== '/app' && item.to !== '/admin' && item.to !== '/pet-sitter'
+                && item.to !== '/famille-accueil' && item.to !== '/benevole'
+                && location.pathname.startsWith(itemPath))
           }
+          const isMessages = item.to === messagesPath
+          const showDot = isMessages && unreadCount > 0
           return (
             <Link
               key={item.to}
@@ -113,8 +168,21 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
                 isActive ? colorClasses.active : cn('text-slate-600', colorClasses.hover)
               )}
             >
-              <item.icon className="w-5 h-5" />
-              {item.label}
+              <span className="relative shrink-0">
+                <item.icon className="w-5 h-5" />
+                {showDot && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white"
+                    aria-hidden
+                  />
+                )}
+              </span>
+              <span className="flex-1">{item.label}</span>
+              {showDot && (
+                <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
           )
         })}
@@ -141,7 +209,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
           className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
         >
           <LogOut className="w-5 h-5" />
-          Déconnexion
+          {t('dash.logout')}
         </button>
       </div>
     </div>
@@ -172,22 +240,40 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
             <div className="flex items-center gap-4">
               <button
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 relative"
                 onClick={() => setSidebarOpen(true)}
+                aria-label="Menu"
               >
                 <Menu className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" aria-hidden />
+                )}
               </button>
               <Link to="/" className="lg:hidden p-2 rounded-lg hover:bg-slate-100">
                 <ChevronLeft className="w-5 h-5" />
               </Link>
               {title && <h1 className="text-lg font-bold text-slate-900">{title}</h1>}
             </div>
-            <button
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? <X className="w-5 h-5" /> : null}
-            </button>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              {unreadCount > 0 && (
+                <Link
+                  to={messagesPath}
+                  className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+                  title="Nouveaux messages"
+                  aria-label={`${unreadCount} message(s) non lu(s)`}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                </Link>
+              )}
+              <button
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="w-5 h-5" /> : null}
+              </button>
+            </div>
           </div>
         </header>
         </div>

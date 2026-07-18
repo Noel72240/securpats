@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/Button'
 import { Card, EmptyState, Modal } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { useOwnerReferents, useApp } from '@/contexts/AppContext'
+import { useI18n } from '@/i18n/LanguageContext'
 import type { Referent } from '@/types'
 
 const emptyRef = { firstName: '', lastName: '', phone: '', email: '', address: '' }
 
 export default function ReferentsPage() {
+  const { t } = useI18n()
   const referents = useOwnerReferents()
   const { addReferent, updateReferent, deleteReferent, reorderReferents } = useApp()
   const [modalOpen, setModalOpen] = useState(false)
@@ -41,16 +43,16 @@ export default function ReferentsPage() {
   }
 
   return (
-    <DashboardLayout variant="owner" title="Référents d'urgence">
+    <DashboardLayout variant="owner" title={t('ownerReferents.title')}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <p className="text-sm text-slate-600">{referents.length}/5 référents enregistrés</p>
-          <Button icon={Plus} onClick={openCreate} disabled={referents.length >= 5}>Ajouter un référent</Button>
+          <Button icon={Plus} onClick={openCreate} disabled={referents.length >= 5}>{t('ownerReferents.add')}</Button>
         </div>
 
         {referents.length === 0 ? (
           <Card>
-            <EmptyState icon={Users} title="Aucun référent" description="Ajoutez des contacts de confiance qui seront alertés en cas d'urgence." action={<Button icon={Plus} onClick={openCreate}>Ajouter</Button>} />
+            <EmptyState icon={Users} title={t('ownerReferents.emptyTitle')} description={t('ownerReferents.emptyDesc')} action={<Button icon={Plus} onClick={openCreate}>{t('commonApp.add')}</Button>} />
           </Card>
         ) : (
           <div className="space-y-3">
@@ -79,7 +81,7 @@ export default function ReferentsPage() {
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(ref)} icon={Edit} />
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm('Supprimer ?')) deleteReferent(ref.id) }} icon={Trash2} className="text-red-500" />
+                    <Button variant="ghost" size="sm" onClick={() => { if (confirm(t('commonApp.confirmDelete'))) deleteReferent(ref.id) }} icon={Trash2} className="text-red-500" />
                   </div>
                 </div>
               </Card>
@@ -88,7 +90,7 @@ export default function ReferentsPage() {
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier le référent' : 'Nouveau référent'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('ownerReferents.editTitle') : t('ownerReferents.newTitle')}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input label="Prénom" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
@@ -109,7 +111,7 @@ export default function ReferentsPage() {
               </span>
             </label>
           )}
-          <Button onClick={handleSave} className="w-full" disabled={!editing && !referentConsent}>{editing ? 'Enregistrer' : 'Ajouter'}</Button>
+          <Button onClick={handleSave} className="w-full" disabled={!editing && !referentConsent}>{editing ? t('commonApp.save') : t('commonApp.add')}</Button>
         </div>
       </Modal>
     </DashboardLayout>

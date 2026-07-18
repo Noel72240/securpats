@@ -6,30 +6,32 @@ import { PageSEO } from '@/components/seo/PageSEO'
 import { Card } from '@/components/ui/Card'
 import { fetchPublishedActuPosts } from '@/lib/actu/api'
 import { formatActuDate, type ActuPost } from '@/lib/actu/types'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function ActuPage() {
   const [posts, setPosts] = useState<ActuPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useI18n()
 
   useEffect(() => {
     void (async () => {
       const { posts: list, error: err } = await fetchPublishedActuPosts()
       if (err?.includes('actu_posts')) {
-        setError('La gazette sera bientôt disponible.')
+        setError(t('actu.soon'))
       } else if (err) {
         setError(err)
       }
       setPosts(list)
       setLoading(false)
     })()
-  }, [])
+  }, [t])
 
   return (
     <PublicLayout>
       <PageSEO
-        title="Actu & Gazette"
-        description="La gazette SécurPats : conseils, actualités et guides pour protéger votre animal en cas d’urgence."
+        title={`${t('nav.news')} & Gazette`}
+        description={t('actu.subtitle')}
         path="/actu"
         keywords={['actu SécurPats', 'gazette animal urgence', 'conseils protection animal']}
       />
@@ -39,14 +41,13 @@ export default function ActuPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16 relative">
           <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700 mb-4">
             <Newspaper className="w-3.5 h-3.5" />
-            Gazette SécurPats
+            {t('actu.badge')}
           </p>
           <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
-            L’actu <span className="text-brand-600">protection animale</span>
+            {t('actu.titleBefore')} <span className="text-brand-600">{t('actu.titleHighlight')}</span>
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl">
-            Conseils pratiques, rappels utiles et articles pour anticiper l’urgence —
-            publiés régulièrement pour vous et pour le référencement de ces sujets essentiels.
+            {t('actu.subtitle')}
           </p>
         </div>
       </section>
@@ -54,13 +55,11 @@ export default function ActuPage() {
       <section className="py-12 lg:py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <p className="text-slate-500 text-sm text-center py-16">Chargement de la gazette…</p>
+            <p className="text-slate-500 text-sm text-center py-16">{t('actu.loading')}</p>
           ) : error ? (
             <p className="text-slate-500 text-sm text-center py-16">{error}</p>
           ) : posts.length === 0 ? (
-            <p className="text-slate-500 text-sm text-center py-16">
-              Aucun article pour le moment. Revenez bientôt.
-            </p>
+            <p className="text-slate-500 text-sm text-center py-16">{t('actu.empty')}</p>
           ) : (
             <div className="space-y-8">
               {posts.map((post, index) => (
@@ -90,7 +89,7 @@ export default function ActuPage() {
                         <p className="text-slate-600 text-sm lg:text-base line-clamp-3 mb-3">
                           {post.excerpt}
                         </p>
-                        <span className="text-sm font-semibold text-brand-600">Lire l’article →</span>
+                        <span className="text-sm font-semibold text-brand-600">{t('actu.readMore')} →</span>
                       </div>
                     </div>
                   </Card>

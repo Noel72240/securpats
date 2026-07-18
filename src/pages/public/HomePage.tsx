@@ -12,26 +12,43 @@ import { HeroVisual } from '@/components/home/HeroVisual'
 import { FounderPresentation } from '@/components/home/FounderPresentation'
 import { HomeVideoSection } from '@/components/home/HomeVideoSection'
 import { EmergencyScenariosSection } from '@/components/home/EmergencyScenariosSection'
-
-const features = [
-  { icon: PawPrint, title: 'Fiches animaux complètes', desc: 'Photo, traitements, allergies, alimentation et consignes en un seul endroit.' },
-  { icon: Users, title: 'Référents d\'urgence', desc: 'Jusqu\'à 5 contacts prioritaires notifiés automatiquement.' },
-  { icon: QrCode, title: 'QR Code unique', desc: 'Accès instantané aux informations essentielles en cas d\'urgence.' },
-  { icon: FileText, title: 'Documents sécurisés', desc: 'Carnet de santé, ordonnances et assurances centralisés.' },
-  { icon: Bell, title: 'Alertes automatiques', desc: 'Notification des référents et pet-sitters en cas d\'urgence.' },
-  { icon: Shield, title: 'Données protégées', desc: 'Conformité RGPD, chiffrement et hébergement en Europe.' },
-]
-
-const steps = [
-  { num: '01', title: 'Créez votre compte', desc: 'Inscription rapide en moins de 2 minutes.' },
-  { num: '02', title: 'Ajoutez vos animaux', desc: 'Renseignez toutes les informations essentielles.' },
-  { num: '03', title: 'Configurez vos référents', desc: 'Définissez jusqu\'à 5 contacts de confiance.' },
-  { num: '04', title: 'Générez votre QR Code', desc: 'Imprimez la carte d\'urgence et gardez l\'esprit tranquille.' },
-]
+import { AnimalParadeFrieze } from '@/components/home/AnimalParadeFrieze'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function HomePage() {
   const { siteSettings } = useApp()
+  const { t, locale } = useI18n()
   const { home, testimonials } = siteSettings
+
+  const heroBadge = locale === 'en' ? t('home.heroBadge') : home.badge
+  const heroTitle = locale === 'en' ? t('home.heroTitle') : home.title
+  const heroHighlight = locale === 'en' ? t('home.heroTitleHighlight') : home.titleHighlight
+  const heroSubtitle = locale === 'en' ? t('home.heroSubtitle') : home.subtitle
+  const videoTitle = locale === 'en' ? t('home.videoTitle') : (home.videoTitle || t('home.videoTitle'))
+  const ctaTitle = locale === 'en' ? t('home.ctaTitle') : home.ctaTitle
+  const ctaSubtitle = locale === 'en' ? t('home.ctaSubtitle') : home.ctaSubtitle
+
+  const features = [
+    { icon: PawPrint, title: t('home.featPets'), desc: t('home.featPetsDesc') },
+    { icon: Users, title: t('home.featReferents'), desc: t('home.featReferentsDesc') },
+    { icon: QrCode, title: t('home.featQr'), desc: t('home.featQrDesc') },
+    { icon: FileText, title: t('home.featDocs'), desc: t('home.featDocsDesc') },
+    { icon: Bell, title: t('home.featAlerts'), desc: t('home.featAlertsDesc') },
+    { icon: Shield, title: t('home.featData'), desc: t('home.featDataDesc') },
+  ]
+
+  const steps = [
+    { num: '01', title: t('home.step1Title'), desc: t('home.step1Desc') },
+    { num: '02', title: t('home.step2Title'), desc: t('home.step2Desc') },
+    { num: '03', title: t('home.step3Title'), desc: t('home.step3Desc') },
+    { num: '04', title: t('home.step4Title'), desc: t('home.step4Desc') },
+  ]
+
+  const whyItems = [
+    { icon: Clock, title: t('home.reactivity'), desc: t('home.reactivityDesc') },
+    { icon: Shield, title: t('home.serenity'), desc: t('home.serenityDesc') },
+    { icon: Heart, title: t('home.animalWelfare'), desc: t('home.animalWelfareDesc') },
+  ]
 
   return (
     <PublicLayout>
@@ -52,27 +69,28 @@ export default function HomePage() {
             <div className="animate-fade-in-up">
               <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
                 <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {home.badge}
+                {heroBadge}
               </div>
               <h1 className="text-[1.65rem] leading-tight min-[400px]:text-3xl sm:text-4xl lg:text-6xl font-extrabold text-slate-900 mb-4 sm:mb-6">
-                {home.title}{' '}
-                <span className="text-brand-600">{home.titleHighlight}</span>, même en votre absence
+                {heroTitle}{' '}
+                <span className="text-brand-600">{heroHighlight}</span>
+                {t('home.evenInAbsence')}
               </h1>
               <p className="text-base sm:text-lg text-slate-600 mb-6 sm:mb-8 leading-relaxed max-w-xl">
-                {home.subtitle}
+                {heroSubtitle}
               </p>
               <div className="flex flex-col min-[400px]:flex-row gap-3 sm:gap-4">
                 <Link to="/inscription" className="w-full min-[400px]:w-auto">
-                  <Button size="lg" icon={ArrowRight} className="w-full min-[400px]:w-auto">Commencer maintenant</Button>
+                  <Button size="lg" icon={ArrowRight} className="w-full min-[400px]:w-auto">{t('home.startNow')}</Button>
                 </Link>
                 <Link to="/fonctionnement" className="w-full min-[400px]:w-auto">
-                  <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">Comment ça marche</Button>
+                  <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">{t('home.howItWorks')}</Button>
                 </Link>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6 mt-6 sm:mt-10 text-xs sm:text-sm text-slate-500">
-                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> Sans engagement</span>
-                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> Données sécurisées</span>
-                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> RGPD</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> {t('home.noCommitment')}</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> {t('home.secureData')}</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" /> {t('home.rgpd')}</span>
               </div>
             </div>
             <div className="relative animate-fade-in-up animation-delay-200">
@@ -82,11 +100,13 @@ export default function HomePage() {
         </div>
       </section>
 
+      <AnimalParadeFrieze />
+
       <FounderPresentation />
 
       <HomeVideoSection
         enabled={home.videoEnabled !== false}
-        title={home.videoTitle || 'Découvrez SécurPats en vidéo'}
+        title={videoTitle}
         videoUrl={home.videoUrl || ''}
       />
 
@@ -95,18 +115,14 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-              Pourquoi utiliser SécurPats ?
+              {t('home.whyTitle')}
             </h2>
             <p className="text-lg text-slate-600">
-              Chaque année, des milliers d'animaux restent seuls lorsque leur propriétaire fait face à une urgence. SécurPats existe pour que cela n'arrive jamais.
+              {t('home.whySubtitle')}
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Clock, title: 'Réactivité', desc: 'Vos référents sont alertés en quelques secondes, 24h/24.' },
-              { icon: Shield, title: 'Sérénité', desc: 'Préparez l\'avenir de vos animaux en toute tranquillité.' },
-              { icon: Heart, title: 'Bien-être animal', desc: 'Continuité des soins, alimentation et traitements garantis.' },
-            ].map((item, i) => (
+            {whyItems.map((item, i) => (
               <Card key={i} hover className="text-center">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-50 flex items-center justify-center">
                   <item.icon className="w-7 h-7 text-brand-600" />
@@ -123,8 +139,8 @@ export default function HomePage() {
       <section className="py-12 sm:py-20 lg:py-28 bg-slate-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Comment ça fonctionne</h2>
-            <p className="text-lg text-slate-600">Quatre étapes simples pour protéger vos compagnons.</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">{t('home.howTitle')}</h2>
+            <p className="text-lg text-slate-600">{t('home.howSubtitle')}</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step, i) => (
@@ -142,8 +158,8 @@ export default function HomePage() {
       <section className="py-12 sm:py-20 lg:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Fonctionnalités</h2>
-            <p className="text-lg text-slate-600">Tout ce dont vous avez besoin pour une protection complète.</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">{t('home.featuresTitle')}</h2>
+            <p className="text-lg text-slate-600">{t('home.featuresSubtitle')}</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
@@ -164,22 +180,22 @@ export default function HomePage() {
       <section className="py-12 sm:py-20 lg:py-28 bg-slate-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Ils nous font confiance</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">{t('home.trustTitle')}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <Card key={t.id} hover>
+            {testimonials.map((tItem) => (
+              <Card key={tItem.id} hover>
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, j) => (
                     <Star key={j} className="w-4 h-4 fill-accent-400 text-accent-400" />
                   ))}
                 </div>
-                <p className="text-slate-600 text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
+                <p className="text-slate-600 text-sm leading-relaxed mb-6 italic">"{tItem.text}"</p>
                 <div className="flex items-center gap-3">
-                  {t.avatar && <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />}
+                  {tItem.avatar && <img src={tItem.avatar} alt={tItem.name} className="w-10 h-10 rounded-full object-cover" />}
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
-                    <p className="text-xs text-slate-500">{t.role}</p>
+                    <p className="font-semibold text-slate-900 text-sm">{tItem.name}</p>
+                    <p className="text-xs text-slate-500">{tItem.role}</p>
                   </div>
                 </div>
               </Card>
@@ -200,18 +216,18 @@ export default function HomePage() {
             </div>
             <div className="relative px-5 py-10 sm:px-8 sm:py-16 lg:px-16 lg:py-20 text-center">
               <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
-                {home.ctaTitle}
+                {ctaTitle}
               </h2>
               <p className="text-brand-100 text-lg mb-8 max-w-2xl mx-auto">
-                {home.ctaSubtitle}
+                {ctaSubtitle}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/inscription">
-                  <Button size="lg" variant="accent" icon={ArrowRight}>Créer mon compte</Button>
+                  <Button size="lg" variant="accent" icon={ArrowRight}>{t('home.createAccount')}</Button>
                 </Link>
                 <Link to="/tarifs">
                   <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
-                    Voir les tarifs
+                    {t('home.seePricing')}
                   </Button>
                 </Link>
               </div>

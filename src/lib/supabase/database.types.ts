@@ -5,7 +5,7 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type UserRole = 'owner' | 'petsitter' | 'admin'
+export type UserRole = 'owner' | 'petsitter' | 'admin' | 'foster_family' | 'volunteer'
 export type DocumentCategory = 'carnet_sante' | 'ordonnance' | 'facture' | 'assurance' | 'directives_anticipees' | 'divers'
 export type SubscriptionPlan = 'monthly' | 'yearly' | 'petsitter_vip'
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing'
@@ -39,6 +39,7 @@ export type Database = {
           consent_version: string | null
           marketing_opt_in: boolean | null
           qr_token: string | null
+          must_change_password: boolean
           created_at: string
         },
         {
@@ -56,6 +57,7 @@ export type Database = {
           consent_version?: string | null
           marketing_opt_in?: boolean | null
           qr_token?: string | null
+          must_change_password?: boolean
           created_at?: string
         }
       >
@@ -239,6 +241,7 @@ export type Database = {
           available_days: string[]
           available_hours: string
           service_area: string
+          department_code: string | null
           verified: boolean
           id_consent_at: string | null
           id_consent_version: string | null
@@ -256,9 +259,46 @@ export type Database = {
           available_days?: string[]
           available_hours?: string
           service_area?: string
+          department_code?: string | null
           verified?: boolean
           id_consent_at?: string | null
           id_consent_version?: string | null
+        }
+      >
+      caregiver_profiles: TableDef<
+        {
+          id: string
+          user_id: string
+          kind: 'foster_family' | 'volunteer'
+          photo: string | null
+          bio: string
+          phone: string
+          email: string
+          address: string
+          department_code: string | null
+          available_days: string[]
+          available_hours: string
+          service_area: string
+          verified: boolean
+          created_at: string
+          updated_at: string
+        },
+        {
+          id?: string
+          user_id: string
+          kind: 'foster_family' | 'volunteer'
+          photo?: string | null
+          bio?: string
+          phone?: string
+          email?: string
+          address?: string
+          department_code?: string | null
+          available_days?: string[]
+          available_hours?: string
+          service_area?: string
+          verified?: boolean
+          created_at?: string
+          updated_at?: string
         }
       >
       activities: TableDef<
@@ -423,6 +463,50 @@ export type Database = {
           updated_at?: string
         }
       >
+      support_conversations: TableDef<
+        {
+          id: string
+          client_id: string
+          client_role: string
+          client_name: string
+          client_email: string
+          subject: string
+          last_message_at: string
+          last_message_preview: string
+          client_unread: number
+          admin_unread: number
+          created_at: string
+        },
+        {
+          id?: string
+          client_id: string
+          client_role: string
+          client_name?: string
+          client_email?: string
+          subject?: string
+          last_message_at?: string
+          last_message_preview?: string
+          client_unread?: number
+          admin_unread?: number
+          created_at?: string
+        }
+      >
+      support_messages: TableDef<
+        {
+          id: string
+          conversation_id: string
+          sender_id: string
+          body: string
+          created_at: string
+        },
+        {
+          id?: string
+          conversation_id: string
+          sender_id: string
+          body: string
+          created_at?: string
+        }
+      >
       contact_messages: TableDef<
         {
           id: string
@@ -469,6 +553,39 @@ export type Database = {
       accept_mission: {
         Args: { p_mission_id: string }
         Returns: Database['public']['Tables']['missions']['Row']
+      }
+      get_or_create_support_conversation: {
+        Args: Record<string, never>
+        Returns: Database['public']['Tables']['support_conversations']['Row']
+      }
+      admin_open_support_conversation: {
+        Args: { p_client_id: string }
+        Returns: Database['public']['Tables']['support_conversations']['Row']
+      }
+      send_support_message: {
+        Args: { p_conversation_id: string; p_body: string }
+        Returns: Database['public']['Tables']['support_messages']['Row']
+      }
+      mark_support_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
+      list_verified_petsitters: {
+        Args: { p_department_code?: string | null }
+        Returns: {
+          user_id: string
+          first_name: string
+          last_name: string
+          photo: string | null
+          bio: string
+          phone: string
+          email: string
+          address: string
+          available_days: string[]
+          available_hours: string
+          service_area: string
+          department_code: string | null
+        }[]
       }
     }
     Enums: {

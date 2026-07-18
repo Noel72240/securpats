@@ -1,6 +1,7 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useMemo } from 'react'
 import { QrCode, PawPrint, Heart, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/i18n/LanguageContext'
 
 interface HeroVisualProps {
   heroImage?: string
@@ -15,16 +16,17 @@ const ORBIT_PAWS = [
   { angle: 288, variant: 'dog' as const, size: 20 },
 ]
 
-const FLOAT_BADGES = [
-  { icon: Heart, label: 'Aimé', className: 'top-2 left-2 sm:top-4 sm:-left-6 hero-badge-delay-1', color: 'text-rose-500 bg-rose-50 border-rose-200' },
-  { icon: Shield, label: 'Protégé', className: 'top-2 right-2 sm:-top-2 sm:-right-4 hero-badge-delay-2', color: 'text-brand-600 bg-brand-50 border-brand-200' },
-  { icon: PawPrint, label: 'Sécurisé', className: 'bottom-[4.5rem] right-2 sm:bottom-24 sm:-right-5 hero-badge-delay-3', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-]
-
 export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
+  const { t } = useI18n()
   const wrapRef = useRef<HTMLDivElement>(null)
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const [glow, setGlow] = useState({ x: 50, y: 50 })
+
+  const floatBadges = useMemo(() => [
+    { icon: Heart, label: t('home.heroLoved'), className: 'top-2 left-2 sm:top-4 sm:-left-6 hero-badge-delay-1', color: 'text-rose-500 bg-rose-50 border-rose-200' },
+    { icon: Shield, label: t('home.heroProtected'), className: 'top-2 right-2 sm:-top-2 sm:-right-4 hero-badge-delay-2', color: 'text-brand-600 bg-brand-50 border-brand-200' },
+    { icon: PawPrint, label: t('home.heroSecured'), className: 'bottom-[4.5rem] right-2 sm:bottom-24 sm:-right-5 hero-badge-delay-3', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+  ], [t])
 
   const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = wrapRef.current
@@ -90,7 +92,7 @@ export function HeroVisual({ heroImage, heroImageAlt }: HeroVisualProps) {
       </div>
 
       {/* Badges — compacts sur mobile, dans la carte */}
-      {FLOAT_BADGES.map(({ icon: Icon, label, className, color }) => (
+      {floatBadges.map(({ icon: Icon, label, className, color }) => (
         <div
           key={label}
           className={cn(

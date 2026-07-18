@@ -1,0 +1,130 @@
+/** Départements français (métropole + outre-mer). */
+export const FRENCH_DEPARTMENTS = [
+  { code: '01', nameFr: 'Ain', nameEn: 'Ain' },
+  { code: '02', nameFr: 'Aisne', nameEn: 'Aisne' },
+  { code: '03', nameFr: 'Allier', nameEn: 'Allier' },
+  { code: '04', nameFr: 'Alpes-de-Haute-Provence', nameEn: 'Alpes-de-Haute-Provence' },
+  { code: '05', nameFr: 'Hautes-Alpes', nameEn: 'Hautes-Alpes' },
+  { code: '06', nameFr: 'Alpes-Maritimes', nameEn: 'Alpes-Maritimes' },
+  { code: '07', nameFr: 'Ardèche', nameEn: 'Ardèche' },
+  { code: '08', nameFr: 'Ardennes', nameEn: 'Ardennes' },
+  { code: '09', nameFr: 'Ariège', nameEn: 'Ariège' },
+  { code: '10', nameFr: 'Aube', nameEn: 'Aube' },
+  { code: '11', nameFr: 'Aude', nameEn: 'Aude' },
+  { code: '12', nameFr: 'Aveyron', nameEn: 'Aveyron' },
+  { code: '13', nameFr: 'Bouches-du-Rhône', nameEn: 'Bouches-du-Rhône' },
+  { code: '14', nameFr: 'Calvados', nameEn: 'Calvados' },
+  { code: '15', nameFr: 'Cantal', nameEn: 'Cantal' },
+  { code: '16', nameFr: 'Charente', nameEn: 'Charente' },
+  { code: '17', nameFr: 'Charente-Maritime', nameEn: 'Charente-Maritime' },
+  { code: '18', nameFr: 'Cher', nameEn: 'Cher' },
+  { code: '19', nameFr: 'Corrèze', nameEn: 'Corrèze' },
+  { code: '2A', nameFr: 'Corse-du-Sud', nameEn: 'Corse-du-Sud' },
+  { code: '2B', nameFr: 'Haute-Corse', nameEn: 'Haute-Corse' },
+  { code: '21', nameFr: "Côte-d'Or", nameEn: "Côte-d'Or" },
+  { code: '22', nameFr: "Côtes-d'Armor", nameEn: "Côtes-d'Armor" },
+  { code: '23', nameFr: 'Creuse', nameEn: 'Creuse' },
+  { code: '24', nameFr: 'Dordogne', nameEn: 'Dordogne' },
+  { code: '25', nameFr: 'Doubs', nameEn: 'Doubs' },
+  { code: '26', nameFr: 'Drôme', nameEn: 'Drôme' },
+  { code: '27', nameFr: 'Eure', nameEn: 'Eure' },
+  { code: '28', nameFr: 'Eure-et-Loir', nameEn: 'Eure-et-Loir' },
+  { code: '29', nameFr: 'Finistère', nameEn: 'Finistère' },
+  { code: '30', nameFr: 'Gard', nameEn: 'Gard' },
+  { code: '31', nameFr: 'Haute-Garonne', nameEn: 'Haute-Garonne' },
+  { code: '32', nameFr: 'Gers', nameEn: 'Gers' },
+  { code: '33', nameFr: 'Gironde', nameEn: 'Gironde' },
+  { code: '34', nameFr: 'Hérault', nameEn: 'Hérault' },
+  { code: '35', nameFr: 'Ille-et-Vilaine', nameEn: 'Ille-et-Vilaine' },
+  { code: '36', nameFr: 'Indre', nameEn: 'Indre' },
+  { code: '37', nameFr: 'Indre-et-Loire', nameEn: 'Indre-et-Loire' },
+  { code: '38', nameFr: 'Isère', nameEn: 'Isère' },
+  { code: '39', nameFr: 'Jura', nameEn: 'Jura' },
+  { code: '40', nameFr: 'Landes', nameEn: 'Landes' },
+  { code: '41', nameFr: 'Loir-et-Cher', nameEn: 'Loir-et-Cher' },
+  { code: '42', nameFr: 'Loire', nameEn: 'Loire' },
+  { code: '43', nameFr: 'Haute-Loire', nameEn: 'Haute-Loire' },
+  { code: '44', nameFr: 'Loire-Atlantique', nameEn: 'Loire-Atlantique' },
+  { code: '45', nameFr: 'Loiret', nameEn: 'Loiret' },
+  { code: '46', nameFr: 'Lot', nameEn: 'Lot' },
+  { code: '47', nameFr: 'Lot-et-Garonne', nameEn: 'Lot-et-Garonne' },
+  { code: '48', nameFr: 'Lozère', nameEn: 'Lozère' },
+  { code: '49', nameFr: 'Maine-et-Loire', nameEn: 'Maine-et-Loire' },
+  { code: '50', nameFr: 'Manche', nameEn: 'Manche' },
+  { code: '51', nameFr: 'Marne', nameEn: 'Marne' },
+  { code: '52', nameFr: 'Haute-Marne', nameEn: 'Haute-Marne' },
+  { code: '53', nameFr: 'Mayenne', nameEn: 'Mayenne' },
+  { code: '54', nameFr: 'Meurthe-et-Moselle', nameEn: 'Meurthe-et-Moselle' },
+  { code: '55', nameFr: 'Meuse', nameEn: 'Meuse' },
+  { code: '56', nameFr: 'Morbihan', nameEn: 'Morbihan' },
+  { code: '57', nameFr: 'Moselle', nameEn: 'Moselle' },
+  { code: '58', nameFr: 'Nièvre', nameEn: 'Nièvre' },
+  { code: '59', nameFr: 'Nord', nameEn: 'Nord' },
+  { code: '60', nameFr: 'Oise', nameEn: 'Oise' },
+  { code: '61', nameFr: 'Orne', nameEn: 'Orne' },
+  { code: '62', nameFr: 'Pas-de-Calais', nameEn: 'Pas-de-Calais' },
+  { code: '63', nameFr: 'Puy-de-Dôme', nameEn: 'Puy-de-Dôme' },
+  { code: '64', nameFr: 'Pyrénées-Atlantiques', nameEn: 'Pyrénées-Atlantiques' },
+  { code: '65', nameFr: 'Hautes-Pyrénées', nameEn: 'Hautes-Pyrénées' },
+  { code: '66', nameFr: 'Pyrénées-Orientales', nameEn: 'Pyrénées-Orientales' },
+  { code: '67', nameFr: 'Bas-Rhin', nameEn: 'Bas-Rhin' },
+  { code: '68', nameFr: 'Haut-Rhin', nameEn: 'Haut-Rhin' },
+  { code: '69', nameFr: 'Rhône', nameEn: 'Rhône' },
+  { code: '70', nameFr: 'Haute-Saône', nameEn: 'Haute-Saône' },
+  { code: '71', nameFr: 'Saône-et-Loire', nameEn: 'Saône-et-Loire' },
+  { code: '72', nameFr: 'Sarthe', nameEn: 'Sarthe' },
+  { code: '73', nameFr: 'Savoie', nameEn: 'Savoie' },
+  { code: '74', nameFr: 'Haute-Savoie', nameEn: 'Haute-Savoie' },
+  { code: '75', nameFr: 'Paris', nameEn: 'Paris' },
+  { code: '76', nameFr: 'Seine-Maritime', nameEn: 'Seine-Maritime' },
+  { code: '77', nameFr: 'Seine-et-Marne', nameEn: 'Seine-et-Marne' },
+  { code: '78', nameFr: 'Yvelines', nameEn: 'Yvelines' },
+  { code: '79', nameFr: 'Deux-Sèvres', nameEn: 'Deux-Sèvres' },
+  { code: '80', nameFr: 'Somme', nameEn: 'Somme' },
+  { code: '81', nameFr: 'Tarn', nameEn: 'Tarn' },
+  { code: '82', nameFr: 'Tarn-et-Garonne', nameEn: 'Tarn-et-Garonne' },
+  { code: '83', nameFr: 'Var', nameEn: 'Var' },
+  { code: '84', nameFr: 'Vaucluse', nameEn: 'Vaucluse' },
+  { code: '85', nameFr: 'Vendée', nameEn: 'Vendée' },
+  { code: '86', nameFr: 'Vienne', nameEn: 'Vienne' },
+  { code: '87', nameFr: 'Haute-Vienne', nameEn: 'Haute-Vienne' },
+  { code: '88', nameFr: 'Vosges', nameEn: 'Vosges' },
+  { code: '89', nameFr: 'Yonne', nameEn: 'Yonne' },
+  { code: '90', nameFr: 'Territoire de Belfort', nameEn: 'Territoire de Belfort' },
+  { code: '91', nameFr: 'Essonne', nameEn: 'Essonne' },
+  { code: '92', nameFr: 'Hauts-de-Seine', nameEn: 'Hauts-de-Seine' },
+  { code: '93', nameFr: 'Seine-Saint-Denis', nameEn: 'Seine-Saint-Denis' },
+  { code: '94', nameFr: 'Val-de-Marne', nameEn: 'Val-de-Marne' },
+  { code: '95', nameFr: "Val-d'Oise", nameEn: "Val-d'Oise" },
+  { code: '971', nameFr: 'Guadeloupe', nameEn: 'Guadeloupe' },
+  { code: '972', nameFr: 'Martinique', nameEn: 'Martinique' },
+  { code: '973', nameFr: 'Guyane', nameEn: 'French Guiana' },
+  { code: '974', nameFr: 'La Réunion', nameEn: 'Réunion' },
+  { code: '976', nameFr: 'Mayotte', nameEn: 'Mayotte' },
+] as const
+
+export type FrenchDepartmentCode = (typeof FRENCH_DEPARTMENTS)[number]['code']
+
+export function isFrenchDepartmentCode(value: string): value is FrenchDepartmentCode {
+  return FRENCH_DEPARTMENTS.some(d => d.code === value)
+}
+
+export function departmentLabel(code: string | null | undefined, locale: 'fr' | 'en' = 'fr'): string {
+  if (!code) return ''
+  const dept = FRENCH_DEPARTMENTS.find(d => d.code === code)
+  if (!dept) return code
+  const name = locale === 'en' ? dept.nameEn : dept.nameFr
+  return `${dept.code} — ${name}`
+}
+
+export function departmentSelectOptions(
+  locale: 'fr' | 'en',
+  emptyLabel?: string,
+): { value: string; label: string }[] {
+  const departments = FRENCH_DEPARTMENTS.map(d => ({
+    value: d.code,
+    label: `${d.code} — ${locale === 'en' ? d.nameEn : d.nameFr}`,
+  }))
+  if (emptyLabel === undefined) return departments
+  return [{ value: '', label: emptyLabel }, ...departments]
+}

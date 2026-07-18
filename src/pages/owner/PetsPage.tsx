@@ -9,6 +9,7 @@ import { useOwnerPets, useApp } from '@/contexts/AppContext'
 import { calculateAge } from '@/lib/utils'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadPetPhotoFile } from '@/lib/supabase/uploads'
+import { useI18n } from '@/i18n/LanguageContext'
 import type { Pet } from '@/types'
 
 type PetForm = Omit<Pet, 'id' | 'ownerId' | 'qrToken' | 'createdAt'>
@@ -20,6 +21,7 @@ const emptyPet: PetForm = {
 }
 
 export default function PetsPage() {
+  const { t } = useI18n()
   const pets = useOwnerPets()
   const { currentUser, addPet, updatePet, deletePet } = useApp()
   const [search, setSearch] = useState('')
@@ -108,32 +110,32 @@ export default function PetsPage() {
   }
 
   const handleDelete = (id: string) => {
-    if (confirm('Supprimer cet animal ?')) deletePet(id)
+    if (confirm(t('ownerPets.confirmDelete'))) deletePet(id)
   }
 
   return (
-    <DashboardLayout variant="owner" title="Mes animaux">
+    <DashboardLayout variant="owner" title={t('ownerPets.title')}>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
-              placeholder="Rechercher un animal..."
+              placeholder={t('ownerPets.search')}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <Button icon={Plus} onClick={openCreate}>Ajouter un animal</Button>
+          <Button icon={Plus} onClick={openCreate}>{t('ownerPets.add')}</Button>
         </div>
 
         {filtered.length === 0 ? (
           <Card>
             <EmptyState
               icon={Dog}
-              title="Aucun animal"
-              description="Ajoutez votre premier compagnon pour commencer à le protéger."
-              action={<Button icon={Plus} onClick={openCreate}>Ajouter un animal</Button>}
+              title={t('ownerPets.emptyTitle')}
+              description={t('ownerPets.emptyDesc')}
+              action={<Button icon={Plus} onClick={openCreate}>{t('ownerPets.add')}</Button>}
             />
           </Card>
         ) : (
@@ -167,7 +169,7 @@ export default function PetsPage() {
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); resetPhotoState() }} title={editing ? 'Modifier l\'animal' : 'Nouvel animal'}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); resetPhotoState() }} title={editing ? t('ownerPets.editTitle') : t('ownerPets.newTitle')}>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <Input label="Nom" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           <div className="grid grid-cols-2 gap-4">
@@ -218,7 +220,7 @@ export default function PetsPage() {
             <Input label="Adresse vétérinaire" value={form.vetAddress} onChange={e => setForm({ ...form, vetAddress: e.target.value })} />
           </div>
           <Button onClick={handleSave} className="w-full" loading={saving || photoUploading}>
-            {editing ? 'Enregistrer' : 'Ajouter'}
+            {editing ? t('commonApp.save') : t('commonApp.add')}
           </Button>
         </div>
       </Modal>

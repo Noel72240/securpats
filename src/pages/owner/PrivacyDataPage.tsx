@@ -5,8 +5,10 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useApp } from '@/contexts/AppContext'
+import { useI18n } from '@/i18n/LanguageContext'
 
 export default function PrivacyDataPage() {
+  const { t } = useI18n()
   const { exportUserData, deleteAccount, currentUser } = useApp()
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -38,13 +40,13 @@ export default function PrivacyDataPage() {
   }
 
   return (
-    <DashboardLayout variant="owner" title="Mes données personnelles">
+    <DashboardLayout variant="owner" title={t('ownerPrivacy.title')}>
       <div className="max-w-2xl space-y-6">
         <Card padding="lg">
           <div className="flex items-start gap-3 mb-4">
             <Shield className="w-6 h-6 text-brand-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h2 className="font-bold text-slate-900">Vos droits RGPD</h2>
+              <h2 className="font-bold text-slate-900">{t('ownerPrivacy.rights')}</h2>
               <p className="text-sm text-slate-600 mt-1">
                 Conformément au Règlement (UE) 2016/679, vous pouvez accéder, exporter et supprimer vos données personnelles.
               </p>
@@ -67,25 +69,25 @@ export default function PrivacyDataPage() {
         </Card>
 
         <Card padding="lg">
-          <h3 className="font-semibold text-slate-900 mb-2">Exporter mes données</h3>
+          <h3 className="font-semibold text-slate-900 mb-2">{t('ownerPrivacy.export')}</h3>
           <p className="text-sm text-slate-600 mb-4">
             Téléchargez une copie de vos données (profil, animaux, référents, documents, abonnement) au format JSON.
           </p>
-          <Button icon={Download} onClick={handleExport}>Télécharger l&apos;export JSON</Button>
+          <Button icon={Download} onClick={handleExport}>{t('ownerPrivacy.downloadJson')}</Button>
         </Card>
 
         <Card padding="lg" className="border-red-100">
           <div className="flex items-start gap-3 mb-4">
             <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-red-700">Supprimer mon compte</h3>
+              <h3 className="font-semibold text-red-700">{t('ownerPrivacy.deleteAccount')}</h3>
               <p className="text-sm text-slate-600 mt-1">
                 Action irréversible. Toutes vos données (animaux, référents, documents, abonnement) seront définitivement supprimées.
               </p>
             </div>
           </div>
           <p className="text-sm text-slate-600 mb-3">
-            Tapez <strong>SUPPRIMER</strong> pour confirmer :
+            {t('ownerPrivacy.typeDelete')} :
           </p>
           <input
             type="text"
@@ -101,7 +103,7 @@ export default function PrivacyDataPage() {
             disabled={confirmText !== 'SUPPRIMER' || deleting}
             onClick={handleDelete}
           >
-            {deleting ? 'Suppression...' : 'Supprimer définitivement mon compte'}
+            {deleting ? t('ownerPrivacy.deleting') : t('ownerPrivacy.deleteForever')}
           </Button>
         </Card>
       </div>
