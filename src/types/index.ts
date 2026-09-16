@@ -1,6 +1,6 @@
 export type UserRole = 'owner' | 'petsitter' | 'admin' | 'foster_family' | 'volunteer'
 
-export type CaregiverKind = 'foster_family' | 'volunteer'
+export type CaregiverKind = 'foster_family' | 'volunteer' | 'both'
 
 export interface User {
   id: string
@@ -22,6 +22,13 @@ export interface User {
   qrToken?: string
   /** True après reset admin : l’utilisateur doit changer son MDP */
   mustChangePassword?: boolean
+  /** Pièce d’identité (KYC propriétaire) */
+  idDocument?: string
+  /** Justificatif de domicile */
+  proofOfAddress?: string
+  /** Compte activé après validation admin des documents */
+  identityVerified?: boolean
+  identityVerifiedAt?: string
 }
 
 export interface Pet {
@@ -130,6 +137,10 @@ export interface PetSitterProfile {
   address: string
   idDocument?: string
   proofOfAddress?: string
+  /** Extrait de casier (bulletin n°3) — facultatif, non bloquant */
+  criminalRecord?: string
+  /** Dispose de l’ACACED */
+  hasAcaced?: boolean | null
   availableDays: string[]
   availableHours: string
   serviceArea: string
@@ -141,7 +152,7 @@ export interface PetSitterProfile {
   idConsentVersion?: string
 }
 
-/** Profil famille d'accueil ou bénévole */
+/** Profil famille d'accueil / bénévole (espace aidant unifié) */
 export interface CaregiverProfile {
   id: string
   userId: string
@@ -152,10 +163,34 @@ export interface CaregiverProfile {
   email: string
   address: string
   departmentCode?: string
+  birthDate?: string
+  postalCode: string
+  city: string
+  engagementTypes: string[]
+  interventionRadiusKm?: number
+  canTravel?: boolean | null
+  hasVehicle?: boolean | null
+  questionnaire: import('@/lib/caregiver/form').CaregiverQuestionnaire
+  idDocument?: string
+  proofOfAddress?: string
+  criminalRecord?: string
+  insurance?: string
+  housingPhotos: string[]
+  outdoorPhotos: string[]
+  ownAnimalsPhotos: string[]
+  aboutMe: string
+  motivation: string
+  importantNotes: string
+  infoAccuracyAt?: string
+  charterAcceptedAt?: string
+  contactAuthorizedAt?: string
+  confidentialityAcceptedAt?: string
   availableDays: string[]
   availableHours: string
   serviceArea: string
   verified: boolean
+  verifiedAt?: string
+  verificationNotes: string
 }
 
 export interface Activity {
@@ -275,6 +310,16 @@ export interface SiteSettings {
     videoTitle: string
     /** URL YouTube, Vimeo ou fichier .mp4 */
     videoUrl: string
+  }
+  /** Section « L'histoire de SécurPats » (page d'accueil) */
+  founder: {
+    eyebrow: string
+    title: string
+    name: string
+    role: string
+    photoUrl: string
+    photoAlt: string
+    paragraphs: string[]
   }
   footer: {
     description: string

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Save, RotateCcw, Mail, Phone, MapPin, Image, Home, MessageSquare,
-  Plus, Trash2, Edit, CheckCircle, Building2, Wrench,
+  Plus, Trash2, Edit, CheckCircle, Building2, Wrench, UserRound,
 } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
@@ -16,11 +16,12 @@ import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadSiteAssetFile } from '@/lib/supabase/uploads'
 import type { SiteSettings, SiteTestimonial } from '@/types'
 
-type Tab = 'contact' | 'home' | 'testimonials' | 'legal' | 'maintenance'
+type Tab = 'contact' | 'home' | 'founder' | 'testimonials' | 'legal' | 'maintenance'
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'contact', label: 'Contact & Adresse', icon: MapPin },
   { id: 'home', label: 'Accueil & Images', icon: Home },
+  { id: 'founder', label: 'Histoire fondatrice', icon: UserRound },
   { id: 'testimonials', label: 'Témoignages', icon: MessageSquare },
   { id: 'legal', label: 'Légal & Footer', icon: Building2 },
   { id: 'maintenance', label: 'Maintenance', icon: Wrench },
@@ -237,6 +238,96 @@ export default function AdminSiteContentPage() {
               <hr className="border-slate-100 my-6" />
               <Input label="Titre bandeau CTA" value={draft.home.ctaTitle} onChange={e => setDraft({ ...draft, home: { ...draft.home, ctaTitle: e.target.value } })} />
               <Textarea label="Sous-titre bandeau CTA" rows={2} value={draft.home.ctaSubtitle} onChange={e => setDraft({ ...draft, home: { ...draft.home, ctaSubtitle: e.target.value } })} />
+            </div>
+          </Card>
+        )}
+
+        {tab === 'founder' && (
+          <Card padding="lg">
+            <CardHeader
+              title="Histoire de la fondatrice"
+              subtitle="Section « L'histoire de SécurPats » sur la page d'accueil (version française)"
+            />
+            <div className="space-y-4">
+              <Input
+                label="Sur-titre"
+                value={draft.founder.eyebrow}
+                onChange={e => setDraft({ ...draft, founder: { ...draft.founder, eyebrow: e.target.value } })}
+              />
+              <Input
+                label="Titre de la section"
+                value={draft.founder.title}
+                onChange={e => setDraft({ ...draft, founder: { ...draft.founder, title: e.target.value } })}
+              />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Input
+                  label="Nom"
+                  value={draft.founder.name}
+                  onChange={e => setDraft({ ...draft, founder: { ...draft.founder, name: e.target.value } })}
+                />
+                <Input
+                  label="Fonction / rôle"
+                  value={draft.founder.role}
+                  onChange={e => setDraft({ ...draft, founder: { ...draft.founder, role: e.target.value } })}
+                />
+              </div>
+              <ImageField
+                label="Photo"
+                value={draft.founder.photoUrl}
+                onChange={v => setDraft({ ...draft, founder: { ...draft.founder, photoUrl: v } })}
+                previewClass="w-36 h-48"
+              />
+              <Input
+                label="Texte alternatif de la photo"
+                value={draft.founder.photoAlt}
+                onChange={e => setDraft({ ...draft, founder: { ...draft.founder, photoAlt: e.target.value } })}
+              />
+
+              <hr className="border-slate-100 my-2" />
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-slate-900">Paragraphes du récit</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  icon={Plus}
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      founder: { ...draft.founder, paragraphs: [...draft.founder.paragraphs, ''] },
+                    })
+                  }
+                >
+                  Ajouter un paragraphe
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {draft.founder.paragraphs.map((paragraph, index) => (
+                  <div key={index} className="relative">
+                    <Textarea
+                      label={`Paragraphe ${index + 1}`}
+                      rows={4}
+                      value={paragraph}
+                      onChange={e => {
+                        const paragraphs = [...draft.founder.paragraphs]
+                        paragraphs[index] = e.target.value
+                        setDraft({ ...draft, founder: { ...draft.founder, paragraphs } })
+                      }}
+                    />
+                    {draft.founder.paragraphs.length > 1 && (
+                      <button
+                        type="button"
+                        className="absolute top-0 right-0 text-xs text-red-500 hover:text-red-600 font-medium"
+                        onClick={() => {
+                          const paragraphs = draft.founder.paragraphs.filter((_, i) => i !== index)
+                          setDraft({ ...draft, founder: { ...draft.founder, paragraphs } })
+                        }}
+                      >
+                        Supprimer
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
         )}

@@ -28,6 +28,10 @@ export function profileToUser(row: Tables<'profiles'>): User {
     marketingOptIn: row.marketing_opt_in ?? undefined,
     qrToken: row.qr_token ?? undefined,
     mustChangePassword: Boolean(row.must_change_password),
+    idDocument: row.id_document_path ?? undefined,
+    proofOfAddress: row.proof_of_address_path ?? undefined,
+    identityVerified: Boolean(row.identity_verified),
+    identityVerifiedAt: row.identity_verified_at ?? undefined,
   }
 }
 
@@ -51,7 +55,7 @@ export function userToProfileInsert(
   }
 }
 
-export function userToProfileUpdate(updates: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate' | 'qrToken'>>): TablesUpdate<'profiles'> {
+export function userToProfileUpdate(updates: Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate' | 'qrToken' | 'idDocument' | 'proofOfAddress' | 'identityVerified'>>): TablesUpdate<'profiles'> {
   const patch: TablesUpdate<'profiles'> = {}
   if (updates.firstName !== undefined) patch.first_name = updates.firstName
   if (updates.lastName !== undefined) patch.last_name = updates.lastName
@@ -59,6 +63,9 @@ export function userToProfileUpdate(updates: Partial<Pick<User, 'firstName' | 'l
   if (updates.address !== undefined) patch.address = updates.address
   if (updates.birthDate !== undefined) patch.birth_date = updates.birthDate || null
   if (updates.qrToken !== undefined) patch.qr_token = updates.qrToken || null
+  if (updates.idDocument !== undefined) patch.id_document_path = updates.idDocument || null
+  if (updates.proofOfAddress !== undefined) patch.proof_of_address_path = updates.proofOfAddress || null
+  if (updates.identityVerified !== undefined) patch.identity_verified = updates.identityVerified
   return patch
 }
 
@@ -267,6 +274,8 @@ export function petsitterFromRow(row: Tables<'petsitter_profiles'>): PetSitterPr
     address: row.address,
     idDocument: row.id_document_path ?? undefined,
     proofOfAddress: row.proof_of_address_path ?? undefined,
+    criminalRecord: row.criminal_record_path ?? undefined,
+    hasAcaced: row.has_acaced ?? null,
     availableDays: row.available_days,
     availableHours: row.available_hours,
     serviceArea: row.service_area,
@@ -301,6 +310,14 @@ export function mergeSiteSettings(partial: unknown): SiteSettings {
     contact: { ...defaultSiteSettings.contact, ...p.contact },
     legal: { ...defaultSiteSettings.legal, ...p.legal },
     home: { ...defaultSiteSettings.home, ...p.home },
+    founder: {
+      ...defaultSiteSettings.founder,
+      ...p.founder,
+      paragraphs:
+        Array.isArray(p.founder?.paragraphs) && p.founder.paragraphs.length > 0
+          ? p.founder.paragraphs.filter(x => typeof x === 'string')
+          : defaultSiteSettings.founder.paragraphs,
+    },
     footer: { ...defaultSiteSettings.footer, ...p.footer },
     maintenance: { ...defaultSiteSettings.maintenance, ...p.maintenance },
     testimonials: p.testimonials ?? defaultSiteSettings.testimonials,

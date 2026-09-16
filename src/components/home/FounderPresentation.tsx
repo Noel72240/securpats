@@ -1,7 +1,8 @@
+import { useApp } from '@/contexts/AppContext'
 import { useI18n } from '@/i18n/LanguageContext'
 import type { TranslationKey } from '@/i18n/LanguageContext'
 
-const FOUNDER_PHOTO = '/founder-johanna-hayer.png'
+const FALLBACK_PHOTO = '/founder-johanna-hayer.png'
 
 const paragraphKeys: TranslationKey[] = [
   'founder.p1',
@@ -14,17 +15,30 @@ const paragraphKeys: TranslationKey[] = [
 ]
 
 export function FounderPresentation() {
-  const { t } = useI18n()
+  const { siteSettings } = useApp()
+  const { t, locale } = useI18n()
+  const founder = siteSettings.founder
+
+  const useEn = locale === 'en'
+  const eyebrow = useEn ? t('founder.eyebrow') : (founder.eyebrow || t('founder.eyebrow'))
+  const title = useEn ? t('founder.title') : (founder.title || t('founder.title'))
+  const name = founder.name || 'Johanna Hayer'
+  const role = useEn ? t('founder.role') : (founder.role || t('founder.role'))
+  const photoUrl = founder.photoUrl || FALLBACK_PHOTO
+  const photoAlt = useEn ? t('founder.photoAlt') : (founder.photoAlt || t('founder.photoAlt'))
+  const paragraphs = useEn
+    ? paragraphKeys.map(key => t(key))
+    : (founder.paragraphs?.length ? founder.paragraphs : paragraphKeys.map(key => t(key)))
 
   return (
     <section className="founder-presentation py-12 sm:py-16 lg:py-20 bg-white border-y border-slate-100">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-12">
           <p className="text-sm sm:text-base font-semibold tracking-[0.14em] uppercase text-brand-600 mb-3">
-            {t('founder.eyebrow')}
+            {eyebrow}
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">
-            {t('founder.title')}
+            {title}
           </h2>
         </div>
 
@@ -32,23 +46,23 @@ export function FounderPresentation() {
           <div className="mx-auto lg:mx-0 w-full max-w-sm lg:max-w-none">
             <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-200 bg-slate-50">
               <img
-                src={FOUNDER_PHOTO}
-                alt={t('founder.photoAlt')}
+                src={photoUrl}
+                alt={photoAlt}
                 className="w-full h-auto object-cover aspect-[3/4]"
                 loading="lazy"
               />
             </div>
             <p className="mt-4 text-center lg:text-left">
-              <span className="block font-bold text-slate-900 text-xl sm:text-2xl tracking-tight">Johanna Hayer</span>
+              <span className="block font-bold text-slate-900 text-xl sm:text-2xl tracking-tight">{name}</span>
               <span className="block font-medium text-brand-700 text-sm sm:text-base mt-1">
-                {t('founder.role')}
+                {role}
               </span>
             </p>
           </div>
 
           <div className="space-y-5 sm:space-y-6 text-slate-700 text-base sm:text-lg leading-relaxed">
-            {paragraphKeys.map(key => (
-              <p key={key}>{t(key)}</p>
+            {paragraphs.map((text, i) => (
+              <p key={i}>{text}</p>
             ))}
           </div>
         </div>

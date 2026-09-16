@@ -11,7 +11,7 @@ import {
 import { generateId, generateQrToken, buildOwnerQrToken } from '@/lib/utils'
 import { LEGAL_VERSION } from '@/lib/legal/constants'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
-import { missionFromRow } from '@/lib/supabase/mappers'
+import { missionFromRow, mergeSiteSettings } from '@/lib/supabase/mappers'
 import type { Tables } from '@/lib/supabase/database.types'
 import { signIn, signUp, signOut, getSessionUser, onAuthStateChange } from '@/lib/supabase/auth'
 import * as db from '@/lib/supabase/services'
@@ -22,6 +22,7 @@ import { uploadPetSitterDocFile } from '@/lib/supabase/uploads'
 import { validatePetsitterIdFile } from '@/lib/petsitter/validation'
 import { formatPetsitterDbError } from '@/lib/petsitter/db-errors'
 import * as caregiverDb from '@/lib/caregiver/services'
+import { apiUrl } from '@/lib/platform'
 
 interface AppState {
   currentUser: User | null
@@ -35,6 +36,7 @@ interface AppState {
   petSitterProfile: PetSitterProfile | null
   caregiverProfile: CaregiverProfile | null
   allPetsitterProfiles: PetSitterProfile[]
+  allCaregiverProfiles: CaregiverProfile[]
   activities: Activity[]
   allUsers: User[]
   registeredUsers: User[]
@@ -52,6 +54,8 @@ interface AppContextType extends AppState {
     firstName: string
     lastName: string
     phone: string
+    idFile: File
+    proofFile: File
     consent: { termsAccepted: boolean; privacyAccepted: boolean; marketingOptIn?: boolean }
   }) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>
   registerPetsitter: (data: {
@@ -64,7 +68,9 @@ interface AppContextType extends AppState {
     bio: string
     departmentCode: string
     idFile: File
-    proofFile?: File | null
+    proofFile: File
+    criminalFile?: File | null
+    hasAcaced?: boolean | null
     consent: {
       termsAccepted: boolean
       privacyAccepted: boolean
@@ -74,7 +80,9 @@ interface AppContextType extends AppState {
   }) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; message?: string }>
   completePetsitterIdentity: (data: {
     idFile: File
-    proofFile?: File | null
+    proofFile: File
+    criminalFile?: File | null
+    hasAcaced?: boolean | null
     address?: string
     bio?: string
     departmentCode?: string
@@ -82,17 +90,39 @@ interface AppContextType extends AppState {
   }) => Promise<{ error: string | null }>
   registerCaregiver: (data: {
     kind: CaregiverKind
+    engagementTypes: string[]
     email: string
     password: string
     firstName: string
     lastName: string
     phone: string
     address: string
+    postalCode: string
+    city: string
+    birthDate: string
     departmentCode: string
+    interventionRadiusKm?: number
+    canTravel?: boolean | null
+    hasVehicle?: boolean | null
+    questionnaire: import('@/lib/caregiver/form').CaregiverQuestionnaire
+    aboutMe: string
+    motivation: string
+    importantNotes: string
     bio: string
+    idFile: File
+    proofOfAddressFile?: File | null
+    criminalRecordFile?: File | null
+    insuranceFile?: File | null
+    housingFiles?: File[]
+    outdoorFiles?: File[]
+    ownAnimalsFiles?: File[]
     consent: {
       termsAccepted: boolean
       privacyAccepted: boolean
+      infoAccurate: boolean
+      charterOk: boolean
+      contactOk: boolean
+      confidentialOk: boolean
       marketingOptIn?: boolean
     }
   }) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; message?: string; readyToLogin?: boolean }>
@@ -124,6 +154,8 @@ interface AppContextType extends AppState {
   cancelMission: (id: string) => Promise<string | null>
   deleteActivity: (id: string) => Promise<string | null>
   setPetsitterVerified: (userId: string, verified: boolean) => Promise<string | null>
+  setCaregiverVerified: (userId: string, verified: boolean) => Promise<string | null>
+  setOwnerIdentityVerified: (userId: string, verified: boolean) => Promise<string | null>
   updateSubscription: (plan: OwnerSubscriptionPlan) => void
   syncSubscriptionFromStripe: (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => void
   cancelSubscription: () => void
@@ -174,15 +206,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [petSitterProfile, setPetSitterProfile] = useState<PetSitterProfile | null>(saved.petSitterProfile ?? mockPetSitter)
   const [caregiverProfile, setCaregiverProfile] = useState<CaregiverProfile | null>(null)
   const [allPetsitterProfiles, setAllPetsitterProfiles] = useState<PetSitterProfile[]>([])
+  const [allCaregiverProfiles, setAllCaregiverProfiles] = useState<CaregiverProfile[]>([])
   const [activities, setActivities] = useState<Activity[]>(saved.activities ?? mockActivities)
   const [registeredUsers, setRegisteredUsers] = useState<User[]>(saved.registeredUsers ?? [])
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(saved.siteSettings ?? defaultSiteSettings)
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(
+    mergeSiteSettings(saved.siteSettings ?? defaultSiteSettings),
+  )
 
   const allUsers = [...systemUsers, ...registeredUsers]
 
   const dataSetters = useMemo(() => ({
     setPets, setReferents, setDocuments, setSubscription, setInvoices,
-    setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile, setCaregiverProfile, setAllPetsitterProfiles, setAllSubscriptions,
+    setMissions, setActivities, setRegisteredUsers, setSiteSettings, setPetSitterProfile, setCaregiverProfile, setAllPetsitterProfiles, setAllCaregiverProfiles, setAllSubscriptions,
   }), [])
 
   const syncOwnerSubscriptionInBackground = useCallback(async (user: User) => {
@@ -366,22 +401,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     firstName: string
     lastName: string
     phone: string
+    idFile: File
+    proofFile: File
     consent: { termsAccepted: boolean; privacyAccepted: boolean; marketingOptIn?: boolean }
   }): Promise<{ error: string | null; needsEmailConfirmation?: boolean }> => {
     if (!data.consent.termsAccepted || !data.consent.privacyAccepted) {
       return { error: 'Vous devez accepter les CGU et la politique de confidentialité.' }
     }
+    if (!data.idFile || !data.proofFile) {
+      return { error: 'Pièce d’identité et justificatif de domicile sont obligatoires.' }
+    }
+
+    const idErr = validatePetsitterIdFile(data.idFile)
+    if (idErr) return { error: idErr }
+    const proofErr = validatePetsitterIdFile(data.proofFile)
+    if (proofErr) return { error: `Justificatif de domicile : ${proofErr}` }
 
     const consentAt = new Date().toISOString()
 
     if (supabaseMode) {
-      const { consent, ...signupData } = data
-      const { user, error, needsEmailConfirmation } = await signUp({
+      const { consent, idFile, proofFile, ...signupData } = data
+      const signUpResult = await signUp({
         ...signupData,
         consentAt,
         consentVersion: LEGAL_VERSION,
         marketingOptIn: consent.marketingOptIn,
       })
+      const { error, needsEmailConfirmation } = signUpResult
+      let user = signUpResult.user
+
+      // Compte créé côté serveur mais session pas encore prête → reconnecter avant upload
+      if (!user && !error && 'readyToLogin' in signUpResult && signUpResult.readyToLogin) {
+        const { signIn } = await import('@/lib/supabase/auth')
+        const again = await signIn(data.email, data.password)
+        user = again.user
+        if (!user) {
+          return {
+            error:
+              'Compte créé, mais connexion automatique impossible. Connectez-vous, puis déposez vos documents dans Profil (Documents obligatoires).',
+          }
+        }
+      }
+
       if (needsEmailConfirmation) {
         return { error: null, needsEmailConfirmation: true }
       }
@@ -389,8 +450,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (error?.toLowerCase().includes('database error saving new user')) {
           return { error: 'Erreur base de données à l\'inscription. Exécutez supabase/migrations/005_fix_signup_trigger.sql dans Supabase SQL Editor, puis réessayez.' }
         }
-        if (error?.toLowerCase().includes('already registered')) {
-          return { error: 'Un compte existe déjà avec cet email. Connectez-vous ou réinitialisez votre mot de passe.' }
+        if (error?.toLowerCase().includes('already registered') || error?.toLowerCase().includes('existe déjà')) {
+          return { error: 'Un compte existe déjà avec cet email. Connectez-vous, puis déposez vos documents dans Profil si besoin.' }
         }
         if (error?.toLowerCase().includes('rate limit')) {
           return {
@@ -399,7 +460,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         return { error: error || 'Inscription échouée. Réessayez.' }
       }
-      const withQr = user.role === 'owner' ? await syncOwnerQrToken(user) : user
+
+      const { uploadOwnerIdentityDocFile } = await import('@/lib/supabase/uploads')
+      const idUp = await uploadOwnerIdentityDocFile(user.id, 'id', idFile)
+      if (!idUp.path) {
+        setCurrentUser(user)
+        return {
+          error:
+            idUp.error
+              || 'Compte créé, mais la pièce d’identité n’a pas pu être envoyée. Allez dans Profil pour la déposer.',
+        }
+      }
+      const addrUp = await uploadOwnerIdentityDocFile(user.id, 'address', proofFile)
+      if (!addrUp.path) {
+        await db.patchProfile(user.id, { idDocument: idUp.path, identityVerified: false })
+        setCurrentUser({ ...user, idDocument: idUp.path, identityVerified: false })
+        return {
+          error:
+            addrUp.error
+              || 'Compte créé, mais le justificatif de domicile n’a pas pu être envoyé. Allez dans Profil pour le déposer.',
+        }
+      }
+
+      const { user: patched, error: patchErr } = await db.patchProfile(user.id, {
+        idDocument: idUp.path,
+        proofOfAddress: addrUp.path,
+        identityVerified: false,
+      })
+      if (patchErr) {
+        setCurrentUser({ ...user, idDocument: idUp.path, proofOfAddress: addrUp.path, identityVerified: false })
+        return {
+          error: `Compte créé mais enregistrement des documents incomplet (${patchErr}). Vérifiez dans Profil, ou exécutez la migration 026_identity_docs_all_roles.sql.`,
+        }
+      }
+
+      const withDocs = patched || { ...user, idDocument: idUp.path, proofOfAddress: addrUp.path, identityVerified: false }
+      const withQr = withDocs.role === 'owner' ? await syncOwnerQrToken(withDocs) : withDocs
       setCurrentUser(withQr)
       return { error: null }
     }
@@ -437,7 +533,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bio: string
       departmentCode?: string
       idFile: File
-      proofFile?: File | null
+      proofFile: File
+      criminalFile?: File | null
+      hasAcaced?: boolean | null
     },
     consentAt: string,
   ): Promise<{ error: string | null }> => {
@@ -451,13 +549,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    let proofPath: string | undefined
-    if (data.proofFile) {
-      const { path, error: proofErr } = await uploadPetSitterDocFile(user.id, 'address', data.proofFile)
-      if (!path) {
-        return { error: proofErr || 'Échec de l\'envoi du justificatif de domicile.' }
-      }
-      proofPath = path
+    const proofErr = validatePetsitterIdFile(data.proofFile)
+    if (proofErr) return { error: `Justificatif de domicile : ${proofErr}` }
+    const { path: proofPath, error: uploadErr } = await uploadPetSitterDocFile(user.id, 'address', data.proofFile)
+    if (!proofPath) {
+      return { error: uploadErr || 'Échec de l\'envoi du justificatif de domicile.' }
+    }
+
+    let criminalPath: string | undefined
+    if (data.criminalFile) {
+      const crErr = validatePetsitterIdFile(data.criminalFile)
+      if (crErr) return { error: `Extrait de casier : ${crErr}` }
+      const { path, error: crUploadErr } = await uploadPetSitterDocFile(user.id, 'criminal', data.criminalFile)
+      if (!path) return { error: crUploadErr || 'Échec de l\'envoi de l\'extrait de casier.' }
+      criminalPath = path
     }
 
     const { profile, error: profileErr } = await db.upsertPetsitterProfile(user.id, {
@@ -468,6 +573,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       departmentCode: data.departmentCode || undefined,
       idDocument: idPath,
       proofOfAddress: proofPath,
+      criminalRecord: criminalPath,
+      hasAcaced: data.hasAcaced ?? null,
       verified: false,
       idConsentAt: consentAt,
       idConsentVersion: LEGAL_VERSION,
@@ -491,7 +598,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     bio: string
     departmentCode: string
     idFile: File
-    proofFile?: File | null
+    proofFile: File
+    criminalFile?: File | null
+    hasAcaced?: boolean | null
     consent: {
       termsAccepted: boolean
       privacyAccepted: boolean
@@ -574,7 +683,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       email: data.email,
       address: data.address,
       idDocument: data.idFile.name,
-      proofOfAddress: data.proofFile?.name,
+      proofOfAddress: data.proofFile.name,
+      criminalRecord: data.criminalFile?.name,
+      hasAcaced: data.hasAcaced ?? null,
       availableDays: [],
       availableHours: '',
       serviceArea: '',
@@ -588,7 +699,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const completePetsitterIdentity = useCallback(async (data: {
     idFile: File
-    proofFile?: File | null
+    proofFile: File
+    criminalFile?: File | null
+    hasAcaced?: boolean | null
     address?: string
     bio?: string
     departmentCode?: string
@@ -610,6 +723,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       departmentCode: data.departmentCode ?? petSitterProfile?.departmentCode ?? '',
       idFile: data.idFile,
       proofFile: data.proofFile,
+      criminalFile: data.criminalFile,
+      hasAcaced: data.hasAcaced,
     }
 
     if (supabaseMode) {
@@ -625,7 +740,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       email: profileData.email,
       address: profileData.address,
       idDocument: data.idFile.name,
-      proofOfAddress: data.proofFile?.name ?? prev?.proofOfAddress,
+      proofOfAddress: data.proofFile.name,
+      criminalRecord: data.criminalFile?.name ?? prev?.criminalRecord,
+      hasAcaced: data.hasAcaced ?? prev?.hasAcaced ?? null,
       availableDays: prev?.availableDays ?? [],
       availableHours: prev?.availableHours ?? '',
       serviceArea: prev?.serviceArea ?? '',
@@ -639,29 +756,137 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const registerCaregiver = useCallback(async (data: {
     kind: CaregiverKind
+    engagementTypes: string[]
     email: string
     password: string
     firstName: string
     lastName: string
     phone: string
     address: string
+    postalCode: string
+    city: string
+    birthDate: string
     departmentCode: string
+    interventionRadiusKm?: number
+    canTravel?: boolean | null
+    hasVehicle?: boolean | null
+    questionnaire: import('@/lib/caregiver/form').CaregiverQuestionnaire
+    aboutMe: string
+    motivation: string
+    importantNotes: string
     bio: string
+    idFile: File
+    proofOfAddressFile?: File | null
+    criminalRecordFile?: File | null
+    insuranceFile?: File | null
+    housingFiles?: File[]
+    outdoorFiles?: File[]
+    ownAnimalsFiles?: File[]
     consent: {
       termsAccepted: boolean
       privacyAccepted: boolean
+      infoAccurate: boolean
+      charterOk: boolean
+      contactOk: boolean
+      confidentialOk: boolean
       marketingOptIn?: boolean
     }
   }): Promise<{ error: string | null; needsEmailConfirmation?: boolean; message?: string; readyToLogin?: boolean }> => {
     if (!data.consent.termsAccepted || !data.consent.privacyAccepted) {
       return { error: 'Vous devez accepter les CGU et la politique de confidentialité.' }
     }
+    if (!data.consent.infoAccurate || !data.consent.charterOk || !data.consent.contactOk || !data.consent.confidentialOk) {
+      return { error: 'Veuillez accepter tous les engagements.' }
+    }
     if (!data.departmentCode) {
       return { error: 'Veuillez sélectionner votre département.' }
     }
+    if (!data.idFile) {
+      return { error: 'La pièce d’identité est obligatoire.' }
+    }
+
+    const { kindToRole } = await import('@/lib/caregiver/form')
+    const { uploadCaregiverDocFile } = await import('@/lib/supabase/uploads')
+    const { validatePetsitterIdFile } = await import('@/lib/petsitter/validation')
+
+    const idErr = validatePetsitterIdFile(data.idFile)
+    if (idErr) return { error: idErr }
 
     const consentAt = new Date().toISOString()
-    const role = data.kind
+    const role = kindToRole(data.kind)
+
+    const buildProfilePayload = async (userId: string): Promise<{ error: string | null; payload?: Partial<CaregiverProfile> }> => {
+      const idUp = await uploadCaregiverDocFile(userId, 'id', data.idFile)
+      if (idUp.error || !idUp.path) return { error: idUp.error || 'Échec envoi pièce d’identité' }
+      if (!data.proofOfAddressFile) return { error: 'Le justificatif de domicile est obligatoire.' }
+      const addrUp = await uploadCaregiverDocFile(userId, 'address', data.proofOfAddressFile)
+      if (addrUp.error || !addrUp.path) return { error: addrUp.error || 'Échec envoi justificatif de domicile' }
+
+      const uploadOpt = async (file: File | null | undefined, kind: 'criminal' | 'insurance') => {
+        if (!file) return undefined
+        const r = await uploadCaregiverDocFile(userId, kind, file)
+        if (r.error) throw new Error(r.error)
+        return r.path || undefined
+      }
+      const uploadMany = async (files: File[] | undefined, kind: 'housing' | 'outdoor' | 'own-animals') => {
+        const out: string[] = []
+        for (const f of files || []) {
+          const r = await uploadCaregiverDocFile(userId, kind, f)
+          if (r.error) throw new Error(r.error)
+          if (r.path) out.push(r.path)
+        }
+        return out
+      }
+
+      try {
+        const criminalRecord = await uploadOpt(data.criminalRecordFile, 'criminal')
+        const insurance = await uploadOpt(data.insuranceFile, 'insurance')
+        const housingPhotos = await uploadMany(data.housingFiles, 'housing')
+        const outdoorPhotos = await uploadMany(data.outdoorFiles, 'outdoor')
+        const ownAnimalsPhotos = await uploadMany(data.ownAnimalsFiles, 'own-animals')
+
+        return {
+          error: null,
+          payload: {
+            kind: data.kind,
+            bio: data.bio || data.aboutMe,
+            phone: data.phone,
+            email: data.email,
+            address: data.address,
+            postalCode: data.postalCode,
+            city: data.city,
+            birthDate: data.birthDate,
+            departmentCode: data.departmentCode,
+            engagementTypes: data.engagementTypes,
+            interventionRadiusKm: data.interventionRadiusKm,
+            canTravel: data.canTravel,
+            hasVehicle: data.hasVehicle,
+            questionnaire: data.questionnaire,
+            aboutMe: data.aboutMe,
+            motivation: data.motivation,
+            importantNotes: data.importantNotes,
+            idDocument: idUp.path,
+            proofOfAddress: addrUp.path,
+            criminalRecord,
+            insurance,
+            housingPhotos,
+            outdoorPhotos,
+            ownAnimalsPhotos,
+            availableDays: data.questionnaire.availabilityTypes || [],
+            availableHours: '',
+            serviceArea: data.interventionRadiusKm ? `${data.interventionRadiusKm} km` : '',
+            infoAccuracyAt: consentAt,
+            charterAcceptedAt: consentAt,
+            contactAuthorizedAt: consentAt,
+            confidentialityAcceptedAt: consentAt,
+            verified: false,
+            verificationNotes: '',
+          },
+        }
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : 'Échec envoi des documents' }
+      }
+    }
 
     if (supabaseMode) {
       const result = await signUp({
@@ -678,7 +903,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const user = result.user
       const error = result.error
       const needsEmailConfirmation = result.needsEmailConfirmation
-      const readyToLogin = 'readyToLogin' in result ? Boolean(result.readyToLogin) : false
       const userId = 'userId' in result && typeof result.userId === 'string' ? result.userId : undefined
 
       if (needsEmailConfirmation) {
@@ -697,35 +921,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const profileUserId = user?.id || userId
-      if (!profileUserId || readyToLogin) {
-        if (profileUserId) {
-          await caregiverDb.upsertCaregiverProfile(profileUserId, data.kind, {
-            bio: data.bio,
-            phone: data.phone,
-            email: data.email,
-            address: data.address,
-            departmentCode: data.departmentCode,
-            verified: false,
-          })
-        }
+      if (!profileUserId) {
+        return { error: 'Compte créé mais profil incomplet. Reconnectez-vous pour finaliser.' }
+      }
+
+      const built = await buildProfilePayload(profileUserId)
+      if (built.error || !built.payload) {
         return {
           error: null,
           readyToLogin: true,
-          message: 'Compte créé ! Connectez-vous avec votre email et mot de passe.',
+          message: `Compte créé, mais documents incomplets : ${built.error || 'erreur'}. Connectez-vous pour finaliser.`,
         }
       }
 
-      const { profile, error: profileErr } = await caregiverDb.upsertCaregiverProfile(profileUserId, data.kind, {
-        bio: data.bio,
-        phone: data.phone,
-        email: data.email,
-        address: data.address,
-        departmentCode: data.departmentCode,
-        verified: false,
-      })
+      const { profile, error: profileErr } = await caregiverDb.upsertCaregiverProfile(
+        profileUserId,
+        data.kind,
+        built.payload,
+      )
 
       if (profileErr || !profile) {
-        return { error: profileErr || 'Profil non enregistré. Exécutez supabase/migrations/024_caregiver_roles.sql.' }
+        return {
+          error: null,
+          readyToLogin: true,
+          message: `Compte créé. Profil : ${profileErr || 'à finaliser'}. Exécutez aussi la migration 025 si besoin.`,
+        }
       }
 
       if (user) {
@@ -737,7 +957,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return {
         error: null,
         readyToLogin: true,
-        message: 'Compte créé ! Connectez-vous avec votre email et mot de passe.',
+        message: 'Candidature envoyée ! Connectez-vous. Votre profil sera vérifié par SécurPats.',
       }
     }
 
@@ -768,11 +988,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       phone: data.phone,
       email: data.email,
       address: data.address,
+      postalCode: data.postalCode,
+      city: data.city,
+      birthDate: data.birthDate,
       departmentCode: data.departmentCode,
-      availableDays: [],
+      engagementTypes: data.engagementTypes,
+      interventionRadiusKm: data.interventionRadiusKm,
+      canTravel: data.canTravel,
+      hasVehicle: data.hasVehicle,
+      questionnaire: data.questionnaire,
+      aboutMe: data.aboutMe,
+      motivation: data.motivation,
+      importantNotes: data.importantNotes,
+      housingPhotos: [],
+      outdoorPhotos: [],
+      ownAnimalsPhotos: [],
+      availableDays: data.questionnaire.availabilityTypes || [],
       availableHours: '',
       serviceArea: '',
       verified: false,
+      verificationNotes: '',
+      infoAccuracyAt: consentAt,
+      charterAcceptedAt: consentAt,
+      contactAuthorizedAt: consentAt,
+      confidentialityAcceptedAt: consentAt,
     })
     return { error: null }
   }, [allUsers])
@@ -833,7 +1072,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data: { session } } = await getSupabase().auth.getSession()
       if (!session?.access_token) return false
 
-      const response = await fetch('/api/user/delete-account', {
+      const response = await fetch(apiUrl('/api/user/delete-account'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -871,7 +1110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data: { session } } = await getSupabase().auth.getSession()
       if (!session?.access_token) return 'Session expirée, reconnectez-vous'
 
-      const response = await fetch('/api/admin/delete-user', {
+      const response = await fetch(apiUrl('/api/admin/delete-user'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -895,6 +1134,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAllSubscriptions(prev => prev.filter(s => s.ownerId !== userId))
     setMissions(prev => prev.filter(m => m.ownerId !== userId && m.petsitterId !== userId))
     setAllPetsitterProfiles(prev => prev.filter(p => p.userId !== userId))
+    setAllCaregiverProfiles(prev => prev.filter(p => p.userId !== userId))
     return null
   }, [currentUser, allUsers, dataSetters])
 
@@ -1213,6 +1453,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null
   }, [currentUser?.id])
 
+  const setCaregiverVerifiedAdmin = useCallback(async (userId: string, verified: boolean): Promise<string | null> => {
+    if (supabaseMode) {
+      const { profile, error } = await caregiverDb.setCaregiverVerified(userId, verified)
+      if (error) return error
+      if (profile) {
+        setAllCaregiverProfiles(prev => prev.map(p => p.userId === userId ? profile : p))
+        if (currentUser?.id === userId) setCaregiverProfile(profile)
+      }
+      return null
+    }
+
+    setAllCaregiverProfiles(prev => prev.map(p => (p.userId === userId ? { ...p, verified } : p)))
+    if (currentUser?.id === userId) {
+      setCaregiverProfile(prev => (prev ? { ...prev, verified } : prev))
+    }
+    return null
+  }, [currentUser?.id])
+
+  const setOwnerIdentityVerifiedAdmin = useCallback(async (userId: string, verified: boolean): Promise<string | null> => {
+    if (supabaseMode) {
+      const { user, error } = await db.setOwnerIdentityVerified(userId, verified)
+      if (error) return error
+      if (user) {
+        setRegisteredUsers(prev => prev.map(u => u.id === userId ? { ...u, ...user } : u))
+        if (currentUser?.id === userId) setCurrentUser(user)
+      }
+      return null
+    }
+    setRegisteredUsers(prev => prev.map(u => u.id === userId ? { ...u, identityVerified: verified } : u))
+    if (currentUser?.id === userId) {
+      setCurrentUser(prev => (prev ? { ...prev, identityVerified: verified } : prev))
+    }
+    return null
+  }, [currentUser?.id])
+
   const syncSubscriptionFromStripe = useCallback(async (data: Omit<Subscription, 'id' | 'ownerId'> & { ownerId?: string }) => {
     if (!currentUser) return
     const ownerId = data.ownerId || currentUser.id
@@ -1368,13 +1643,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentUser, pets, referents, documents, subscription, invoices, allSubscriptions,
-      missions, petSitterProfile, caregiverProfile, allPetsitterProfiles, activities, allUsers, registeredUsers, siteSettings,
+      missions, petSitterProfile, caregiverProfile, allPetsitterProfiles, allCaregiverProfiles, activities, allUsers, registeredUsers, siteSettings,
       authLoading, isSupabaseMode: supabaseMode,
       login, logout, register, registerPetsitter, completePetsitterIdentity, registerCaregiver,
       exportUserData, deleteAccount, deleteUserAsAdmin, addPet, updatePet, deletePet,
       addReferent, updateReferent, deleteReferent, reorderReferents,
       addDocument, deleteDocument, declareEmergency, updateMissionStatus, deleteMission, cancelMission, deleteActivity,
       setPetsitterVerified: setPetsitterVerifiedAdmin,
+      setCaregiverVerified: setCaregiverVerifiedAdmin,
+      setOwnerIdentityVerified: setOwnerIdentityVerifiedAdmin,
       updateSubscription, syncSubscriptionFromStripe, cancelSubscription, updatePetSitterProfile, updateCaregiverProfile, updateOwnerProfile, clearMustChangePassword, addActivity,
       updateSiteSettings, resetSiteSettings, addTestimonial, updateTestimonial, deleteTestimonial,
     }}>
