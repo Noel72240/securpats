@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, ShoppingBag, ChevronDown } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -8,10 +8,12 @@ import { BrandLogo } from '@/components/brand/BrandLogo'
 import { DeveloperCredit } from '@/components/legal/DeveloperCredit'
 import { SEO_NAV_LINKS } from '@/lib/seo/content'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 import { useShopCart } from '@/lib/shop/cart'
 import { useI18n } from '@/i18n/LanguageContext'
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher'
-import { homePathForRole } from '@/lib/caregiver/spaces'
+import { homePathForRole, isCaregiverRole } from '@/lib/caregiver/spaces'
+import { isNativeApp } from '@/lib/platform'
 
 function AuthSpaceMenu({
   mode,
@@ -35,14 +37,12 @@ function AuthSpaceMenu({
     ? [
         { to: '/connexion', label: t('nav.ownerLogin'), className: 'text-brand-700' },
         { to: '/pet-sitter/connexion', label: t('nav.petSitterLogin'), className: 'text-blue-700' },
-        { to: '/famille-accueil/connexion', label: t('nav.fosterLogin'), className: 'text-teal-700' },
-        { to: '/benevole/connexion', label: t('nav.volunteerLogin'), className: 'text-amber-800' },
+        { to: '/aidant/connexion', label: 'Bénévole / Famille d’accueil', className: 'text-teal-700' },
       ]
     : [
         { to: '/inscription', label: t('nav.ownerRegister'), className: 'text-brand-700' },
         { to: '/pet-sitter/inscription', label: t('nav.becomeVip'), className: 'text-blue-700' },
-        { to: '/famille-accueil/inscription', label: t('nav.fosterRegister'), className: 'text-teal-700' },
-        { to: '/benevole/inscription', label: t('nav.volunteerRegister'), className: 'text-amber-800' },
+        { to: '/aidant/inscription', label: 'Devenir aidant', className: 'text-teal-700' },
       ]
 
   return (
@@ -230,14 +230,9 @@ export function PublicHeader() {
                       {t('nav.petSitterLogin')}
                     </Button>
                   </Link>
-                  <Link to="/famille-accueil/connexion" onClick={() => setMobileOpen(false)}>
+                  <Link to="/aidant/connexion" onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" className="w-full">
-                      {t('nav.fosterLogin')}
-                    </Button>
-                  </Link>
-                  <Link to="/benevole/connexion" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      {t('nav.volunteerLogin')}
+                      Bénévole / Famille d’accueil
                     </Button>
                   </Link>
                   <p className="px-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{t('nav.signUp')}</p>
@@ -249,14 +244,9 @@ export function PublicHeader() {
                       {t('nav.becomeVip')}
                     </Button>
                   </Link>
-                  <Link to="/famille-accueil/inscription" onClick={() => setMobileOpen(false)}>
+                  <Link to="/aidant/inscription" onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" className="w-full">
-                      {t('nav.fosterRegister')}
-                    </Button>
-                  </Link>
-                  <Link to="/benevole/inscription" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      {t('nav.volunteerRegister')}
+                      Devenir aidant
                     </Button>
                   </Link>
                 </>
@@ -292,7 +282,7 @@ export function PublicFooter() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           <div>
-            <BrandLogo variant="full" imageClassName="h-16 sm:h-20 lg:h-24" />
+            <BrandLogo variant="full" to={undefined} />
             <p className="text-sm leading-relaxed mt-4">{locale === 'en' ? t('home.footerDesc') : footer.description}</p>
             <div className="mt-4 space-y-1 text-xs text-slate-400">
               <p>{contact.email}</p>
@@ -315,8 +305,7 @@ export function PublicFooter() {
               <li><Link to="/inscription" className="hover:text-brand-400 transition-colors">{t('nav.ownerRegister')}</Link></li>
               <li><Link to="/pet-sitter/connexion" className="hover:text-blue-300 transition-colors">{t('nav.petSitterLogin')}</Link></li>
               <li><Link to="/pet-sitter/inscription" className="hover:text-blue-300 transition-colors">{t('nav.becomeVip')}</Link></li>
-              <li><Link to="/famille-accueil/inscription" className="hover:text-teal-300 transition-colors">{t('nav.fosterRegister')}</Link></li>
-              <li><Link to="/benevole/inscription" className="hover:text-amber-300 transition-colors">{t('nav.volunteerRegister')}</Link></li>
+              <li><Link to="/aidant/inscription" className="hover:text-teal-300 transition-colors">Devenir aidant</Link></li>
             </ul>
           </div>
           <div>
@@ -351,14 +340,33 @@ export function PublicFooter() {
 }
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
+  const { currentUser } = useApp()
+  const navigate = useNavigate()
+  const native = isNativeApp()
+
+  const bottomVariant = useMemo(() => {
+    if (!currentUser) return null
+    if (currentUser.role === 'admin') return 'admin' as const
+    if (currentUser.role === 'petsitter') return 'petsitter' as const
+    if (currentUser.role === 'volunteer') return 'volunteer' as const
+    if (isCaregiverRole(currentUser.role)) return 'foster' as const
+    return 'owner' as const
+  }, [currentUser])
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <div className="sticky top-0 z-50">
         <MaintenanceBanner />
         <PublicHeader />
       </div>
-      <main className="flex-1">{children}</main>
-      <PublicFooter />
+      <main className={cn('flex-1', native && bottomVariant && 'pb-24')}>{children}</main>
+      {!native && <PublicFooter />}
+      {native && bottomVariant && (
+        <MobileBottomNav
+          variant={bottomVariant}
+          onMore={() => navigate(homePathForRole(currentUser!.role))}
+        />
+      )}
     </div>
   )
 }

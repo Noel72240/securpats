@@ -1,18 +1,20 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Dog, Users, FileText, QrCode, CreditCard,
-  AlertTriangle, LogOut, Menu, X, ChevronLeft, Shield, Calendar, Briefcase,
+  AlertTriangle, LogOut, Menu, ChevronLeft, Shield, Calendar, Briefcase,
   BarChart3, Settings, Globe, Lock, IdCard, Wrench, ShoppingBag, Newspaper, Handshake, ScrollText,
-  MessageSquare,
+  MessageSquare, Heart,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { MaintenanceBanner } from '@/components/layout/MaintenanceBanner'
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 import { useSupportUnreadCount } from '@/hooks/useSupportUnreadCount'
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher'
 import { useI18n } from '@/i18n/LanguageContext'
+import { isNativeApp } from '@/lib/platform'
 
 interface NavItem {
   to: string
@@ -40,6 +42,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/app/documents', label: t('dash.documents'), icon: FileText },
     { to: '/app/directives', label: t('dash.directives'), icon: ScrollText },
     { to: '/app/messages', label: t('dash.messages'), icon: MessageSquare },
+    { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
     { to: '/app/qr-code', label: t('dash.qrCode'), icon: QrCode },
     { to: '/app/carte-urgence', label: t('dash.emergencyCard'), icon: CreditCard },
     { to: '/app/urgence', label: t('dash.declareEmergency'), icon: AlertTriangle },
@@ -55,20 +58,23 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/pet-sitter/missions', label: t('dash.missions'), icon: Briefcase },
     { to: '/pet-sitter/disponibilites', label: t('dash.availability'), icon: Calendar },
     { to: '/pet-sitter/messages', label: t('dash.messages'), icon: MessageSquare },
+    { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
     { to: '/pet-sitter/profil', label: t('dash.myProfile'), icon: Settings },
     { to: '/pet-sitter/abonnement', label: t('dash.vipSub'), icon: CreditCard },
   ], [t])
 
   const fosterNav: NavItem[] = useMemo(() => [
-    { to: '/famille-accueil', label: t('dash.dashboard'), icon: LayoutDashboard },
-    { to: '/famille-accueil/disponibilites', label: t('dash.availability'), icon: Calendar },
-    { to: '/famille-accueil/profil', label: t('dash.myProfile'), icon: Settings },
+    { to: '/aidant', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/aidant/disponibilites', label: t('dash.availability'), icon: Calendar },
+    { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/aidant/profil', label: t('dash.myProfile'), icon: Settings },
   ], [t])
 
   const volunteerNav: NavItem[] = useMemo(() => [
-    { to: '/benevole', label: t('dash.dashboard'), icon: LayoutDashboard },
-    { to: '/benevole/disponibilites', label: t('dash.availability'), icon: Calendar },
-    { to: '/benevole/profil', label: t('dash.myProfile'), icon: Settings },
+    { to: '/aidant', label: t('dash.dashboard'), icon: LayoutDashboard },
+    { to: '/aidant/disponibilites', label: t('dash.availability'), icon: Calendar },
+    { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/aidant/profil', label: t('dash.myProfile'), icon: Settings },
   ], [t])
 
   const adminNav: NavItem[] = useMemo(() => [
@@ -83,6 +89,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/admin/animaux', label: t('dash.pets'), icon: Dog },
     { to: '/admin/referents', label: t('dash.referents'), icon: Users },
     { to: '/admin/pet-sitters', label: t('dash.petsitters'), icon: Shield },
+    { to: '/admin/aidants', label: t('dash.caregivers'), icon: Heart },
     { to: '/admin/documents', label: t('dash.documents'), icon: FileText },
     { to: '/admin/missions', label: t('dash.missions'), icon: Briefcase },
     { to: '/admin/abonnements', label: t('dash.subscriptions'), icon: CreditCard },
@@ -109,10 +116,13 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
 
   const handleLogout = () => {
     logout()
+    if (isNativeApp()) {
+      navigate('/')
+      return
+    }
     navigate(
       variant === 'petsitter' ? '/pet-sitter/connexion'
-        : variant === 'foster' ? '/famille-accueil/connexion'
-          : variant === 'volunteer' ? '/benevole/connexion'
+        : variant === 'foster' || variant === 'volunteer' ? '/aidant/connexion'
             : variant === 'admin' ? '/admin/connexion'
               : '/connexion',
     )
@@ -136,7 +146,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
   const Sidebar = () => (
     <div className="flex flex-col h-full">
       <div className="p-4 sm:p-6 border-b border-slate-100">
-        <BrandLogo variant="icon" showText={false} imageClassName="h-12 w-12 sm:h-14 sm:w-14" />
+        <BrandLogo variant="icon" />
         <p className="text-xs text-slate-500 capitalize mt-2 pl-0.5">
           {spaceLabel}
         </p>
@@ -153,7 +163,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
           } else {
             isActive = location.pathname === item.to ||
               (item.to !== '/app' && item.to !== '/admin' && item.to !== '/pet-sitter'
-                && item.to !== '/famille-accueil' && item.to !== '/benevole'
+                && item.to !== '/aidant'
                 && location.pathname.startsWith(itemPath))
           }
           const isMessages = item.to === messagesPath
@@ -233,14 +243,14 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
       )}
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-72">
+      <div className="flex-1 lg:ml-72 min-w-0">
         <div className="sticky top-0 z-20">
           <MaintenanceBanner />
           <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100">
-          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14 sm:h-16">
+            <div className="flex items-center gap-3 min-w-0">
               <button
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 relative"
+                className="lg:hidden p-2.5 rounded-xl hover:bg-slate-100 relative"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Menu"
               >
@@ -249,17 +259,21 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" aria-hidden />
                 )}
               </button>
-              <Link to="/" className="lg:hidden p-2 rounded-lg hover:bg-slate-100">
-                <ChevronLeft className="w-5 h-5" />
-              </Link>
-              {title && <h1 className="text-lg font-bold text-slate-900">{title}</h1>}
+              {!isNativeApp() && (
+                <Link to="/" className="hidden sm:inline-flex lg:hidden p-2 rounded-lg hover:bg-slate-100">
+                  <ChevronLeft className="w-5 h-5" />
+                </Link>
+              )}
+              {title && <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">{title}</h1>}
             </div>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <div className="hidden sm:block">
+                <LanguageSwitcher />
+              </div>
               {unreadCount > 0 && (
                 <Link
                   to={messagesPath}
-                  className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+                  className="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-600"
                   title="Nouveaux messages"
                   aria-label={`${unreadCount} message(s) non lu(s)`}
                 >
@@ -267,17 +281,16 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
                   <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white" />
                 </Link>
               )}
-              <button
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                {sidebarOpen ? <X className="w-5 h-5" /> : null}
-              </button>
             </div>
           </div>
         </header>
         </div>
-        <main className="p-3 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8">{children}</main>
+        <MobileBottomNav
+          variant={variant}
+          unreadCount={unreadCount}
+          onMore={() => setSidebarOpen(true)}
+        />
       </div>
     </div>
   )
