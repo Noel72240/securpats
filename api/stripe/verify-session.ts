@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyCors } from '../../server/lib/cors.js'
 import { getSubscriptionPeriodEnd } from '../../server/lib/stripe-helpers.js'
 import { stripeGet } from '../../server/lib/stripe-api.js'
 import { upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
@@ -32,6 +33,7 @@ type CheckoutSessionResponse = {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

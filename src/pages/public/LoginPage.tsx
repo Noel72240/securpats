@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, Loader2, PawPrint, ArrowLeft } from 'lucide-react'
-import { PublicLayout } from '@/components/layout/PublicLayout'
+import { AuthShell } from '@/components/layout/AuthShell'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -54,8 +54,8 @@ export default function LoginPage() {
   }
 
   return (
-    <PublicLayout>
-      <section className="py-12 sm:py-16 lg:py-20">
+    <AuthShell>
+      <section className="py-8 sm:py-16 lg:py-20">
         <div className="max-w-md mx-auto px-4">
           <Link
             to="/"
@@ -117,6 +117,6 @@ export default function LoginPage() {
           </Card>
         </div>
       </section>
-    </PublicLayout>
+    </AuthShell>
   )
 }

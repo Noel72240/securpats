@@ -14,13 +14,18 @@ import {
 } from '@/lib/shop/api'
 import {
   SHOP_CATEGORIES,
+  SHOP_ANIMAL_TARGETS,
   DEFAULT_SIZE_OPTIONS,
   formatShopPrice,
   slugifyProductName,
   categoryLabel,
+  animalTargetLabel,
   loadShopCatalog,
+  PARCEL_SIZES,
   type ShopCategoryId,
+  type ShopAnimalTargetId,
   type ShopProduct,
+  type ParcelSizeId,
 } from '@/lib/shop/catalog'
 import { uploadShopProductImage } from '@/lib/supabase/uploads'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
@@ -33,11 +38,13 @@ type Draft = {
   description: string
   priceEuros: string
   category: ShopCategoryId
+  animalTarget: ShopAnimalTargetId
   imageUrl: string
   imageAlt: string
   highlightsText: string
   sizesEnabled: boolean
   sizes: string[]
+  parcelSize: ParcelSizeId
   active: boolean
   sortOrder: string
   isNew: boolean
@@ -51,12 +58,14 @@ function emptyDraft(): Draft {
     shortDescription: '',
     description: '',
     priceEuros: '19,90',
-    category: 'colliers',
+    category: 'identification-securite',
+    animalTarget: 'tous',
     imageUrl: '',
     imageAlt: '',
     highlightsText: '',
     sizesEnabled: false,
     sizes: ['S', 'M', 'L'],
+    parcelSize: 'petit',
     active: true,
     sortOrder: '100',
     isNew: true,
@@ -72,11 +81,13 @@ function productToDraft(p: ShopProduct): Draft {
     description: p.description,
     priceEuros: (p.priceCents / 100).toFixed(2).replace('.', ','),
     category: p.category,
+    animalTarget: p.animalTarget || 'tous',
     imageUrl: p.imageUrl,
     imageAlt: p.imageAlt,
     highlightsText: p.highlights.join('\n'),
     sizesEnabled: p.sizesEnabled,
     sizes: p.sizes.length ? p.sizes : ['S', 'M', 'L'],
+    parcelSize: p.parcelSize || 'petit',
     active: p.active,
     sortOrder: String(p.sortOrder),
     isNew: false,
@@ -192,11 +203,13 @@ export default function AdminShopPage() {
       description: draft.description.trim(),
       priceCents: cents,
       category: draft.category,
+      animalTarget: draft.animalTarget,
       imageUrl: draft.imageUrl.trim(),
       imageAlt: (draft.imageAlt || draft.name).trim(),
       highlights: draft.highlightsText.split('\n').map(s => s.trim()).filter(Boolean),
       sizesEnabled: draft.sizesEnabled,
       sizes: draft.sizesEnabled ? draft.sizes : [],
+      parcelSize: draft.parcelSize,
       active: draft.active,
       sortOrder: Number(draft.sortOrder) || 100,
     }
@@ -206,7 +219,13 @@ export default function AdminShopPage() {
     const { error: err } = await upsertShopProduct(product)
     setSaving(false)
     if (err) {
-      setError(err)
+      setError(
+        err.includes('animal_target')
+          ? 'Colonne manquante : exécutez supabase/migrations/031_shop_categories_animal.sql dans Supabase SQL Editor.'
+          : err.includes('parcel_size')
+            ? 'Colonne manquante : exécutez supabase/migrations/030_shop_parcel_size.sql dans Supabase SQL Editor.'
+            : err,
+      )
       return
     }
     setDraft(null)
@@ -285,9 +304,15 @@ export default function AdminShopPage() {
                   </div>
                 </div>
                 <div className="p-4 flex-1 flex flex-col gap-2">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">{categoryLabel(p.category)}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">
+                    {categoryLabel(p.category)} · {animalTargetLabel(p.animalTarget)}
+                  </p>
                   <h3 className="font-semibold text-slate-900 leading-snug">{p.name}</h3>
                   <p className="text-lg font-bold text-brand-700">{formatShopPrice(p.priceCents)}</p>
+                  <p className="text-xs text-slate-500">
+                    Colis : {PARCEL_SIZES.find(s => s.id === p.parcelSize)?.label ?? 'Petit'} ·{' '}
+                    {formatShopPrice(PARCEL_SIZES.find(s => s.id === (p.parcelSize || 'petit'))?.priceCents ?? 390)}
+                  </p>
                   {p.sizesEnabled && (
                     <p className="text-xs text-slate-500">Tailles : {p.sizes.join(', ')}</p>
                   )}
@@ -329,6 +354,22 @@ export default function AdminShopPage() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Animal concerné</label>
+              <p className="text-xs text-slate-500 mb-2">
+                Indépendant de la catégorie (ex. gamelle → Repas & hydratation + Chien & Chat).
+              </p>
+              <select
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white"
+                value={draft.animalTarget}
+                onChange={e => patchDraft({ animalTarget: e.target.value as ShopAnimalTargetId })}
+              >
+                {SHOP_ANIMAL_TARGETS.map(a => (
+                  <option key={a.id} value={a.id}>{a.label}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -406,6 +447,35 @@ export default function AdminShopPage() {
                 onChange={e => patchDraft({ imageUrl: e.target.value })}
                 placeholder="https://…"
               />
+            </div>
+
+            <div className="space-y-3 p-4 rounded-xl bg-amber-50/80 border border-amber-100">
+              <p className="font-semibold text-slate-900 text-sm">Taille de colis Mondial Relay *</p>
+              <p className="text-xs text-slate-600">
+                Fixée ici pour éviter la fraude aux frais d’envoi. Au panier, le client paie la taille
+                la plus grande parmi les articles commandés.
+              </p>
+              <div className="grid sm:grid-cols-3 gap-2">
+                {PARCEL_SIZES.map(size => {
+                  const on = draft.parcelSize === size.id
+                  return (
+                    <button
+                      key={size.id}
+                      type="button"
+                      onClick={() => patchDraft({ parcelSize: size.id })}
+                      className={`text-left rounded-xl border px-3 py-2.5 transition-colors ${
+                        on
+                          ? 'border-brand-500 bg-white ring-2 ring-brand-500/30'
+                          : 'border-slate-200 bg-white hover:border-brand-300'
+                      }`}
+                    >
+                      <div className="font-semibold text-slate-900 text-sm">{size.label}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{size.description}</div>
+                      <div className="text-sm font-bold text-brand-700 mt-1">{formatShopPrice(size.priceCents)}</div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             <div className="space-y-3 p-4 rounded-xl bg-brand-50/60 border border-brand-100">

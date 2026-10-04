@@ -1,5 +1,6 @@
 import { getSupabase, isSupabaseConfigured } from './client'
 import { profileToUser, userToProfileInsert } from './mappers'
+import { publicAppOrigin, apiUrl } from '@/lib/platform'
 import type { User, UserRole } from '@/types'
 
 const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@securpats.fr').toLowerCase()
@@ -9,16 +10,12 @@ function resolveRole(email: string): UserRole {
 }
 
 function appOrigin(): string {
-  const fromEnv = (import.meta.env.VITE_APP_URL || '').replace(/\/$/, '')
-  if (fromEnv) return fromEnv
-  if (typeof window !== 'undefined') return window.location.origin
-  return 'https://www.securpats.fr'
+  return publicAppOrigin()
 }
 
 function loginPathForRole(role: UserRole): string {
   if (role === 'petsitter') return '/pet-sitter/connexion'
-  if (role === 'foster_family') return '/famille-accueil/connexion'
-  if (role === 'volunteer') return '/benevole/connexion'
+  if (role === 'foster_family' || role === 'volunteer') return '/aidant/connexion'
   if (role === 'admin') return '/admin/connexion'
   return '/connexion'
 }
@@ -39,7 +36,7 @@ export async function signUp(data: {
   // Inscription via API admin : compte déjà confirmé (plus d’attente d’email Supabase)
   if (typeof window !== 'undefined') {
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(apiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -260,7 +257,37 @@ export async function fetchProfile(userId: string) {
 
 export async function fetchAllProfiles() {
   const supabase = getSupabase()
+
+  // Admin : liste via service role (évite un RLS is_admin() défaillant qui ne renverrait qu’une partie des comptes)
+  if (typeof window !== 'undefined') {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        const res = await fetch(apiUrl('/api/admin/delete-user'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ action: 'list' }),
+        })
+        if (res.ok) {
+          const payload = (await res.json().catch(() => ({}))) as {
+            users?: User[]
+            error?: string
+          }
+          if (Array.isArray(payload.users)) {
+            return { users: payload.users, error: null as string | null }
+          }
+        }
+        // 403 = pas admin → fallback RLS ci-dessous
+      }
+    } catch {
+      // Fallback RLS
+    }
+  }
+
   const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
-  if (error) return { users: [], error: error.message }
-  return { users: data.map(profileToUser), error: null }
+  if (error) return { users: [] as User[], error: error.message }
+  return { users: (data || []).map(profileToUser), error: null as string | null }
 }

@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-[#0a0f1a] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-5xl">
         <div className="text-center mb-10">
-          <BrandLogo to="/" variant="icon" imageClassName="h-16 w-16 sm:h-20 sm:w-20 mx-auto" className="justify-center mb-5" />
+          <BrandLogo to="/" variant="icon" className="justify-center mb-5" />
           <h1 className="text-2xl font-bold text-white tracking-tight">Espace Admin</h1>
           <p className="text-slate-400 mt-2 text-sm">Connexion sécurisée au back-office</p>
         </div>

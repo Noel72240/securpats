@@ -1,4 +1,26 @@
-export type ShopCategoryId = 'plaques' | 'colliers' | 'longes' | 'jouets' | 'kits'
+export type ShopCategoryId =
+  | 'identification-securite'
+  | 'promenade-transport'
+  | 'repas-hydratation'
+  | 'jeux-occupation'
+  | 'confort-accessoires'
+  | 'kits-securpats'
+
+/** Anciennes catégories (migration / données legacy). */
+const LEGACY_CATEGORY_MAP: Record<string, ShopCategoryId> = {
+  plaques: 'identification-securite',
+  colliers: 'promenade-transport',
+  longes: 'promenade-transport',
+  jouets: 'jeux-occupation',
+  kits: 'kits-securpats',
+}
+
+export type ShopAnimalTargetId =
+  | 'chien'
+  | 'chat'
+  | 'chien-chat'
+  | 'autres'
+  | 'tous'
 
 export type ShopProduct = {
   id: string
@@ -8,25 +30,39 @@ export type ShopProduct = {
   description: string
   priceCents: number
   category: ShopCategoryId
+  /** Animal(s) concerné(s) — indépendant de la catégorie. */
+  animalTarget: ShopAnimalTargetId
   imageUrl: string
   imageAlt: string
   highlights: string[]
   sizesEnabled: boolean
   sizes: string[]
+  /** Taille colis Mondial Relay (définie en admin, pas au panier). */
+  parcelSize: import('./mondial-relay').ParcelSizeId
   active: boolean
   sortOrder: number
 }
 
 export const SHOP_CATEGORIES: { id: ShopCategoryId; label: string }[] = [
-  { id: 'plaques', label: 'Plaques QR' },
-  { id: 'colliers', label: 'Colliers' },
-  { id: 'longes', label: 'Longes' },
-  { id: 'jouets', label: 'Jouets' },
-  { id: 'kits', label: 'Kits' },
+  { id: 'identification-securite', label: 'Identification & sécurité' },
+  { id: 'promenade-transport', label: 'Promenade & transport' },
+  { id: 'repas-hydratation', label: 'Repas & hydratation' },
+  { id: 'jeux-occupation', label: 'Jeux & occupation' },
+  { id: 'confort-accessoires', label: 'Confort & accessoires' },
+  { id: 'kits-securpats', label: 'Kits SecurPats' },
+]
+
+export const SHOP_ANIMAL_TARGETS: { id: ShopAnimalTargetId; label: string }[] = [
+  { id: 'chien', label: 'Chien' },
+  { id: 'chat', label: 'Chat' },
+  { id: 'chien-chat', label: 'Chien & Chat' },
+  { id: 'autres', label: 'Autres animaux' },
+  { id: 'tous', label: 'Tous animaux' },
 ]
 
 export const DEFAULT_SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 
+/** Prix moyen (compat) — préférer shippingCentsForParcel (Mondial Relay). */
 export const SHOP_SHIPPING_CENTS = 490
 export const SHOP_FREE_SHIPPING_FROM_CENTS = 4000
 
@@ -59,6 +95,26 @@ export function slugifyProductName(name: string): string {
     .slice(0, 60) || 'produit'
 }
 
+export function normalizeShopCategoryId(value: string | null | undefined): ShopCategoryId {
+  if (!value) return 'kits-securpats'
+  if (SHOP_CATEGORIES.some(c => c.id === value)) return value as ShopCategoryId
+  return LEGACY_CATEGORY_MAP[value] ?? 'kits-securpats'
+}
+
+export function isValidShopAnimalTargetId(value: string | null | undefined): value is ShopAnimalTargetId {
+  return !!value && SHOP_ANIMAL_TARGETS.some(a => a.id === value)
+}
+
+export function normalizeShopAnimalTargetId(value: string | null | undefined): ShopAnimalTargetId {
+  return isValidShopAnimalTargetId(value) ? value : 'tous'
+}
+
 export function categoryLabel(id: string): string {
-  return SHOP_CATEGORIES.find(c => c.id === id)?.label ?? id
+  const normalized = normalizeShopCategoryId(id)
+  return SHOP_CATEGORIES.find(c => c.id === normalized)?.label ?? id
+}
+
+export function animalTargetLabel(id: string): string {
+  const normalized = normalizeShopAnimalTargetId(id)
+  return SHOP_ANIMAL_TARGETS.find(a => a.id === normalized)?.label ?? id
 }

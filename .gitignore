@@ -14,6 +14,20 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.capacitor
+
+# Android local
+android/.gradle
+android/app/build
+android/build
+android/captures
+android/local.properties
+android/keystore.properties
+android/*.jks
+*.jks
+*.keystore
+SecurPats*.apk
+SecurPats*.aab
 
 # Editor directories and files
 .vscode/*

@@ -29,8 +29,8 @@ export default function ShopSuccessPage() {
               <CheckCircle className="w-16 h-16 text-brand-500 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-slate-900 mb-2">Merci pour votre commande !</h1>
               <p className="text-slate-600 mb-6">
-                Votre paiement a été accepté. Un e-mail de confirmation vous sera envoyé avec le détail
-                de la livraison.
+                Votre paiement a été accepté. Un e-mail de confirmation vous sera envoyé avec le suivi
+                Mondial Relay (Point Relais®).
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link to="/boutique">

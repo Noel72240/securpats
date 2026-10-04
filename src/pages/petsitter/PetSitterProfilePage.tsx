@@ -32,6 +32,7 @@ export default function PetSitterProfilePage() {
     address: '',
     departmentCode: '',
     photo: '',
+    hasAcaced: null as boolean | null,
   })
   const [uploading, setUploading] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -54,6 +55,7 @@ export default function PetSitterProfilePage() {
       address: petSitterProfile.address || '',
       departmentCode: petSitterProfile.departmentCode || '',
       photo: petSitterProfile.photo || '',
+      hasAcaced: petSitterProfile.hasAcaced ?? null,
     })
   }, [petSitterProfile])
 
@@ -128,7 +130,7 @@ export default function PetSitterProfilePage() {
     e.target.value = ''
   }
 
-  const handleFileUpload = (field: 'idDocument' | 'proofOfAddress', kind: 'id' | 'address') =>
+  const handleFileUpload = (field: 'idDocument' | 'proofOfAddress' | 'criminalRecord', kind: 'id' | 'address' | 'criminal') =>
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
       if (!file || !currentUser) return
@@ -141,7 +143,11 @@ export default function PetSitterProfilePage() {
       const { path, error: uploadError } = await uploadPetSitterDocFile(currentUser.id, kind, file)
       setUploading(null)
       if (path) {
-        const err = await updatePetSitterProfile({ [field]: path })
+        const patch =
+          field === 'criminalRecord'
+            ? { criminalRecord: path }
+            : { [field]: path, verified: false as const }
+        const err = await updatePetSitterProfile(patch)
         if (err) setError(err)
         else setSuccess(t('petsitterProfile.docSaved'))
       } else {
@@ -203,6 +209,20 @@ export default function PetSitterProfilePage() {
               onChange={e => setForm({ ...form, departmentCode: e.target.value })}
               options={departmentSelectOptions(locale, t('petsitterProfile.departmentHint'))}
             />
+            <div>
+              <p className="text-sm font-medium text-slate-700 mb-1.5">Disposez-vous de l’ACACED ?</p>
+              <p className="text-xs text-slate-500 mb-2">Attestation de connaissances animaux de compagnie — facultatif</p>
+              <div className="flex gap-4 text-sm">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" checked={form.hasAcaced === true} onChange={() => setForm({ ...form, hasAcaced: true })} />
+                  Oui
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" checked={form.hasAcaced === false} onChange={() => setForm({ ...form, hasAcaced: false })} />
+                  Non
+                </label>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-2">
@@ -264,11 +284,11 @@ export default function PetSitterProfilePage() {
         <Card>
           <h3 className="font-semibold text-slate-900 mb-4">{t('petsitterProfile.idDocs')}</h3>
           <p className="text-xs text-slate-500 mb-4">
-            La pièce d&apos;identité est obligatoire. Sans elle, l&apos;accès à l&apos;espace pet-sitter est bloqué.
+            Pièce d&apos;identité et justificatif de domicile obligatoires. L&apos;extrait de casier est recommandé mais non bloquant.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">
-              <input type="file" className="hidden" accept=".pdf,.jpg,.png" onChange={e => void handleFileUpload('idDocument', 'id')(e)} disabled={uploading === 'idDocument'} />
+              <input type="file" className="hidden" accept=".pdf,.jpg,.png,.webp" onChange={e => void handleFileUpload('idDocument', 'id')(e)} disabled={uploading === 'idDocument'} />
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-blue-300 transition-colors cursor-pointer">
                 <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-sm font-medium text-slate-700">{t('petsitterProfile.idDoc')}</p>
@@ -278,12 +298,22 @@ export default function PetSitterProfilePage() {
               </div>
             </label>
             <label className="block">
-              <input type="file" className="hidden" accept=".pdf,.jpg,.png" onChange={e => void handleFileUpload('proofOfAddress', 'address')(e)} disabled={uploading === 'proofOfAddress'} />
+              <input type="file" className="hidden" accept=".pdf,.jpg,.png,.webp" onChange={e => void handleFileUpload('proofOfAddress', 'address')(e)} disabled={uploading === 'proofOfAddress'} />
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-blue-300 transition-colors cursor-pointer">
                 <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-sm font-medium text-slate-700">{t('petsitterProfile.proof')}</p>
                 <p className="text-xs text-slate-400 mt-1">
                   {uploading === 'proofOfAddress' ? t('petsitterProfile.uploading') : fileLabel(petSitterProfile?.proofOfAddress)}
+                </p>
+              </div>
+            </label>
+            <label className="block sm:col-span-2">
+              <input type="file" className="hidden" accept=".pdf,.jpg,.png,.webp" onChange={e => void handleFileUpload('criminalRecord', 'criminal')(e)} disabled={uploading === 'criminalRecord'} />
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-blue-300 transition-colors cursor-pointer">
+                <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-700">Extrait de casier judiciaire (bulletin n°3)</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {uploading === 'criminalRecord' ? t('petsitterProfile.uploading') : fileLabel(petSitterProfile?.criminalRecord)}
                 </p>
               </div>
             </label>

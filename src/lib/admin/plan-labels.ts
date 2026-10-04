@@ -17,5 +17,6 @@ export function userRoleLabel(role: string): string {
   if (role === 'admin') return 'Admin'
   if (role === 'foster_family') return 'Famille d’accueil'
   if (role === 'volunteer') return 'Bénévole'
+  if (role === 'both') return 'Bénévole & famille d’accueil'
   return 'Propriétaire'
 }

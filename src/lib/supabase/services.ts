@@ -17,10 +17,11 @@ import type { Pet, Referent, PetDocument, Subscription, Invoice, Mission, PetSit
 import type { Tables, TablesUpdate } from './database.types'
 import { defaultSiteSettings } from '@/lib/mock/data'
 import { generateQrToken, buildOwnerQrToken } from '@/lib/utils'
+import { fetchAllCaregiverProfiles } from '@/lib/caregiver/services'
 
 // ─── Profiles ───────────────────────────────────────────────
 
-export type OwnerProfilePatch = Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate' | 'qrToken'>>
+export type OwnerProfilePatch = Partial<Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'birthDate' | 'qrToken' | 'idDocument' | 'proofOfAddress' | 'identityVerified'>>
 
 export async function patchProfile(userId: string, updates: OwnerProfilePatch) {
   const patch = userToProfileUpdate(updates)
@@ -38,6 +39,10 @@ export async function patchProfile(userId: string, updates: OwnerProfilePatch) {
     .single()
   if (error) return { user: null as User | null, error: error.message }
   return { user: profileToUser(data), error: null }
+}
+
+export async function setOwnerIdentityVerified(userId: string, verified: boolean) {
+  return patchProfile(userId, { identityVerified: verified })
 }
 
 export async function ensureOwnerQrToken(user: User) {
@@ -474,6 +479,8 @@ export async function upsertPetsitterProfile(userId: string, profile: Partial<Pe
     address: profile.address ?? '',
     id_document_path: profile.idDocument ?? null,
     proof_of_address_path: profile.proofOfAddress ?? null,
+    criminal_record_path: profile.criminalRecord ?? null,
+    has_acaced: profile.hasAcaced ?? null,
     available_days: profile.availableDays ?? [],
     available_hours: profile.availableHours ?? '',
     service_area: profile.serviceArea ?? '',
@@ -496,6 +503,8 @@ export async function patchPetsitterProfile(userId: string, profile: Partial<Pet
   if (profile.address !== undefined) patch.address = profile.address
   if (profile.idDocument !== undefined) patch.id_document_path = profile.idDocument ?? null
   if (profile.proofOfAddress !== undefined) patch.proof_of_address_path = profile.proofOfAddress ?? null
+  if (profile.criminalRecord !== undefined) patch.criminal_record_path = profile.criminalRecord ?? null
+  if (profile.hasAcaced !== undefined) patch.has_acaced = profile.hasAcaced ?? null
   if (profile.availableDays !== undefined) patch.available_days = profile.availableDays
   if (profile.availableHours !== undefined) patch.available_hours = profile.availableHours
   if (profile.serviceArea !== undefined) patch.service_area = profile.serviceArea
@@ -631,7 +640,7 @@ export async function loadOwnerData(ownerId: string) {
 }
 
 export async function loadAdminData() {
-  const [profiles, pets, referents, documents, missions, siteSettings, invoices, petsitters, subscriptions] = await Promise.all([
+  const [profiles, pets, referents, documents, missions, siteSettings, invoices, petsitters, subscriptions, caregivers] = await Promise.all([
     fetchAllProfiles(),
     fetchAllPets(),
     fetchAllReferents(),
@@ -641,9 +650,16 @@ export async function loadAdminData() {
     fetchAllInvoices(),
     fetchAllPetsitterProfiles(),
     fetchAllSubscriptions(),
+    fetchAllCaregiverProfiles(),
   ])
+
+  if (profiles.error) {
+    console.error('[loadAdminData] profiles:', profiles.error)
+  }
+
   return {
     allUsers: profiles.users,
+    profilesError: profiles.error,
     pets: pets.pets,
     referents: referents.referents,
     documents: documents.documents,
@@ -651,6 +667,7 @@ export async function loadAdminData() {
     siteSettings: siteSettings.settings,
     invoices: invoices.invoices,
     petsitterProfiles: petsitters.profiles,
+    caregiverProfiles: caregivers.profiles,
     subscriptions: subscriptions.subscriptions,
   }
 }

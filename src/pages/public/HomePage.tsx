@@ -13,6 +13,8 @@ import { FounderPresentation } from '@/components/home/FounderPresentation'
 import { HomeVideoSection } from '@/components/home/HomeVideoSection'
 import { EmergencyScenariosSection } from '@/components/home/EmergencyScenariosSection'
 import { AnimalParadeFrieze } from '@/components/home/AnimalParadeFrieze'
+import { HomeActuTeaser } from '@/components/home/HomeActuTeaser'
+import { SubscribePitchSection } from '@/components/home/SubscribePitchSection'
 import { useI18n } from '@/i18n/LanguageContext'
 
 export default function HomePage() {
@@ -206,6 +208,10 @@ export default function HomePage() {
       )}
 
       <EmergencyScenariosSection />
+
+      <HomeActuTeaser limit={3} />
+
+      <SubscribePitchSection />
 
       {/* CTA */}
       <section className="py-12 sm:py-20 lg:py-28">

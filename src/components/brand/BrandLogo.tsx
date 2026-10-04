@@ -2,71 +2,56 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 
-export const DEFAULT_LOGO_ICON = '/logo-securpats-icon.png'
-export const DEFAULT_LOGO_FULL = '/logo-securpats.png'
-/** @deprecated use DEFAULT_LOGO_FULL */
-export const DEFAULT_LOGO_URL = DEFAULT_LOGO_FULL
+/** Conservés pour compatibilité (cartes PDF, directives) — plus affichés dans l’UI. */
+export const DEFAULT_LOGO_ICON = ''
+export const DEFAULT_LOGO_FULL = ''
+export const DEFAULT_LOGO_URL = ''
 export const LOGO_ALT = "SécurPats — Protection animale d'urgence"
 
 type BrandLogoProps = {
   className?: string
   imageClassName?: string
   to?: string
-  /** icon = bouclier + nom (header) | full = logo horizontal complet (footer) */
+  /** icon = en-tête | full = pied de page (texte plus grand) */
   variant?: 'icon' | 'full'
   showText?: boolean
 }
 
 export function BrandLogo({
   className,
-  imageClassName,
   to = '/',
   variant = 'icon',
   showText = true,
 }: BrandLogoProps) {
   const { siteSettings } = useApp()
   const siteName = siteSettings.siteName || 'SécurPats'
-
   const isFull = variant === 'full'
-  const src = isFull
-    ? (siteSettings.logoUrl || DEFAULT_LOGO_FULL)
-    : DEFAULT_LOGO_ICON
+
+  if (!showText) {
+    return null
+  }
 
   const content = isFull ? (
-    <img
-      src={src}
-      alt={LOGO_ALT}
-      className={cn('h-20 sm:h-24 lg:h-28 w-auto max-w-[min(100%,420px)] object-contain object-left', imageClassName)}
-    />
+    <span className="block leading-tight">
+      <span className="block text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+        {siteName}
+      </span>
+      <span className="block text-sm text-slate-400 font-medium mt-1">
+        Protection animale
+      </span>
+    </span>
   ) : (
-    <>
-      <img
-        src={src}
-        alt=""
-        aria-hidden
-        className={cn(
-          'h-16 w-16 sm:h-[4.25rem] sm:w-[4.25rem] lg:h-20 lg:w-20 object-contain shrink-0',
-          imageClassName,
-        )}
-      />
-      {showText && (
-        <span className="min-w-0 leading-tight">
-          <span className="block text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 tracking-tight">
-            {siteName}
-          </span>
-          <span className="hidden sm:block text-xs sm:text-sm text-slate-500 font-medium">
-            Protection animale
-          </span>
-        </span>
-      )}
-    </>
+    <span className="min-w-0 leading-tight">
+      <span className="block text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 tracking-tight">
+        {siteName}
+      </span>
+      <span className="hidden sm:block text-xs sm:text-sm text-slate-500 font-medium">
+        Protection animale
+      </span>
+    </span>
   )
 
-  const wrapClass = cn(
-    'inline-flex items-center shrink-0',
-    !isFull && showText && 'gap-2.5 sm:gap-3',
-    className,
-  )
+  const wrapClass = cn('inline-flex items-center shrink-0', className)
 
   if (to) {
     return (

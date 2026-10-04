@@ -9,20 +9,23 @@ import { departmentLabel } from '@/lib/geo/french-departments'
 import { CAREGIVER_SPACES } from '@/lib/caregiver/spaces'
 import type { CaregiverKind } from '@/types'
 
-export default function CaregiverDashboard({ kind }: { kind: CaregiverKind }) {
+export default function CaregiverDashboard({ kind: kindProp }: { kind?: CaregiverKind } = {}) {
   const { currentUser, caregiverProfile } = useApp()
   const { t, locale } = useI18n()
-  const space = CAREGIVER_SPACES[kind]
-  const prefix = kind === 'foster_family' ? 'fosterDash' : 'volunteerDash'
-  const Icon = kind === 'foster_family' ? Heart : HandHeart
-  const variant = kind === 'foster_family' ? 'foster' : 'volunteer'
+  const kind: CaregiverKind = kindProp
+    || caregiverProfile?.kind
+    || (currentUser?.role === 'volunteer' ? 'volunteer' : 'foster_family')
+  const space = CAREGIVER_SPACES[kind === 'both' ? 'foster_family' : kind]
+  const prefix = kind === 'volunteer' ? 'volunteerDash' : 'fosterDash'
+  const Icon = kind === 'volunteer' ? HandHeart : Heart
+  const variant = kind === 'volunteer' ? 'volunteer' : 'foster'
 
   return (
     <DashboardLayout variant={variant} title={t(`${prefix}.title` as 'fosterDash.title')}>
       <div className="max-w-3xl space-y-6">
-        <Card className={`!p-6 border-2 ${kind === 'foster_family' ? 'border-teal-200 bg-gradient-to-br from-teal-50 to-white' : 'border-amber-200 bg-gradient-to-br from-amber-50 to-white'}`}>
+        <Card className={`!p-6 border-2 ${kind === 'volunteer' ? 'border-amber-200 bg-gradient-to-br from-amber-50 to-white' : 'border-teal-200 bg-gradient-to-br from-teal-50 to-white'}`}>
           <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white ${kind === 'foster_family' ? 'bg-teal-600' : 'bg-amber-600'}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white ${kind === 'volunteer' ? 'bg-amber-600' : 'bg-teal-600'}`}>
               <Icon className="w-6 h-6" />
             </div>
             <div>
@@ -30,6 +33,11 @@ export default function CaregiverDashboard({ kind }: { kind: CaregiverKind }) {
                 {t(`${prefix}.welcome` as 'fosterDash.welcome', { name: currentUser?.firstName || '' })}
               </h2>
               <p className="text-sm text-slate-600 mt-1">{t(`${prefix}.intro` as 'fosterDash.intro')}</p>
+              {caregiverProfile?.verified ? (
+                <p className="text-xs font-semibold text-teal-700 mt-2">✓ Profil vérifié par SécurPats</p>
+              ) : (
+                <p className="text-xs text-amber-700 mt-2">En attente de validation des documents</p>
+              )}
             </div>
           </div>
         </Card>

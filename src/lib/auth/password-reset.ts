@@ -1,8 +1,12 @@
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
 import { SITE_URL } from '@/lib/seo/constants'
+import { isNativeApp, publicAppOrigin, apiUrl } from '@/lib/platform'
 
 /** URL de retour après clic dans l’email. */
 function passwordResetRedirectUrl(): string {
+  if (isNativeApp()) {
+    return `${publicAppOrigin()}/reinitialiser-mot-de-passe`
+  }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname
     // Respecte le domaine réel (www ou non) pour coller aux Redirect URLs Supabase
@@ -99,7 +103,7 @@ export async function adminResetUserPassword(
   const { data: { session } } = await getSupabase().auth.getSession()
   if (!session?.access_token) return { error: 'Session expirée, reconnectez-vous' }
 
-  const response = await fetch('/api/admin/reset-password', {
+  const response = await fetch(apiUrl('/api/admin/reset-password'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

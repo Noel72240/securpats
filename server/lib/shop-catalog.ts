@@ -19,3 +19,23 @@ export function shippingCentsForSubtotal(subtotalCents: number): number {
   if (subtotalCents >= SHOP_FREE_SHIPPING_FROM_CENTS) return 0
   return SHOP_SHIPPING_CENTS
 }
+
+export {
+  PARCEL_SIZES,
+  getParcelSize,
+  isValidParcelSizeId,
+  maxParcelSize,
+  type ParcelSizeId,
+} from './mondial-relay.js'
+
+import { getParcelSize, type ParcelSizeId } from './mondial-relay.js'
+
+export function shippingCentsForParcel(
+  subtotalCents: number,
+  parcelSizeId: ParcelSizeId | undefined,
+): number {
+  if (subtotalCents <= 0) return 0
+  if (subtotalCents >= SHOP_FREE_SHIPPING_FROM_CENTS) return 0
+  const size = getParcelSize(parcelSizeId) ?? getParcelSize('moyen')!
+  return size.priceCents
+}

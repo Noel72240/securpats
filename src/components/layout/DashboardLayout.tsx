@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Dog, Users, FileText, QrCode, CreditCard,
   AlertTriangle, LogOut, Menu, ChevronLeft, Shield, Calendar, Briefcase,
   BarChart3, Settings, Globe, Lock, IdCard, Wrench, ShoppingBag, Newspaper, Handshake, ScrollText,
-  MessageSquare, Heart,
+  MessageSquare, Heart, Scale,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/app/directives', label: t('dash.directives'), icon: ScrollText },
     { to: '/app/messages', label: t('dash.messages'), icon: MessageSquare },
     { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/informations-legales', label: 'Informations légales', icon: Scale },
     { to: '/app/qr-code', label: t('dash.qrCode'), icon: QrCode },
     { to: '/app/carte-urgence', label: t('dash.emergencyCard'), icon: CreditCard },
     { to: '/app/urgence', label: t('dash.declareEmergency'), icon: AlertTriangle },
@@ -59,6 +60,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/pet-sitter/disponibilites', label: t('dash.availability'), icon: Calendar },
     { to: '/pet-sitter/messages', label: t('dash.messages'), icon: MessageSquare },
     { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/informations-legales', label: 'Informations légales', icon: Scale },
     { to: '/pet-sitter/profil', label: t('dash.myProfile'), icon: Settings },
     { to: '/pet-sitter/abonnement', label: t('dash.vipSub'), icon: CreditCard },
   ], [t])
@@ -67,6 +69,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/aidant', label: t('dash.dashboard'), icon: LayoutDashboard },
     { to: '/aidant/disponibilites', label: t('dash.availability'), icon: Calendar },
     { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/informations-legales', label: 'Informations légales', icon: Scale },
     { to: '/aidant/profil', label: t('dash.myProfile'), icon: Settings },
   ], [t])
 
@@ -74,6 +77,7 @@ export function DashboardLayout({ children, variant, title }: DashboardLayoutPro
     { to: '/aidant', label: t('dash.dashboard'), icon: LayoutDashboard },
     { to: '/aidant/disponibilites', label: t('dash.availability'), icon: Calendar },
     { to: '/boutique', label: t('dash.shop'), icon: ShoppingBag },
+    { to: '/informations-legales', label: 'Informations légales', icon: Scale },
     { to: '/aidant/profil', label: t('dash.myProfile'), icon: Settings },
   ], [t])
 

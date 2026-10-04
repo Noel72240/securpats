@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Save, User, IdCard } from 'lucide-react'
+import { Save, User, IdCard, Upload } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -7,6 +7,14 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { useApp } from '@/contexts/AppContext'
 import { formatHumanAge, formatDate } from '@/lib/utils'
 import { useI18n } from '@/i18n/LanguageContext'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { uploadOwnerIdentityDocFile } from '@/lib/supabase/uploads'
+
+function fileLabel(path?: string) {
+  if (!path) return 'Aucun fichier'
+  const name = path.split('/').pop() || path
+  return name.length > 40 ? `${name.slice(0, 37)}…` : name
+}
 
 export default function OwnerProfilePage() {
   const { t } = useI18n()
@@ -19,6 +27,7 @@ export default function OwnerProfilePage() {
     birthDate: currentUser?.birthDate ?? '',
   })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState<'idDocument' | 'proofOfAddress' | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
@@ -49,6 +58,30 @@ export default function OwnerProfilePage() {
     setSuccess(true)
   }
 
+  const handleDocUpload = (field: 'idDocument' | 'proofOfAddress', kind: 'id' | 'address') =>
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file || !currentUser) return
+      setError('')
+      setSuccess(false)
+      if (!isSupabaseConfigured()) {
+        await updateOwnerProfile({ [field]: file.name, identityVerified: false })
+        e.target.value = ''
+        return
+      }
+      setUploading(field)
+      const { path, error: uploadError } = await uploadOwnerIdentityDocFile(currentUser.id, kind, file)
+      setUploading(null)
+      if (path) {
+        const err = await updateOwnerProfile({ [field]: path, identityVerified: false })
+        if (err) setError(err)
+        else setSuccess(true)
+      } else {
+        setError(uploadError || 'Échec de l’envoi du document.')
+      }
+      e.target.value = ''
+    }
+
   return (
     <DashboardLayout variant="owner" title={t('ownerProfile.title')}>
       <div className="max-w-2xl space-y-6">
@@ -62,6 +95,15 @@ export default function OwnerProfilePage() {
               <p className="text-sm text-slate-500">
                 Ces informations sont consultables par l&apos;équipe SécurPats en cas de besoin.
               </p>
+              {currentUser?.identityVerified ? (
+                <span className="inline-block mt-1 text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+                  Identité validée
+                </span>
+              ) : (
+                <span className="inline-block mt-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  En attente de validation
+                </span>
+              )}
             </div>
           </div>
 
@@ -117,6 +159,45 @@ export default function OwnerProfilePage() {
             <Button icon={Save} onClick={() => void handleSave()} disabled={saving}>
               {saving ? t('commonApp.saving') : t('commonApp.save')}
             </Button>
+          </div>
+        </Card>
+
+        <Card padding="lg">
+          <h3 className="font-semibold text-slate-900 mb-1">Documents obligatoires</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            Pièce d’identité et justificatif de domicile — l’admin doit les valider avant l’accès au compte.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block rounded-xl border border-slate-200 p-4 space-y-2 cursor-pointer hover:border-brand-300">
+              <span className="text-sm font-medium text-slate-800">Pièce d’identité *</span>
+              <p className="text-xs text-slate-500">{fileLabel(currentUser?.idDocument)}</p>
+              <span className="inline-flex items-center gap-1.5 text-sm text-brand-700 font-medium">
+                <Upload className="w-4 h-4" />
+                {uploading === 'idDocument' ? 'Envoi…' : 'Déposer / remplacer'}
+              </span>
+              <input
+                type="file"
+                className="sr-only"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp,application/pdf"
+                disabled={uploading === 'idDocument'}
+                onChange={e => void handleDocUpload('idDocument', 'id')(e)}
+              />
+            </label>
+            <label className="block rounded-xl border border-slate-200 p-4 space-y-2 cursor-pointer hover:border-brand-300">
+              <span className="text-sm font-medium text-slate-800">Justificatif de domicile *</span>
+              <p className="text-xs text-slate-500">{fileLabel(currentUser?.proofOfAddress)}</p>
+              <span className="inline-flex items-center gap-1.5 text-sm text-brand-700 font-medium">
+                <Upload className="w-4 h-4" />
+                {uploading === 'proofOfAddress' ? 'Envoi…' : 'Déposer / remplacer'}
+              </span>
+              <input
+                type="file"
+                className="sr-only"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp,application/pdf"
+                disabled={uploading === 'proofOfAddress'}
+                onChange={e => void handleDocUpload('proofOfAddress', 'address')(e)}
+              />
+            </label>
           </div>
         </Card>
 

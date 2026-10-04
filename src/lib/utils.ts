@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from 'clsx'
+import { publicAppOrigin } from '@/lib/platform'
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
@@ -76,19 +77,11 @@ export function buildOwnerQrToken(firstName: string, userId: string): string {
 }
 
 export function getRescueUrl(token: string): string {
-  // En navigateur : URL du site actuel → le QR mène toujours à /secours (fiche publique)
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}/secours/${encodeURIComponent(token)}`
-  }
-  const envBase = (import.meta.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')
-  return `${envBase}/secours/${encodeURIComponent(token)}`
+  // QR / liens publics → toujours le site web (pas l’origine Capacitor)
+  return `${publicAppOrigin()}/secours/${encodeURIComponent(token)}`
 }
 
 /** URL publique de la fiche famille (propriétaire + animaux + référents) */
 export function getOwnerRescueUrl(token: string): string {
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}/famille/${encodeURIComponent(token)}`
-  }
-  const envBase = (import.meta.env.VITE_APP_URL || 'https://securpats.fr').replace(/\/$/, '')
-  return `${envBase}/famille/${encodeURIComponent(token)}`
+  return `${publicAppOrigin()}/famille/${encodeURIComponent(token)}`
 }

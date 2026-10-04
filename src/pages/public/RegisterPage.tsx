@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { UserPlus, Loader2 } from 'lucide-react'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { Button } from '@/components/ui/Button'
+import { FileUploadField } from '@/components/ui/FileUploadField'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
@@ -10,6 +11,8 @@ import { useI18n } from '@/i18n/LanguageContext'
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirm: '' })
+  const [idFile, setIdFile] = useState<File | null>(null)
+  const [proofFile, setProofFile] = useState<File | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [marketingOptIn, setMarketingOptIn] = useState(false)
@@ -32,10 +35,16 @@ export default function RegisterPage() {
       setError(t('register.mustAccept'))
       return
     }
+    if (!idFile || !proofFile) {
+      setError('Pièce d’identité et justificatif de domicile sont obligatoires.')
+      return
+    }
     setLoading(true)
     const { confirm, ...signupFields } = form
     const result = await register({
       ...signupFields,
+      idFile,
+      proofFile,
       consent: { termsAccepted, privacyAccepted, marketingOptIn },
     })
     setLoading(false)
@@ -47,7 +56,7 @@ export default function RegisterPage() {
       setSuccess(t('register.emailConfirm'))
       return
     }
-    navigate('/app/abonnement')
+    navigate('/app')
   }
 
   return (
@@ -70,17 +79,36 @@ export default function RegisterPage() {
               <Input label={t('common.password')} type="password" required minLength={8} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
               <Input label={t('common.confirmPassword')} type="password" required value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
 
+              <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Documents obligatoires</p>
+                <FileUploadField
+                  label="Pièce d’identité"
+                  required
+                  hint="Photo ou PDF (carte d’identité, passeport…)"
+                  file={idFile}
+                  onChange={setIdFile}
+                />
+                <FileUploadField
+                  label="Justificatif de domicile"
+                  required
+                  hint="Photo ou PDF (facture, avis d’imposition…)"
+                  file={proofFile}
+                  onChange={setProofFile}
+                />
+                <p className="text-xs text-slate-500">Un administrateur vérifiera ces documents avant d’activer votre compte.</p>
+              </div>
+
               <div className="space-y-3 pt-2">
                 <label className="flex items-start gap-2 text-sm text-slate-600">
                   <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                   <span>
-                    {t('register.acceptTerms')} <Link to="/cgu" target="_blank" className="text-brand-600 hover:underline">{t('register.termsLink')}</Link> *
+                    {t('register.acceptTerms')} <Link to="/cgu" className="text-brand-600 hover:underline">{t('register.termsLink')}</Link> *
                   </span>
                 </label>
                 <label className="flex items-start gap-2 text-sm text-slate-600">
                   <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                   <span>
-                    {t('register.acceptPrivacy')} <Link to="/confidentialite" target="_blank" className="text-brand-600 hover:underline">{t('register.privacyLink')}</Link> {t('register.andRgpd')} *
+                    {t('register.acceptPrivacy')} <Link to="/confidentialite" className="text-brand-600 hover:underline">{t('register.privacyLink')}</Link> {t('register.andRgpd')} *
                   </span>
                 </label>
                 <label className="flex items-start gap-2 text-sm text-slate-500">

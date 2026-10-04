@@ -3,7 +3,8 @@ import { AppProvider, useApp, useHasActiveSubscription, useHasPetsitterVip } fro
 import { LanguageProvider } from '@/i18n/LanguageContext'
 import { ShopCartProvider } from '@/lib/shop/cart'
 
-import HomePage from '@/pages/public/HomePage'
+import { RootHome } from '@/pages/mobile/RootHome'
+import MobileLegalHubPage from '@/pages/mobile/MobileLegalHubPage'
 import HowItWorksPage from '@/pages/public/HowItWorksPage'
 import PricingPage from '@/pages/public/PricingPage'
 import FAQPage from '@/pages/public/FAQPage'
@@ -56,8 +57,7 @@ import PetSitterSubscriptionPage from '@/pages/petsitter/PetSitterSubscriptionPa
 import PetSitterSubscriptionSuccessPage from '@/pages/petsitter/PetSitterSubscriptionSuccessPage'
 import PetSitterMessagesPage from '@/pages/petsitter/MessagesPage'
 import {
-  FosterRegisterPage, FosterLoginPage, FosterDashboard, FosterProfilePage, FosterAvailabilityPage,
-  VolunteerRegisterPage, VolunteerLoginPage, VolunteerDashboard, VolunteerProfilePage, VolunteerAvailabilityPage,
+  AidantRegisterPage, AidantLoginPage, AidantDashboard, AidantProfilePage, AidantAvailabilityPage,
 } from '@/pages/caregiver'
 
 import AdminDashboard from '@/pages/admin/AdminDashboard'
@@ -67,53 +67,73 @@ import AdminShopPage from '@/pages/admin/AdminShopPage'
 import AdminActuPage from '@/pages/admin/AdminActuPage'
 import AdminPartnersPage from '@/pages/admin/AdminPartnersPage'
 import AdminMessagesPage from '@/pages/admin/AdminMessagesPage'
+import IdentityPendingPage from '@/pages/shared/IdentityPendingPage'
 import ActuPage from '@/pages/actu/ActuPage'
 import ActuArticlePage from '@/pages/actu/ActuArticlePage'
 import PartnersPage from '@/pages/public/PartnersPage'
 import {
-  AdminUsersPage, AdminPetsPage, AdminReferentsPage, AdminPetSittersPage,
+  AdminUsersPage, AdminPetsPage, AdminReferentsPage, AdminPetSittersPage, AdminCaregiversPage,
   AdminDocumentsPage, AdminMissionsPage, AdminSubscriptionsPage, AdminStatsPage,
 } from '@/pages/admin/AdminPages'
+
+function CaregiverProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { currentUser, caregiverProfile, authLoading } = useApp()
+  if (authLoading) return null
+  if (!currentUser) return <Navigate to="/aidant/connexion" replace />
+  if (currentUser.role !== 'foster_family' && currentUser.role !== 'volunteer') {
+    if (currentUser.role === 'owner') return <Navigate to="/app" replace />
+    if (currentUser.role === 'petsitter') return <Navigate to="/pet-sitter" replace />
+    return <Navigate to="/" replace />
+  }
+  const hasId = Boolean(caregiverProfile?.idDocument)
+  const hasAddress = Boolean(caregiverProfile?.proofOfAddress)
+  const verified = Boolean(caregiverProfile?.verified)
+  // Profil autorisé pour déposer / consulter les docs
+  const onProfil = typeof window !== 'undefined' && window.location.pathname.endsWith('/profil')
+  if ((!hasId || !hasAddress || !verified) && !onProfil) {
+    return (
+      <IdentityPendingPage
+        variant={currentUser.role === 'volunteer' ? 'volunteer' : 'foster'}
+        hasId={hasId}
+        hasAddress={hasAddress}
+        profilePath="/aidant/profil"
+      />
+    )
+  }
+  return <>{children}</>
+}
 
 function OwnerProtectedRoute({ children }: { children: React.ReactNode }) {
   const { currentUser } = useApp()
   if (!currentUser) return <Navigate to="/connexion" replace />
   if (currentUser.role === 'petsitter') return <Navigate to="/pet-sitter" replace />
-  if (currentUser.role === 'foster_family') return <Navigate to="/famille-accueil" replace />
-  if (currentUser.role === 'volunteer') return <Navigate to="/benevole" replace />
+  if (currentUser.role === 'foster_family' || currentUser.role === 'volunteer') return <Navigate to="/aidant" replace />
   if (currentUser.role !== 'owner') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
-function CaregiverProtectedRoute({
-  children,
-  kind,
-}: {
-  children: React.ReactNode
-  kind: 'foster_family' | 'volunteer'
-}) {
+function OwnerIdentityRoute({ children }: { children: React.ReactNode }) {
   const { currentUser, authLoading } = useApp()
-  const loginPath = kind === 'foster_family' ? '/famille-accueil/connexion' : '/benevole/connexion'
   if (authLoading) return null
-  if (!currentUser) return <Navigate to={loginPath} replace />
-  if (currentUser.role !== kind) {
-    if (currentUser.role === 'owner') return <Navigate to="/app" replace />
-    if (currentUser.role === 'petsitter') return <Navigate to="/pet-sitter" replace />
-    if (currentUser.role === 'foster_family') return <Navigate to="/famille-accueil" replace />
-    if (currentUser.role === 'volunteer') return <Navigate to="/benevole" replace />
-    return <Navigate to="/" replace />
+  if (!currentUser || currentUser.role !== 'owner') return <>{children}</>
+  const hasId = Boolean(currentUser.idDocument)
+  const hasAddress = Boolean(currentUser.proofOfAddress)
+  const verified = Boolean(currentUser.identityVerified)
+  const path = typeof window !== 'undefined' ? window.location.pathname : ''
+  const allowed = path.startsWith('/app/profil') || path.startsWith('/app/abonnement') || path.startsWith('/app/donnees')
+  if ((!hasId || !hasAddress || !verified) && !allowed) {
+    return (
+      <IdentityPendingPage
+        variant="owner"
+        hasId={hasId}
+        hasAddress={hasAddress}
+        profilePath="/app/profil"
+      />
+    )
   }
   return <>{children}</>
 }
 
-function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useApp()
-  if (!currentUser) return <Navigate to="/admin/connexion" replace />
-  if (currentUser.role !== 'admin') return <Navigate to="/" replace />
-  return <>{children}</>
-}
-
-/** Espace propriétaire réservé aux abonnés actifs (Stripe payé). */
 function OwnerSubscribedRoute({ children }: { children: React.ReactNode }) {
   const hasSubscription = useHasActiveSubscription()
   if (!hasSubscription) return <Navigate to="/app/abonnement" replace />
@@ -123,7 +143,9 @@ function OwnerSubscribedRoute({ children }: { children: React.ReactNode }) {
 function OwnerRoute({ children, requireSubscription = true }: { children: React.ReactNode; requireSubscription?: boolean }) {
   return (
     <OwnerProtectedRoute>
-      {requireSubscription ? <OwnerSubscribedRoute>{children}</OwnerSubscribedRoute> : children}
+      <OwnerIdentityRoute>
+        {requireSubscription ? <OwnerSubscribedRoute>{children}</OwnerSubscribedRoute> : children}
+      </OwnerIdentityRoute>
     </OwnerProtectedRoute>
   )
 }
@@ -139,6 +161,21 @@ function PetSitterIdentityRoute({ children, requireVip = true }: { children: Rea
   if (!petSitterProfile?.idDocument) {
     return <Navigate to="/pet-sitter/inscription" replace />
   }
+  const hasId = Boolean(petSitterProfile.idDocument)
+  const hasAddress = Boolean(petSitterProfile.proofOfAddress)
+  const verified = Boolean(petSitterProfile.verified)
+  const path = typeof window !== 'undefined' ? window.location.pathname : ''
+  const allowed = path.startsWith('/pet-sitter/profil') || path.startsWith('/pet-sitter/inscription') || path.startsWith('/pet-sitter/abonnement')
+  if ((!hasId || !hasAddress || !verified) && !allowed) {
+    return (
+      <IdentityPendingPage
+        variant="petsitter"
+        hasId={hasId}
+        hasAddress={hasAddress}
+        profilePath="/pet-sitter/profil"
+      />
+    )
+  }
   if (requireVip) {
     return <PetSitterVipRoute>{children}</PetSitterVipRoute>
   }
@@ -151,11 +188,18 @@ function PetSitterVipRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { currentUser } = useApp()
+  if (!currentUser) return <Navigate to="/admin/connexion" replace />
+  if (currentUser.role !== 'admin') return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
 function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<RootHome />} />
       <Route path="/fonctionnement" element={<HowItWorksPage />} />
       <Route path="/tarifs" element={<PricingPage />} />
       <Route path="/boutique" element={<ShopPage />} />
@@ -174,6 +218,7 @@ function AppRoutes() {
       <Route path="/secours/:token" element={<RescuePage />} />
       <Route path="/famille/:token" element={<OwnerFamilyRescuePage />} />
       <Route path="/urgence/confirmer/:token" element={<EmergencyConfirmPage />} />
+      <Route path="/informations-legales" element={<MobileLegalHubPage />} />
       <Route path="/cgu" element={<CGUPage />} />
       <Route path="/confidentialite" element={<PrivacyPage />} />
       <Route path="/rgpd" element={<RGPDPage />} />
@@ -215,19 +260,22 @@ function AppRoutes() {
       <Route path="/pet-sitter/messages" element={<PetSitterIdentityRoute requireVip={false}><PetSitterMessagesPage /></PetSitterIdentityRoute>} />
       <Route path="/pet-sitter/profil" element={<PetSitterIdentityRoute><PetSitterProfilePage /></PetSitterIdentityRoute>} />
 
-      {/* Famille d'accueil */}
-      <Route path="/famille-accueil/connexion" element={<FosterLoginPage />} />
-      <Route path="/famille-accueil/inscription" element={<FosterRegisterPage />} />
-      <Route path="/famille-accueil" element={<CaregiverProtectedRoute kind="foster_family"><FosterDashboard /></CaregiverProtectedRoute>} />
-      <Route path="/famille-accueil/disponibilites" element={<CaregiverProtectedRoute kind="foster_family"><FosterAvailabilityPage /></CaregiverProtectedRoute>} />
-      <Route path="/famille-accueil/profil" element={<CaregiverProtectedRoute kind="foster_family"><FosterProfilePage /></CaregiverProtectedRoute>} />
+      {/* Aidant unifié (bénévole / famille d'accueil) */}
+      <Route path="/aidant/connexion" element={<AidantLoginPage />} />
+      <Route path="/aidant/inscription" element={<AidantRegisterPage />} />
+      <Route path="/aidant" element={<CaregiverProtectedRoute><AidantDashboard /></CaregiverProtectedRoute>} />
+      <Route path="/aidant/disponibilites" element={<CaregiverProtectedRoute><AidantAvailabilityPage /></CaregiverProtectedRoute>} />
+      <Route path="/aidant/profil" element={<CaregiverProtectedRoute><AidantProfilePage /></CaregiverProtectedRoute>} />
 
-      {/* Bénévole */}
-      <Route path="/benevole/connexion" element={<VolunteerLoginPage />} />
-      <Route path="/benevole/inscription" element={<VolunteerRegisterPage />} />
-      <Route path="/benevole" element={<CaregiverProtectedRoute kind="volunteer"><VolunteerDashboard /></CaregiverProtectedRoute>} />
-      <Route path="/benevole/disponibilites" element={<CaregiverProtectedRoute kind="volunteer"><VolunteerAvailabilityPage /></CaregiverProtectedRoute>} />
-      <Route path="/benevole/profil" element={<CaregiverProtectedRoute kind="volunteer"><VolunteerProfilePage /></CaregiverProtectedRoute>} />
+      {/* Anciennes URLs → redirection */}
+      <Route path="/famille-accueil/inscription" element={<Navigate to="/aidant/inscription" replace />} />
+      <Route path="/famille-accueil/connexion" element={<Navigate to="/aidant/connexion" replace />} />
+      <Route path="/famille-accueil/*" element={<Navigate to="/aidant" replace />} />
+      <Route path="/famille-accueil" element={<Navigate to="/aidant" replace />} />
+      <Route path="/benevole/inscription" element={<Navigate to="/aidant/inscription" replace />} />
+      <Route path="/benevole/connexion" element={<Navigate to="/aidant/connexion" replace />} />
+      <Route path="/benevole/*" element={<Navigate to="/aidant" replace />} />
+      <Route path="/benevole" element={<Navigate to="/aidant" replace />} />
 
       {/* Admin */}
       <Route path="/admin/connexion" element={<AdminLoginPage />} />
@@ -241,6 +289,7 @@ function AppRoutes() {
       <Route path="/admin/animaux" element={<AdminProtectedRoute><AdminPetsPage /></AdminProtectedRoute>} />
       <Route path="/admin/referents" element={<AdminProtectedRoute><AdminReferentsPage /></AdminProtectedRoute>} />
       <Route path="/admin/pet-sitters" element={<AdminProtectedRoute><AdminPetSittersPage /></AdminProtectedRoute>} />
+      <Route path="/admin/aidants" element={<AdminProtectedRoute><AdminCaregiversPage /></AdminProtectedRoute>} />
       <Route path="/admin/documents" element={<AdminProtectedRoute><AdminDocumentsPage /></AdminProtectedRoute>} />
       <Route path="/admin/missions" element={<AdminProtectedRoute><AdminMissionsPage /></AdminProtectedRoute>} />
       <Route path="/admin/abonnements" element={<AdminProtectedRoute><AdminSubscriptionsPage /></AdminProtectedRoute>} />

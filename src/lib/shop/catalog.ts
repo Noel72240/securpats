@@ -1,6 +1,7 @@
-export type { ShopCategoryId, ShopProduct } from './types'
+export type { ShopCategoryId, ShopAnimalTargetId, ShopProduct } from './types'
 export {
   SHOP_CATEGORIES,
+  SHOP_ANIMAL_TARGETS,
   DEFAULT_SIZE_OPTIONS,
   SHOP_SHIPPING_CENTS,
   SHOP_FREE_SHIPPING_FROM_CENTS,
@@ -10,7 +11,22 @@ export {
   remainingForFreeShippingCents,
   slugifyProductName,
   categoryLabel,
+  animalTargetLabel,
+  normalizeShopCategoryId,
+  normalizeShopAnimalTargetId,
 } from './types'
+
+export {
+  PARCEL_SIZES,
+  getParcelSize,
+  shippingCentsForParcel,
+  orderTotalWithParcel,
+  maxParcelSize,
+  isValidParcelSizeId,
+  type ParcelSizeId,
+  type ParcelSize,
+  type RelayPoint,
+} from './mondial-relay'
 
 import type { ShopProduct } from './types'
 import { fetchShopProducts } from './api'

@@ -96,6 +96,10 @@ export default function PetSitterRegisterPage() {
   })
   const [idFile, setIdFile] = useState<File | null>(null)
   const [proofFile, setProofFile] = useState<File | null>(null)
+  const [criminalFile, setCriminalFile] = useState<File | null>(null)
+  const [hasAcaced, setHasAcaced] = useState<boolean | null>(
+    petSitterProfile?.hasAcaced ?? null,
+  )
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [idProcessingAccepted, setIdProcessingAccepted] = useState(false)
@@ -126,6 +130,15 @@ export default function PetSitterRegisterPage() {
       setError(idErr)
       return
     }
+    if (!proofFile) {
+      setError('Le justificatif de domicile est obligatoire.')
+      return
+    }
+    const proofErr = validatePetsitterIdFile(proofFile)
+    if (proofErr) {
+      setError(`Justificatif de domicile : ${proofErr}`)
+      return
+    }
 
     if (!idProcessingAccepted) {
       setError('Vous devez accepter le traitement de votre pièce d\'identité (obligatoire).')
@@ -143,6 +156,8 @@ export default function PetSitterRegisterPage() {
       const result = await completePetsitterIdentity({
         idFile,
         proofFile,
+        criminalFile,
+        hasAcaced,
         address: form.address,
         bio: form.bio,
         departmentCode: form.departmentCode,
@@ -184,6 +199,8 @@ export default function PetSitterRegisterPage() {
       bio: form.bio,
       idFile,
       proofFile,
+      criminalFile,
+      hasAcaced,
       consent: { termsAccepted, privacyAccepted, idProcessingAccepted, marketingOptIn },
     })
     setLoading(false)
@@ -251,6 +268,20 @@ export default function PetSitterRegisterPage() {
                     options={departmentSelectOptions(locale, t('petsitterReg.departmentHint'))}
                   />
                   <Textarea label={t('petsitterReg.bio')} required rows={4} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="…" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-700 mb-1.5">Disposez-vous de l’ACACED ?</p>
+                    <p className="text-xs text-slate-500 mb-2">Attestation de connaissances animaux de compagnie — facultatif</p>
+                    <div className="flex gap-4 text-sm">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" checked={hasAcaced === true} onChange={() => setHasAcaced(true)} />
+                        Oui
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" checked={hasAcaced === false} onChange={() => setHasAcaced(false)} />
+                        Non
+                      </label>
+                    </div>
+                  </div>
                   <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                     <Input label={t('common.password')} type="password" required minLength={8} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
                     <Input label={t('common.confirmPassword')} type="password" required value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
@@ -270,6 +301,19 @@ export default function PetSitterRegisterPage() {
                   options={departmentSelectOptions(locale, t('petsitterReg.departmentHint'))}
                 />
                 <Textarea label="Présentation" rows={3} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
+                <div>
+                  <p className="text-sm font-medium text-slate-700 mb-1.5">Disposez-vous de l’ACACED ?</p>
+                  <div className="flex gap-4 text-sm">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="radio" checked={hasAcaced === true} onChange={() => setHasAcaced(true)} />
+                      Oui
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="radio" checked={hasAcaced === false} onChange={() => setHasAcaced(false)} />
+                      Non
+                    </label>
+                  </div>
+                </div>
               </Card>
             )}
 
@@ -295,9 +339,17 @@ export default function PetSitterRegisterPage() {
                 />
                 <FileUploadBox
                   label="Justificatif de domicile"
-                  hint="Optionnel — facture, quittance..."
+                  required
+                  hint="Facture, quittance, avis d’imposition — JPG, PNG, WEBP ou PDF — max. 10 Mo"
                   file={proofFile}
                   onChange={setProofFile}
+                  disabled={loading}
+                />
+                <FileUploadBox
+                  label="Extrait de casier judiciaire (bulletin n°3)"
+                  hint="Fortement recommandé — non obligatoire pour l’accès au compte"
+                  file={criminalFile}
+                  onChange={setCriminalFile}
                   disabled={loading}
                 />
               </div>
@@ -319,7 +371,7 @@ export default function PetSitterRegisterPage() {
                       <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                       <span>
                         J&apos;accepte les{' '}
-                        <Link to="/cgu" target="_blank" className="text-brand-600 hover:underline">Conditions Générales d&apos;Utilisation</Link>{' '}
+                        <Link to="/cgu" className="text-brand-600 hover:underline">Conditions Générales d&apos;Utilisation</Link>{' '}
                         de SécurPats *
                       </span>
                     </label>
@@ -327,9 +379,9 @@ export default function PetSitterRegisterPage() {
                       <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
                       <span>
                         J&apos;accepte la{' '}
-                        <Link to="/confidentialite" target="_blank" className="text-brand-600 hover:underline">politique de confidentialité</Link>{' '}
+                        <Link to="/confidentialite" className="text-brand-600 hover:underline">politique de confidentialité</Link>{' '}
                         et le{' '}
-                        <Link to="/rgpd" target="_blank" className="text-brand-600 hover:underline">traitement de mes données (RGPD)</Link> *
+                        <Link to="/rgpd" className="text-brand-600 hover:underline">traitement de mes données (RGPD)</Link> *
                       </span>
                     </label>
                   </>
@@ -339,7 +391,7 @@ export default function PetSitterRegisterPage() {
                   <span>
                     J&apos;accepte que ma pièce d&apos;identité soit collectée, stockée de manière sécurisée et traitée
                     uniquement pour la vérification de mon profil pet-sitter, conformément à la{' '}
-                    <Link to="/confidentialite" target="_blank" className="text-brand-600 hover:underline">politique de confidentialité</Link>.
+                    <Link to="/confidentialite" className="text-brand-600 hover:underline">politique de confidentialité</Link>.
                     <strong className="text-red-600"> Sans ce consentement, l&apos;inscription sera refusée. *</strong>
                   </span>
                 </label>

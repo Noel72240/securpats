@@ -7,9 +7,22 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:capacitor": "tsc -b && vite build --mode capacitor",
+    "cap:sync": "npm run build:capacitor && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "android:sync": "npm run cap:sync",
+    "android:open": "npm run cap:open",
+    "assets:android": "npx capacitor-assets generate --android --iconBackgroundColor '#0f766e' --splashBackgroundColor '#0f766e'"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@fontsource/outfit": "^5.2.8",
     "@stripe/stripe-js": "^9.7.0",
     "@supabase/supabase-js": "^2.106.2",
@@ -26,6 +39,8 @@
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.2",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",

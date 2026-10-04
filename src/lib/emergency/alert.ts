@@ -1,4 +1,5 @@
 import { getSupabaseSafe } from '@/lib/supabase/client'
+import { apiUrl } from '@/lib/platform'
 
 export type TriggerEmergencyResult = {
   ok: boolean
@@ -26,7 +27,7 @@ async function postAlert(body: Record<string, unknown>, authToken?: string): Pro
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (authToken) headers.Authorization = `Bearer ${authToken}`
 
-  const response = await fetch('/api/emergency/alert', {
+  const response = await fetch(apiUrl('/api/emergency/alert'), {
     method: 'POST',
     headers,
     body: JSON.stringify(body),

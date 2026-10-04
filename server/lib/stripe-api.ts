@@ -55,3 +55,15 @@ export async function stripeGet<T>(path: string, query?: Record<string, string>)
 
   return parseStripeResponse<T>(res)
 }
+
+/** Annulation immédiate d’un abonnement Stripe. */
+export async function stripeCancelSubscription(subscriptionId: string): Promise<void> {
+  const res = await fetch(`${STRIPE_API}/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${getStripeSecretKey()}`,
+      'Stripe-Version': STRIPE_VERSION,
+    },
+  })
+  await parseStripeResponse<{ id: string }>(res)
+}

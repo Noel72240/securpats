@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SécurPats</string>
+    <string name="title_activity_main">SécurPats</string>
+    <string name="package_name">fr.securpats.app</string>
+    <string name="custom_url_scheme">fr.securpats.app</string>
+</resources>

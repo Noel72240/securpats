@@ -8,6 +8,7 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import { getPlanConfig, type OwnerSubscriptionPlan } from './plans'
 import { getSupabaseSafe } from '@/lib/supabase/client'
+import { publicAppOrigin, apiUrl } from '@/lib/platform'
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -23,7 +24,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 export const stripeConfig = {
   publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '',
-  appUrl: import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : ''),
+  appUrl: import.meta.env.VITE_APP_URL || publicAppOrigin(),
 }
 
 export const isStripeConfigured = () =>
@@ -54,7 +55,7 @@ export async function createSubscriptionCheckout(
   }
 
   try {
-    const response = await fetch('/api/stripe/create-checkout-session', {
+    const response = await fetch(apiUrl('/api/stripe/create-checkout-session'), {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({
@@ -95,7 +96,7 @@ export async function createPetsitterVipCheckout(
   }
 
   try {
-    const response = await fetch('/api/stripe/create-checkout-session', {
+    const response = await fetch(apiUrl('/api/stripe/create-checkout-session'), {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({
@@ -128,7 +129,7 @@ export async function createPetsitterVipCheckout(
 
 export async function reconcilePetsitterVipAccess(userId: string): Promise<{ activated?: boolean; error?: string }> {
   try {
-    const response = await fetch('/api/stripe/reconcile-subscription', {
+    const response = await fetch(apiUrl('/api/stripe/reconcile-subscription'), {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({ userId, planType: 'petsitter_vip' }),
@@ -143,7 +144,7 @@ export async function reconcilePetsitterVipAccess(userId: string): Promise<{ act
 
 export async function reconcileSubscriptionAccess(userId: string): Promise<{ activated?: boolean; error?: string }> {
   try {
-    const response = await fetch('/api/stripe/reconcile-subscription', {
+    const response = await fetch(apiUrl('/api/stripe/reconcile-subscription'), {
       method: 'POST',
       headers: await getAuthHeaders(),
       body: JSON.stringify({ userId }),
@@ -158,7 +159,7 @@ export async function reconcileSubscriptionAccess(userId: string): Promise<{ act
 
 export async function openCustomerPortal(customerId: string, returnUrl?: string): Promise<{ error?: string }> {
   try {
-    const response = await fetch('/api/stripe/create-portal-session', {
+    const response = await fetch(apiUrl('/api/stripe/create-portal-session'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

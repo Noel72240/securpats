@@ -1,7 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { DEFAULT_LOGO_ICON } from '@/components/brand/BrandLogo'
 import { useApp, useOwnerPets, useOwnerReferents } from '@/contexts/AppContext'
 import { getOwnerRescueUrl } from '@/lib/utils'
 import { SECURPATS_URGENCY_PHONE_DISPLAY } from '@/lib/brand/contact'
@@ -104,7 +103,6 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
           aria-label="Carte d'urgence SécurPats"
         >
           <header className="owner-id-card__banner">
-            <img src={DEFAULT_LOGO_ICON} alt="" className="owner-id-card__banner-logo" />
             <span>SÉCURPATS — URGENCE ANIMALE</span>
           </header>
 
@@ -199,7 +197,6 @@ export function OwnerPrintableSheet({ showActions = true }: { showActions?: bool
           </div>
 
           <footer className="owner-id-card__footer">
-            <img src={DEFAULT_LOGO_ICON} alt="" className="owner-id-card__footer-logo" />
             <span>securpats.fr · {SECURPATS_URGENCY_PHONE_DISPLAY}</span>
           </footer>
         </article>

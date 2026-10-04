@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyCors } from '../../server/lib/cors.js'
 import { getSupabaseAdmin } from '../../server/lib/supabase-admin.js'
 import { sendEmail, escapeHtml } from '../../server/lib/emergency-notify.js'
 
@@ -10,8 +11,7 @@ function str(v: unknown): string {
 
 function loginPathForRole(role: string): string {
   if (role === 'petsitter') return '/pet-sitter/connexion'
-  if (role === 'foster_family') return '/famille-accueil/connexion'
-  if (role === 'volunteer') return '/benevole/connexion'
+  if (role === 'foster_family' || role === 'volunteer') return '/aidant/connexion'
   return '/connexion'
 }
 
@@ -23,6 +23,7 @@ function roleLabel(role: string): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -44,13 +45,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!profile) return res.status(404).json({ error: 'Compte introuvable' })
 
+    // Toujours l’email stocké en base (pas une autre adresse env / from)
+    const recipient = String(profile.email || email).trim().toLowerCase()
     const appUrl = (process.env.VITE_APP_URL || 'https://www.securpats.fr').replace(/\/$/, '')
     const role = String(profile.role || 'owner')
     const loginUrl = `${appUrl}${loginPathForRole(role)}`
     const firstName = String(profile.first_name || '')
 
     const result = await sendEmail(
-      email,
+      recipient,
       'Bienvenue sur SécurPats — votre compte est prêt',
       `
         <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;margin:0 auto">
@@ -63,16 +66,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               Se connecter
             </a>
           </p>
+          <p style="font-size:12px;color:#94a3b8">Cet email a été envoyé à ${escapeHtml(recipient)}</p>
           <p style="font-size:13px;color:#64748b">— L’équipe SécurPats</p>
         </div>
       `,
     )
 
     if (!result.sent) {
-      console.error('[auth/register] resend-welcome failed:', result.error)
-      return res.status(502).json({ error: result.error || 'Échec envoi email' })
+      console.error('[auth/register] resend-welcome failed:', result.error, { recipient })
+      return res.status(502).json({ error: result.error || 'Échec envoi email', emailSentTo: recipient })
     }
-    return res.status(200).json({ ok: true, emailSent: true })
+    return res.status(200).json({ ok: true, emailSent: true, emailSentTo: recipient })
   }
 
   const password = typeof req.body?.password === 'string' ? req.body.password : ''
@@ -155,6 +159,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  if (!userId) {
+    return res.status(500).json({ error: 'Inscription incomplète (utilisateur introuvable).' })
+  }
+
   // S’assurer que le rôle profil est correct (trigger + secours)
   await admin.from('profiles').upsert({
     id: userId,
@@ -168,12 +176,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     marketing_opt_in: marketingOptIn,
   }, { onConflict: 'id' })
 
+  // Destinataire = email du compte Auth (source de vérité), jamais RESEND_FROM / admin
+  let recipient = email
+  try {
+    const { data: authUser } = await admin.auth.admin.getUserById(userId)
+    if (authUser.user?.email) recipient = authUser.user.email.trim().toLowerCase()
+  } catch (err) {
+    console.warn('[auth/register] getUserById email fallback:', err)
+  }
+
   const appUrl = (process.env.VITE_APP_URL || 'https://www.securpats.fr').replace(/\/$/, '')
   const loginUrl = `${appUrl}${loginPathForRole(role)}`
 
   // Await obligatoire sur Vercel : sinon la fonction se coupe avant l’envoi Resend
   const welcome = await sendEmail(
-    email,
+    recipient,
     'Bienvenue sur SécurPats — votre compte est prêt',
     `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;margin:0 auto">
@@ -188,21 +205,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           </a>
         </p>
         <p style="font-size:13px;color:#64748b">Lien direct : ${escapeHtml(loginUrl)}</p>
+        <p style="font-size:12px;color:#94a3b8">Cet email a été envoyé à ${escapeHtml(recipient)}</p>
         <p style="font-size:13px;color:#64748b">— L’équipe SécurPats</p>
       </div>
     `,
   )
 
   if (!welcome.sent) {
-    console.error('[auth/register] welcome email failed:', welcome.error)
+    console.error('[auth/register] welcome email failed:', welcome.error, { recipient })
+  } else {
+    console.info('[auth/register] welcome email sent to', recipient)
   }
 
   return res.status(200).json({
     ok: true,
     userId,
-    email,
+    email: recipient,
     role,
     emailSent: welcome.sent,
+    emailSentTo: recipient,
     emailError: welcome.sent ? undefined : welcome.error,
   })
 }

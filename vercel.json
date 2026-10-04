@@ -21,7 +21,14 @@
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/api/emergency/notify-referents", "destination": "/api/emergency/alert" },
     { "source": "/((?!api/).*)", "destination": "/" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/availability-reminder",
+      "schedule": "0 8 * * *"
+    }
   ],
   "functions": {
     "api/**/*.ts": {

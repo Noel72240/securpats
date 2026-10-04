@@ -32,9 +32,43 @@ export async function uploadAvatarFile(userId: string, file: File) {
   return uploadFile(STORAGE_BUCKETS.avatars, path, file, { upsert: true })
 }
 
-export async function uploadPetSitterDocFile(userId: string, kind: 'id' | 'address', file: File) {
+export async function uploadPetSitterDocFile(
+  userId: string,
+  kind: 'id' | 'address' | 'criminal',
+  file: File,
+) {
   const path = `${userId}/${kind}/${safeFileName(file.name)}`
   return uploadFile(STORAGE_BUCKETS.petsitter, path, file, { upsert: true })
+}
+
+export type CaregiverDocKind =
+  | 'id'
+  | 'address'
+  | 'criminal'
+  | 'insurance'
+  | 'housing'
+  | 'outdoor'
+  | 'own-animals'
+
+export async function uploadCaregiverDocFile(userId: string, kind: CaregiverDocKind, file: File) {
+  // folder[1] = userId pour respecter la policy petsitter-docs
+  const path = `${userId}/caregiver/${kind}/${safeFileName(file.name)}`
+  return uploadFile(STORAGE_BUCKETS.petsitter, path, file, { upsert: true })
+}
+
+/** Documents KYC propriétaire (même bucket privé). */
+export async function uploadOwnerIdentityDocFile(userId: string, kind: 'id' | 'address', file: File) {
+  const path = `${userId}/owner/${kind}/${safeFileName(file.name)}`
+  return uploadFile(STORAGE_BUCKETS.petsitter, path, file, { upsert: true })
+}
+
+export async function getCaregiverDocSignedUrl(storagePath: string, expiresIn = 3600) {
+  const { getSupabase } = await import('./client')
+  const { data, error } = await getSupabase().storage
+    .from(STORAGE_BUCKETS.petsitter)
+    .createSignedUrl(storagePath, expiresIn)
+  if (error || !data?.signedUrl) return { url: null as string | null, error: error?.message || 'URL impossible' }
+  return { url: data.signedUrl, error: null as string | null }
 }
 
 export async function getDocumentSignedUrl(storagePath: string, expiresIn = 3600) {

@@ -10,8 +10,19 @@ import { buildMonthlyRevenue } from '@/lib/admin/analytics'
 import { getPetsitterDocSignedUrl } from '@/lib/supabase/uploads'
 import { subscriptionPlanLabel, subscriptionPlanVariant, userRoleLabel } from '@/lib/admin/plan-labels'
 import { adminResetUserPassword } from '@/lib/auth/password-reset'
-import type { User, Pet } from '@/types'
 import { departmentLabel } from '@/lib/geo/french-departments'
+import {
+  ANIMAL_OPTIONS,
+  AVAILABILITY_OPTIONS,
+  DOG_SIZE_OPTIONS,
+  EMERGENCY_DELAY_OPTIONS,
+  ENGAGEMENT_OPTIONS,
+  HOUSING_OPTIONS,
+  optionLabel,
+  optionLabels,
+  yesNoText,
+} from '@/lib/caregiver/form'
+import type { CaregiverProfile, User, Pet } from '@/types'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
@@ -19,6 +30,180 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
     <div>
       <dt className="text-slate-500 font-medium">{label}</dt>
       <dd className="text-slate-900 mt-0.5 whitespace-pre-line">{value || '—'}</dd>
+    </div>
+  )
+}
+
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3 border-t border-slate-100 pt-4 first:border-0 first:pt-0">
+      <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</h3>
+      <div className="grid sm:grid-cols-2 gap-3">{children}</div>
+    </section>
+  )
+}
+
+function kindLabel(kind?: string, role?: string) {
+  if (kind === 'both') return 'Bénévole & famille d’accueil'
+  if (kind === 'volunteer' || role === 'volunteer') return 'Bénévole'
+  if (kind === 'foster_family' || role === 'foster_family') return 'Famille d’accueil'
+  return userRoleLabel(role || 'owner')
+}
+
+function caregiverFullAddress(profile: CaregiverProfile | null | undefined, fallback?: string) {
+  if (!profile) return fallback || '—'
+  const street = profile.address?.trim() || ''
+  const cityLine = [profile.postalCode, profile.city].filter(Boolean).join(' ').trim()
+  if (street && cityLine) {
+    // évite de répéter si l’adresse contient déjà le code postal / la ville
+    const city = profile.city?.trim()
+    if (
+      (profile.postalCode && street.includes(profile.postalCode))
+      || (city && street.toLowerCase().includes(city.toLowerCase()))
+    ) {
+      return street
+    }
+    return `${street}, ${cityLine}`
+  }
+  return street || cityLine || fallback || '—'
+}
+
+function CaregiverAdminFiche({
+  user,
+  profile,
+  onOpenDoc,
+}: {
+  user: User
+  profile: CaregiverProfile | null | undefined
+  onOpenDoc: (path?: string) => void
+}) {
+  const q = profile?.questionnaire
+  const animals = q?.acceptedAnimals?.length
+    ? [
+        optionLabels(ANIMAL_OPTIONS, q.acceptedAnimals),
+        q.acceptedAnimalsOther?.trim() || '',
+      ].filter(Boolean).join(' — ')
+    : '—'
+
+  return (
+    <div className="space-y-1 text-sm max-h-[75vh] overflow-y-auto pr-1">
+      <div className="flex flex-wrap items-center gap-2 pb-3">
+        <Badge variant={user.role === 'volunteer' ? 'warning' : 'success'}>
+          {kindLabel(profile?.kind, user.role)}
+        </Badge>
+        <Badge variant={profile?.verified ? 'success' : 'warning'}>
+          {profile?.verified ? 'Compte validé' : 'En attente de validation'}
+        </Badge>
+        {q?.hasAcaced === true && <Badge variant="info">ACACED</Badge>}
+        {q?.hasAcaced === false && <span className="text-xs text-slate-500">Sans ACACED</span>}
+      </div>
+
+      <DetailSection title="Identité & contact">
+        <DetailField label="Nom" value={`${user.firstName} ${user.lastName}`} />
+        <DetailField label="Email" value={profile?.email || user.email} />
+        <DetailField label="Téléphone" value={profile?.phone || user.phone} />
+        <DetailField label="Date de naissance" value={profile?.birthDate ? formatDate(profile.birthDate) : '—'} />
+        <DetailField label="Adresse" value={caregiverFullAddress(profile, user.address)} />
+        <DetailField label="Département" value={departmentLabel(profile?.departmentCode)} />
+        <DetailField label="Inscription" value={formatDate(user.createdAt)} />
+      </DetailSection>
+
+      <DetailSection title="Engagement & zone">
+        <DetailField
+          label="Type d’engagement"
+          value={optionLabels(ENGAGEMENT_OPTIONS, profile?.engagementTypes)}
+        />
+        <DetailField
+          label="Rayon d’intervention"
+          value={profile?.interventionRadiusKm ? `${profile.interventionRadiusKm} km` : (profile?.serviceArea || '—')}
+        />
+        <DetailField label="Peut se déplacer" value={yesNoText(profile?.canTravel)} />
+        <DetailField label="Véhicule personnel" value={yesNoText(profile?.hasVehicle)} />
+      </DetailSection>
+
+      <DetailSection title="Animaux acceptés">
+        <DetailField label="Espèces" value={animals} />
+        <DetailField label="Nombre max." value={q?.maxAnimals || '—'} />
+        <DetailField label="Taille de chien" value={optionLabel(DOG_SIZE_OPTIONS, q?.maxDogSize)} />
+        <DetailField label="Mâles" value={yesNoText(q?.acceptMales)} />
+        <DetailField label="Femelles" value={yesNoText(q?.acceptFemales)} />
+        <DetailField label="Stérilisés uniquement" value={yesNoText(q?.sterilizedOnly)} />
+        <DetailField label="Chiots / chatons" value={yesNoText(q?.acceptPuppiesKittens)} />
+        <DetailField label="Animaux âgés" value={yesNoText(q?.acceptSenior)} />
+        <DetailField label="Malades" value={yesNoText(q?.acceptSick)} />
+        <DetailField label="Traitements médicaux" value={yesNoText(q?.acceptMedicalTreatments)} />
+        <DetailField label="Handicapés" value={yesNoText(q?.acceptDisabled)} />
+        <DetailField label="Catégorisés" value={yesNoText(q?.acceptCategorized)} />
+        <DetailField label="Non sociables" value={yesNoText(q?.acceptUnsociable)} />
+        <DetailField label="Fugueurs" value={yesNoText(q?.acceptRunaways)} />
+      </DetailSection>
+
+      <DetailSection title="Logement">
+        <DetailField label="Type" value={optionLabel(HOUSING_OPTIONS, q?.housingType)} />
+        <DetailField label="Jardin clôturé" value={yesNoText(q?.gardenFenced)} />
+        <DetailField label="Escaliers" value={yesNoText(q?.hasStairs)} />
+        <DetailField label="Accès intérieur" value={yesNoText(q?.animalsIndoorAccess)} />
+        <DetailField label="Animaux déjà au foyer" value={yesNoText(q?.hasOwnAnimals)} />
+      </DetailSection>
+
+      <DetailSection title="Expérience">
+        <DetailField label="ACACED" value={yesNoText(q?.hasAcaced)} />
+        <DetailField label="A déjà gardé des animaux" value={yesNoText(q?.hasKeptAnimals)} />
+        <DetailField label="Autres formations" value={q?.training || '—'} />
+        <DetailField label="Profession animale" value={q?.animalRelatedJob || '—'} />
+        <DetailField label="Association" value={q?.animalAssociation || '—'} />
+      </DetailSection>
+
+      <DetailSection title="Disponibilités & urgences">
+        <DetailField label="Disponibilités" value={optionLabels(AVAILABILITY_OPTIONS, q?.availabilityTypes?.length ? q.availabilityTypes : profile?.availableDays)} />
+        <DetailField label="Urgences" value={yesNoText(q?.emergencyAvailable)} />
+        <DetailField label="Délai moyen" value={optionLabel(EMERGENCY_DELAY_OPTIONS, q?.emergencyDelay)} />
+      </DetailSection>
+
+      <DetailSection title="Présentation">
+        <div className="sm:col-span-2">
+          <DetailField label="Parlez-nous de vous" value={profile?.aboutMe || profile?.bio || '—'} />
+        </div>
+        <div className="sm:col-span-2">
+          <DetailField label="Motivation" value={profile?.motivation || '—'} />
+        </div>
+        <div className="sm:col-span-2">
+          <DetailField label="Informations importantes" value={profile?.importantNotes || '—'} />
+        </div>
+      </DetailSection>
+
+      <section className="space-y-3 border-t border-slate-100 pt-4">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">Documents</h3>
+        <div className="flex flex-wrap gap-2">
+          {profile?.idDocument ? (
+            <Button variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(profile.idDocument)}>Pièce ID</Button>
+          ) : (
+            <span className="text-xs text-amber-700 self-center">ID manquant</span>
+          )}
+          {profile?.proofOfAddress ? (
+            <Button variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(profile.proofOfAddress)}>Domicile</Button>
+          ) : (
+            <span className="text-xs text-amber-700 self-center">Domicile manquant</span>
+          )}
+          {profile?.criminalRecord ? (
+            <Button variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(profile.criminalRecord)}>Casier</Button>
+          ) : (
+            <span className="text-xs text-slate-400 self-center">Casier non fourni</span>
+          )}
+          {profile?.insurance ? (
+            <Button variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(profile.insurance)}>Assurance RC</Button>
+          ) : null}
+          {(profile?.housingPhotos || []).map((p, i) => (
+            <Button key={p} variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(p)}>Logement {i + 1}</Button>
+          ))}
+          {(profile?.outdoorPhotos || []).map((p, i) => (
+            <Button key={p} variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(p)}>Extérieur {i + 1}</Button>
+          ))}
+          {(profile?.ownAnimalsPhotos || []).map((p, i) => (
+            <Button key={p} variant="ghost" size="sm" icon={Eye} onClick={() => onOpenDoc(p)}>Animaux {i + 1}</Button>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
@@ -127,6 +312,20 @@ function OwnerIdentityModal({ user, onClose }: { user: User | null; onClose: () 
             <dd className="text-slate-900 mt-0.5">{formatHumanAge(user.birthDate)}</dd>
           </div>
         </div>
+        {user.role === 'owner' && (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-1">
+            <p className="font-medium text-slate-800">Documents KYC</p>
+            <p className={user.idDocument ? 'text-teal-700' : 'text-amber-700'}>
+              {user.idDocument ? '✓' : '○'} Pièce d’identité {user.idDocument ? 'reçue' : 'manquante'}
+            </p>
+            <p className={user.proofOfAddress ? 'text-teal-700' : 'text-amber-700'}>
+              {user.proofOfAddress ? '✓' : '○'} Justificatif de domicile {user.proofOfAddress ? 'reçu' : 'manquant'}
+            </p>
+            <p className={user.identityVerified ? 'text-teal-700' : 'text-amber-700'}>
+              {user.identityVerified ? '✓ Compte validé' : '○ En attente de validation admin'}
+            </p>
+          </div>
+        )}
       </dl>
     </Modal>
   )
@@ -141,7 +340,7 @@ function AdminTablePage({ title, variant, children }: { title: string; variant: 
 }
 
 export function AdminUsersPage() {
-  const { allUsers, deleteUserAsAdmin, currentUser } = useApp()
+  const { allUsers, deleteUserAsAdmin, currentUser, setOwnerIdentityVerified, isSupabaseMode } = useApp()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionOk, setActionOk] = useState<string | null>(null)
@@ -150,7 +349,14 @@ export function AdminUsersPage() {
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [resetBusy, setResetBusy] = useState(false)
   const [query, setQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState<'all' | 'owner' | 'petsitter'>('all')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'owner' | 'petsitter' | 'foster_family' | 'volunteer'>('all')
+
+  const roleCounts = useMemo(() => ({
+    owner: allUsers.filter(u => u.role === 'owner').length,
+    petsitter: allUsers.filter(u => u.role === 'petsitter').length,
+    foster_family: allUsers.filter(u => u.role === 'foster_family').length,
+    volunteer: allUsers.filter(u => u.role === 'volunteer').length,
+  }), [allUsers])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -161,6 +367,34 @@ export function AdminUsersPage() {
       return hay.includes(q)
     })
   }, [allUsers, query, roleFilter])
+
+  const openDoc = async (path?: string) => {
+    if (!path) return
+    if (!isSupabaseMode) {
+      setActionError('Consultation du document disponible uniquement avec Supabase.')
+      return
+    }
+    const { url, error } = await getPetsitterDocSignedUrl(path)
+    if (error || !url) {
+      setActionError(error || 'Impossible d’ouvrir le document.')
+      return
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const toggleOwnerVerified = async (user: User, verified: boolean) => {
+    if (verified && (!user.idDocument || !user.proofOfAddress)) {
+      setActionError('Pièce d’identité et justificatif de domicile requis avant validation.')
+      return
+    }
+    setBusyId(user.id)
+    setActionError(null)
+    setActionOk(null)
+    const err = await setOwnerIdentityVerified(user.id, verified)
+    if (err) setActionError(err)
+    else setActionOk(verified ? 'Propriétaire validé — accès autorisé' : 'Validation révoquée')
+    setBusyId(null)
+  }
 
   const copyText = async (text: string, label: string) => {
     try {
@@ -212,9 +446,19 @@ export function AdminUsersPage() {
     <AdminTablePage title="Gestion utilisateurs" variant="admin">
       <div className="px-4 pt-4 pb-2 space-y-3">
         <p className="text-sm text-slate-600">
-          Les emails sont visibles ici. Les mots de passe ne sont <strong>jamais récupérables</strong> (chiffrés) :
-          vous pouvez en définir un temporaire pour un propriétaire ou pet-sitter.
+          Les emails sont visibles ici (admin uniquement). Les mots de passe ne sont <strong>jamais récupérables</strong> (chiffrés) :
+          vous pouvez en définir un temporaire pour un propriétaire, pet-sitter, famille d’accueil ou bénévole.
         </p>
+        <p className="text-xs text-slate-500">
+          En base : {roleCounts.owner} propriétaire(s) · {roleCounts.petsitter} pet-sitter(s) ·{' '}
+          {roleCounts.foster_family} famille(s) d’accueil · {roleCounts.volunteer} bénévole(s)
+        </p>
+        {(roleCounts.owner === 0 && roleCounts.petsitter === 0) && (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+            Aucun propriétaire / pet-sitter trouvé. S’ils existaient avant, ils ont peut‑être été supprimés
+            (vérifiez aussi Authentication → Users dans Supabase). Filtrez par rôle ou rechargez la page.
+          </p>
+        )}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -227,12 +471,14 @@ export function AdminUsersPage() {
           </div>
           <select
             value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value as 'all' | 'owner' | 'petsitter')}
+            onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
           >
             <option value="all">Tous les rôles</option>
             <option value="owner">Propriétaires</option>
             <option value="petsitter">Pet-sitters</option>
+            <option value="foster_family">Familles d’accueil</option>
+            <option value="volunteer">Bénévoles</option>
           </select>
         </div>
       </div>
@@ -269,17 +515,64 @@ export function AdminUsersPage() {
                     </button>
                   </div>
                 </td>
-                <td className="py-3 px-4"><Badge variant={u.role === 'admin' ? 'danger' : u.role === 'petsitter' ? 'info' : 'success'}>{userRoleLabel(u.role)}</Badge></td>
+                <td className="py-3 px-4">
+                  <Badge variant={
+                    u.role === 'admin' ? 'danger'
+                      : u.role === 'petsitter' ? 'info'
+                        : u.role === 'volunteer' ? 'warning'
+                          : 'success'
+                  }>
+                    {userRoleLabel(u.role)}
+                  </Badge>
+                </td>
                 <td className="py-3 px-4">{u.twoFactorEnabled ? '✓' : '—'}</td>
                 <td className="py-3 px-4 text-slate-500">{formatDate(u.createdAt)}</td>
                 <td className="py-3 px-4">
                   <div className="flex flex-wrap gap-2">
-                    {u.role === 'owner' && (
+                    {(u.role === 'owner' || u.role === 'foster_family' || u.role === 'volunteer') && (
                       <Button variant="ghost" size="sm" icon={Eye} onClick={() => setIdentityUser(u)}>
                         Fiche
                       </Button>
                     )}
-                    {(u.role === 'owner' || u.role === 'petsitter') && (
+                    {u.role === 'owner' && (
+                      <>
+                        {u.idDocument ? (
+                          <Button variant="ghost" size="sm" icon={Eye} onClick={() => void openDoc(u.idDocument)}>
+                            ID
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-amber-700 self-center">ID manquant</span>
+                        )}
+                        {u.proofOfAddress ? (
+                          <Button variant="ghost" size="sm" icon={Eye} onClick={() => void openDoc(u.proofOfAddress)}>
+                            Dom.
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-amber-700 self-center">Dom. manquant</span>
+                        )}
+                        {!u.identityVerified ? (
+                          <Button
+                            size="sm"
+                            icon={CheckCircle}
+                            disabled={busyId === u.id || !u.idDocument || !u.proofOfAddress}
+                            onClick={() => void toggleOwnerVerified(u, true)}
+                          >
+                            Valider
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={XCircle}
+                            disabled={busyId === u.id}
+                            onClick={() => void toggleOwnerVerified(u, false)}
+                          >
+                            Révoquer
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {(u.role === 'owner' || u.role === 'petsitter' || u.role === 'foster_family' || u.role === 'volunteer') && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -293,7 +586,9 @@ export function AdminUsersPage() {
                       </Button>
                     )}
                     {u.role === 'admin' || u.id === currentUser?.id ? (
-                      u.role !== 'owner' && u.role !== 'petsitter' && <span className="text-slate-400 text-xs">—</span>
+                      u.role !== 'owner' && u.role !== 'petsitter' && u.role !== 'foster_family' && u.role !== 'volunteer' && (
+                        <span className="text-slate-400 text-xs">—</span>
+                      )
                     ) : (
                       <Button
                         variant="outline"
@@ -453,7 +748,7 @@ export function AdminPetSittersPage() {
 
   const profileFor = (userId: string) => allPetsitterProfiles.find(p => p.userId === userId)
 
-  const openIdDocument = async (path?: string) => {
+  const openDoc = async (path?: string) => {
     if (!path) return
     if (!isSupabaseMode) {
       setActionError('Consultation du document disponible uniquement avec Supabase.')
@@ -468,6 +763,11 @@ export function AdminPetSittersPage() {
   }
 
   const toggleVerified = async (userId: string, verified: boolean) => {
+    const profile = profileFor(userId)
+    if (verified && (!profile?.idDocument || !profile?.proofOfAddress)) {
+      setActionError('Pièce d’identité et justificatif de domicile requis avant validation.')
+      return
+    }
     setBusyId(userId)
     setActionError(null)
     const err = await setPetsitterVerified(userId, verified)
@@ -478,8 +778,9 @@ export function AdminPetSittersPage() {
   return (
     <AdminTablePage title="Gestion Pet-Sitters" variant="admin">
       <p className="text-sm text-slate-600 px-4 pt-4 pb-2">
-        Vérifiez la pièce d&apos;identité puis cliquez sur <strong>Valider le compte</strong>.
-        Un pet-sitter non validé ne peut pas accepter de missions.
+        Ouvrez la <strong>pièce d’identité</strong> et le <strong>justificatif de domicile</strong>, puis validez.
+        L’extrait de casier est consultable s’il a été fourni (non bloquant).
+        Sans validation ID + domicile, le pet-sitter n’a pas accès à l’espace.
       </p>
       {actionError && (
         <p className="text-sm text-red-600 px-4 pb-2">{actionError}</p>
@@ -491,17 +792,21 @@ export function AdminPetSittersPage() {
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Email</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Zone</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Pièce d&apos;identité</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Justificatif</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">Casier</th>
+            <th className="text-left py-3 px-4 font-semibold text-slate-600">ACACED</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
             <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
             {sitters.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 px-4 text-center text-slate-500">Aucun pet-sitter inscrit.</td>
+                <td colSpan={9} className="py-8 px-4 text-center text-slate-500">Aucun pet-sitter inscrit.</td>
               </tr>
             ) : sitters.map(s => {
               const profile = profileFor(s.id)
               const verified = profile?.verified ?? false
+              const canValidate = Boolean(profile?.idDocument && profile?.proofOfAddress)
               return (
                 <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
                   <td className="py-3 px-4 font-medium">{s.firstName} {s.lastName}</td>
@@ -511,16 +816,43 @@ export function AdminPetSittersPage() {
                   </td>
                   <td className="py-3 px-4">
                     {profile?.idDocument ? (
-                      <Button variant="ghost" size="sm" icon={Eye} onClick={() => openIdDocument(profile.idDocument)}>
+                      <Button variant="ghost" size="sm" icon={Eye} onClick={() => void openDoc(profile.idDocument)}>
                         Voir
                       </Button>
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-amber-700 text-xs">Manquant</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {profile?.proofOfAddress ? (
+                      <Button variant="ghost" size="sm" icon={Eye} onClick={() => void openDoc(profile.proofOfAddress)}>
+                        Voir
+                      </Button>
+                    ) : (
+                      <span className="text-amber-700 text-xs">Manquant</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {profile?.criminalRecord ? (
+                      <Button variant="ghost" size="sm" icon={Eye} onClick={() => void openDoc(profile.criminalRecord)}>
+                        Voir
+                      </Button>
+                    ) : (
+                      <span className="text-slate-400 text-xs">Non fourni</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {profile?.hasAcaced === true ? (
+                      <Badge variant="info">Oui</Badge>
+                    ) : profile?.hasAcaced === false ? (
+                      <span className="text-slate-500 text-xs">Non</span>
+                    ) : (
+                      <span className="text-slate-400 text-xs">—</span>
                     )}
                   </td>
                   <td className="py-3 px-4">
                     <Badge variant={verified ? 'success' : 'warning'}>
-                      {verified ? 'Validé' : 'En attente'}
+                      {verified ? 'Compte validé' : 'En attente'}
                     </Badge>
                   </td>
                   <td className="py-3 px-4">
@@ -529,8 +861,8 @@ export function AdminPetSittersPage() {
                         <Button
                           size="sm"
                           icon={CheckCircle}
-                          disabled={busyId === s.id || !profile}
-                          onClick={() => toggleVerified(s.id, true)}
+                          disabled={busyId === s.id || !canValidate}
+                          onClick={() => void toggleVerified(s.id, true)}
                         >
                           Valider le compte
                         </Button>
@@ -540,7 +872,7 @@ export function AdminPetSittersPage() {
                           size="sm"
                           icon={XCircle}
                           disabled={busyId === s.id}
-                          onClick={() => toggleVerified(s.id, false)}
+                          onClick={() => void toggleVerified(s.id, false)}
                         >
                           Révoquer
                         </Button>
@@ -553,6 +885,295 @@ export function AdminPetSittersPage() {
           </tbody>
         </table>
       </div>
+    </AdminTablePage>
+  )
+}
+
+export function AdminCaregiversPage() {
+  const { allUsers, allCaregiverProfiles, setCaregiverVerified, deleteUserAsAdmin, isSupabaseMode } = useApp()
+  const [kindFilter, setKindFilter] = useState<'all' | 'foster_family' | 'volunteer'>('all')
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [actionOk, setActionOk] = useState<string | null>(null)
+  const [detailUserId, setDetailUserId] = useState<string | null>(null)
+
+  const caregivers = useMemo(() => {
+    return allUsers.filter(u => {
+      if (u.role !== 'foster_family' && u.role !== 'volunteer') return false
+      if (kindFilter === 'all') return true
+      return u.role === kindFilter
+    })
+  }, [allUsers, kindFilter])
+
+  const profileFor = (userId: string) => allCaregiverProfiles.find(p => p.userId === userId)
+  const detailUser = detailUserId ? allUsers.find(u => u.id === detailUserId) : null
+  const detailProfile = detailUserId ? profileFor(detailUserId) : null
+
+  const filterLabel =
+    kindFilter === 'foster_family' ? 'familles d’accueil'
+      : kindFilter === 'volunteer' ? 'bénévoles'
+        : 'familles d’accueil et bénévoles'
+
+  const openDoc = async (path?: string) => {
+    if (!path) return
+    if (!isSupabaseMode) {
+      setActionError('Consultation du document disponible uniquement avec Supabase.')
+      return
+    }
+    const { url, error } = await getPetsitterDocSignedUrl(path)
+    if (error || !url) {
+      setActionError(error || 'Impossible d’ouvrir le document.')
+      return
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const toggleVerified = async (userId: string, verified: boolean) => {
+    const profile = profileFor(userId)
+    if (verified && (!profile?.idDocument || !profile?.proofOfAddress)) {
+      setActionError('Pièce d’identité et justificatif de domicile requis avant validation.')
+      return
+    }
+    setBusyId(userId)
+    setActionError(null)
+    setActionOk(null)
+    const err = await setCaregiverVerified(userId, verified)
+    if (err) setActionError(err)
+    else setActionOk(verified ? 'Compte validé — accès autorisé' : 'Validation révoquée')
+    setBusyId(null)
+  }
+
+  const handleDelete = async (user: { id: string; firstName: string; lastName: string; email: string }) => {
+    const label = `${user.firstName} ${user.lastName} (${user.email})`
+    const confirmed = window.confirm(
+      `Supprimer définitivement le compte ${label} ?\n\nCette action est irréversible.`,
+    )
+    if (!confirmed) return
+    setBusyId(user.id)
+    setActionError(null)
+    setActionOk(null)
+    const err = await deleteUserAsAdmin(user.id)
+    if (err) setActionError(err)
+    else {
+      setActionOk('Compte supprimé')
+      if (detailUserId === user.id) setDetailUserId(null)
+    }
+    setBusyId(null)
+  }
+
+  const handleDeleteAll = async () => {
+    if (caregivers.length === 0) return
+    const confirmed = window.confirm(
+      `Supprimer définitivement les ${caregivers.length} compte(s) ${filterLabel} affichés ?\n\nCette action est irréversible.`,
+    )
+    if (!confirmed) return
+
+    setBulkBusy(true)
+    setActionError(null)
+    setActionOk(null)
+    let ok = 0
+    const errors: string[] = []
+    // Copie : la liste se met à jour au fil des suppressions
+    const targets = [...caregivers]
+    for (const u of targets) {
+      const err = await deleteUserAsAdmin(u.id)
+      if (err) errors.push(`${u.email}: ${err}`)
+      else ok += 1
+    }
+    if (errors.length) {
+      setActionError(`${ok} supprimé(s). Échecs : ${errors.slice(0, 3).join(' · ')}${errors.length > 3 ? '…' : ''}`)
+    } else {
+      setActionOk(`${ok} compte(s) supprimé(s).`)
+      setDetailUserId(null)
+    }
+    setBulkBusy(false)
+  }
+
+  return (
+    <AdminTablePage title="Familles d’accueil & bénévoles" variant="admin">
+      <div className="px-4 pt-4 pb-2 space-y-3">
+        <p className="text-sm text-slate-600">
+          Ces comptes sont <strong>visibles uniquement par l’admin</strong>. Vérifiez pièce d’identité
+          + justificatif de domicile avant de valider — sans cela, l’accès reste bloqué.
+          L’extrait de casier est consultable s’il a été fourni (non bloquant).
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+          <select
+            value={kindFilter}
+            onChange={e => setKindFilter(e.target.value as typeof kindFilter)}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+            disabled={bulkBusy}
+          >
+            <option value="all">Tous</option>
+            <option value="foster_family">Familles d’accueil</option>
+            <option value="volunteer">Bénévoles</option>
+          </select>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={Trash2}
+            disabled={bulkBusy || caregivers.length === 0}
+            className="!text-red-600 !border-red-200 hover:!bg-red-50"
+            onClick={() => void handleDeleteAll()}
+          >
+            {bulkBusy ? 'Suppression…' : `Tout supprimer (${caregivers.length})`}
+          </Button>
+        </div>
+      </div>
+      {actionError && <p className="text-sm text-red-600 px-4 pb-2">{actionError}</p>}
+      {actionOk && <p className="text-sm text-brand-700 px-4 pb-2">{actionOk}</p>}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100">
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Nom</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Email</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Type</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Pièce ID</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Domicile</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Casier</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">ACACED</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Statut</th>
+              <th className="text-left py-3 px-4 font-semibold text-slate-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {caregivers.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 px-4 text-center text-slate-500">
+                  Aucun compte famille d’accueil / bénévole.
+                </td>
+              </tr>
+            ) : caregivers.map(u => {
+              const profile = profileFor(u.id)
+              const verified = profile?.verified ?? false
+              const canValidate = Boolean(profile?.idDocument && profile?.proofOfAddress)
+              const rowBusy = bulkBusy || busyId === u.id
+              const acaced = profile?.questionnaire?.hasAcaced
+              return (
+                <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50">
+                  <td className="py-3 px-4 font-medium">{u.firstName} {u.lastName}</td>
+                  <td className="py-3 px-4 text-slate-600">{profile?.email || u.email}</td>
+                  <td className="py-3 px-4">
+                    <Badge variant={u.role === 'volunteer' ? 'warning' : 'success'}>
+                      {profile?.kind === 'both'
+                        ? 'Bénévole & famille'
+                        : userRoleLabel(u.role)}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4">
+                    {profile?.idDocument ? (
+                      <Button variant="ghost" size="sm" icon={Eye} disabled={rowBusy} onClick={() => void openDoc(profile.idDocument)}>
+                        Voir
+                      </Button>
+                    ) : (
+                      <span className="text-amber-700 text-xs">Manquant</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {profile?.proofOfAddress ? (
+                      <Button variant="ghost" size="sm" icon={Eye} disabled={rowBusy} onClick={() => void openDoc(profile.proofOfAddress)}>
+                        Voir
+                      </Button>
+                    ) : (
+                      <span className="text-amber-700 text-xs">Manquant</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {profile?.criminalRecord ? (
+                      <Button variant="ghost" size="sm" icon={Eye} disabled={rowBusy} onClick={() => void openDoc(profile.criminalRecord)}>
+                        Voir
+                      </Button>
+                    ) : (
+                      <span className="text-slate-400 text-xs">Non fourni</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {acaced === true ? (
+                      <Badge variant="info">Oui</Badge>
+                    ) : acaced === false ? (
+                      <span className="text-slate-500 text-xs">Non</span>
+                    ) : (
+                      <span className="text-slate-400 text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    <Badge variant={verified ? 'success' : 'warning'}>
+                      {verified ? 'Profil vérifié SécurPats' : 'En attente'}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="ghost" size="sm" icon={Eye} disabled={rowBusy} onClick={() => setDetailUserId(u.id)}>
+                        Fiche
+                      </Button>
+                      {!verified ? (
+                        <Button
+                          size="sm"
+                          icon={CheckCircle}
+                          disabled={rowBusy || !canValidate}
+                          onClick={() => void toggleVerified(u.id, true)}
+                        >
+                          Valider
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={XCircle}
+                          disabled={rowBusy}
+                          onClick={() => void toggleVerified(u.id, false)}
+                        >
+                          Révoquer
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={Trash2}
+                        disabled={rowBusy}
+                        className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                        onClick={() => void handleDelete(u)}
+                      >
+                        {busyId === u.id ? '…' : 'Supprimer'}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal
+        open={Boolean(detailUser)}
+        onClose={() => setDetailUserId(null)}
+        title={detailUser ? `Fiche — ${detailUser.firstName} ${detailUser.lastName}` : 'Fiche'}
+      >
+        {detailUser && (
+          <div className="space-y-4">
+            <CaregiverAdminFiche
+              user={detailUser}
+              profile={detailProfile}
+              onOpenDoc={path => void openDoc(path)}
+            />
+            <div className="pt-2 border-t border-slate-100">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Trash2}
+                disabled={busyId === detailUser.id || bulkBusy}
+                className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                onClick={() => void handleDelete(detailUser)}
+              >
+                Supprimer ce compte
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </AdminTablePage>
   )
 }

@@ -8,8 +8,14 @@ function LegalPage({ title, children }: { title: string; children: React.ReactNo
   const { t, locale } = useI18n()
   return (
     <PublicLayout>
-      <section className="py-16 lg:py-24">
+      <section className="py-10 sm:py-16 lg:py-24">
         <div className="max-w-3xl mx-auto px-4">
+          <Link
+            to="/informations-legales"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
+          >
+            ← Informations légales
+          </Link>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
           {locale === 'en' && (
             <p className="mb-6 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">

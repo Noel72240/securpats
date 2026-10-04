@@ -1,8 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyCors } from '../../server/lib/cors.js'
 import { verifyRequestUser } from '../../server/lib/verify-auth.js'
 import { stripePostForm } from '../../server/lib/stripe-api.js'
 import { arePaymentsBlockedOnServer } from '../../server/lib/site-settings.js'
-import { resolveShopLinePrices, shippingCentsForSubtotal } from '../../server/lib/shop-prices.js'
+import { resolveShopLinePrices, shippingCentsForParcel } from '../../server/lib/shop-prices.js'
+import {
+  getParcelSize,
+  isRelaySearchConfigured,
+  isValidParcelSizeId,
+  searchRelayPoints,
+  type ParcelSizeId,
+  type RelayPoint,
+} from '../../server/lib/mondial-relay.js'
 
 type CheckoutSessionResponse = {
   id: string
@@ -11,6 +20,25 @@ type CheckoutSessionResponse = {
 
 type CartLine = { productId: string; quantity: number; size?: string }
 
+async function handleRelayPointsSearch(req: VercelRequest, res: VercelResponse) {
+  const postalCode = typeof req.body?.postalCode === 'string' ? req.body.postalCode : ''
+  const country = typeof req.body?.country === 'string' ? req.body.country : 'FR'
+  const parcelSizeId = isValidParcelSizeId(req.body?.parcelSize) ? req.body.parcelSize : 'moyen'
+
+  const result = await searchRelayPoints({ postalCode, country, parcelSizeId })
+  if (!result.ok) {
+    return res.status(400).json({ error: result.error })
+  }
+  if (!result.configured) {
+    return res.status(200).json({
+      configured: false,
+      points: [],
+      message: result.message,
+    })
+  }
+  return res.status(200).json({ configured: true, points: result.points })
+}
+
 async function createShopSession(
   req: VercelRequest,
   res: VercelResponse,
@@ -18,9 +46,17 @@ async function createShopSession(
 ) {
   const items = (req.body?.items ?? []) as CartLine[]
   const customerEmail = typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim() : ''
+  const relayPoint = req.body?.relayPoint as Partial<RelayPoint> | undefined
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Panier vide' })
+  }
+
+  if (isRelaySearchConfigured()) {
+    const relayId = typeof relayPoint?.id === 'string' ? relayPoint.id.trim() : ''
+    if (!relayId) {
+      return res.status(400).json({ error: 'Sélectionnez un Point Relais Mondial Relay' })
+    }
   }
 
   const resolved = await resolveShopLinePrices(items)
@@ -28,19 +64,38 @@ async function createShopSession(
     return res.status(400).json({ error: resolved.error })
   }
 
+  // Taille colis = max des produits (admin) — jamais confiance au client
+  const parcelSizeId: ParcelSizeId = resolved.parcelSize
+  const parcel = getParcelSize(parcelSizeId)!
+
+  const hasRelay = typeof relayPoint?.id === 'string' && relayPoint.id.trim().length > 0
+
   const fields: Record<string, string> = {
     mode: 'payment',
     'payment_method_types[0]': 'card',
     success_url: `${appUrl}/boutique/succes?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/boutique/panier?canceled=1`,
     'metadata[source]': 'shop',
+    'metadata[shipping_carrier]': 'mondial_relay',
+    'metadata[parcel_size]': parcelSizeId,
+    'metadata[mr_action]': parcel.mrAction,
     allow_promotion_codes: 'true',
     billing_address_collection: 'required',
-    'shipping_address_collection[allowed_countries][0]': 'FR',
-    'shipping_address_collection[allowed_countries][1]': 'BE',
-    'shipping_address_collection[allowed_countries][2]': 'LU',
-    'shipping_address_collection[allowed_countries][3]': 'CH',
     locale: 'fr',
+  }
+
+  if (!hasRelay) {
+    fields['shipping_address_collection[allowed_countries][0]'] = 'FR'
+    fields['shipping_address_collection[allowed_countries][1]'] = 'BE'
+    fields['shipping_address_collection[allowed_countries][2]'] = 'LU'
+    fields['shipping_address_collection[allowed_countries][3]'] = 'CH'
+  } else {
+    fields['metadata[mr_relay_id]'] = relayPoint!.id!.trim()
+    if (relayPoint?.name) fields['metadata[mr_relay_name]'] = String(relayPoint.name).slice(0, 80)
+    if (relayPoint?.city) fields['metadata[mr_relay_city]'] = String(relayPoint.city).slice(0, 40)
+    if (relayPoint?.postalCode) fields['metadata[mr_relay_cp]'] = String(relayPoint.postalCode).slice(0, 10)
+    if (relayPoint?.address) fields['metadata[mr_relay_address]'] = String(relayPoint.address).slice(0, 120)
+    if (relayPoint?.country) fields['metadata[mr_relay_country]'] = String(relayPoint.country).slice(0, 2)
   }
 
   if (customerEmail) fields.customer_email = customerEmail
@@ -57,11 +112,14 @@ async function createShopSession(
     lineIndex++
   }
 
-  const shipping = shippingCentsForSubtotal(subtotal)
+  const shipping = shippingCentsForParcel(subtotal, parcelSizeId)
   if (shipping > 0) {
+    const shippingLabel = hasRelay
+      ? `Livraison Mondial Relay — ${parcel.label}`
+      : `Livraison Mondial Relay — ${parcel.label} (Point Relais à confirmer)`
     fields[`line_items[${lineIndex}][price_data][currency]`] = 'eur'
     fields[`line_items[${lineIndex}][price_data][unit_amount]`] = String(shipping)
-    fields[`line_items[${lineIndex}][price_data][product_data][name]`] = 'Livraison France / Benelux / Suisse'
+    fields[`line_items[${lineIndex}][price_data][product_data][name]`] = shippingLabel
     fields[`line_items[${lineIndex}][quantity]`] = '1'
   }
 
@@ -70,8 +128,20 @@ async function createShopSession(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  // Recherche Point Relais — pas besoin de Stripe
+  if (req.body?.action === 'relay-points') {
+    try {
+      return await handleRelayPointsSearch(req, res)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur Mondial Relay'
+      console.error('[Mondial Relay search]', message)
+      return res.status(500).json({ error: message })
+    }
   }
 
   if (!process.env.STRIPE_SECRET_KEY?.trim()) {

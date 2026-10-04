@@ -20,10 +20,13 @@ const DAYS = [
   { storage: 'Dimanche', key: 'petsitterAvail.sun' },
 ] as const satisfies ReadonlyArray<{ storage: string; key: TranslationKey }>
 
-export default function CaregiverAvailabilityPage({ kind }: { kind: CaregiverKind }) {
-  const { caregiverProfile, updateCaregiverProfile } = useApp()
+export default function CaregiverAvailabilityPage({ kind: kindProp }: { kind?: CaregiverKind } = {}) {
+  const { caregiverProfile, updateCaregiverProfile, currentUser } = useApp()
   const { t, locale } = useI18n()
-  const variant = kind === 'foster_family' ? 'foster' : 'volunteer'
+  const kind: CaregiverKind = kindProp
+    || caregiverProfile?.kind
+    || (currentUser?.role === 'volunteer' ? 'volunteer' : 'foster_family')
+  const variant = kind === 'volunteer' ? 'volunteer' : 'foster'
   const [days, setDays] = useState<string[]>(caregiverProfile?.availableDays || [])
   const [hours, setHours] = useState(caregiverProfile?.availableHours || '')
   const [area, setArea] = useState(caregiverProfile?.serviceArea || '')

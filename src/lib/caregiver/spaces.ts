@@ -7,18 +7,31 @@ export type CaregiverSpaceConfig = {
   accent: 'teal' | 'amber'
 }
 
+/** Espace unique bénévole + famille d'accueil */
+export const CAREGIVER_UNIFIED = {
+  basePath: '/aidant',
+  accent: 'teal' as const,
+  label: 'Bénévole / Famille d’accueil',
+}
+
 export const CAREGIVER_SPACES: Record<CaregiverKind, CaregiverSpaceConfig> = {
   foster_family: {
     kind: 'foster_family',
     role: 'foster_family',
-    basePath: '/famille-accueil',
+    basePath: CAREGIVER_UNIFIED.basePath,
     accent: 'teal',
   },
   volunteer: {
     kind: 'volunteer',
     role: 'volunteer',
-    basePath: '/benevole',
+    basePath: CAREGIVER_UNIFIED.basePath,
     accent: 'amber',
+  },
+  both: {
+    kind: 'both',
+    role: 'foster_family',
+    basePath: CAREGIVER_UNIFIED.basePath,
+    accent: 'teal',
   },
 }
 
@@ -34,4 +47,8 @@ export function homePathForRole(role: string): string {
   const space = caregiverSpaceForRole(role)
   if (space) return space.basePath
   return '/app'
+}
+
+export function isCaregiverRole(role: string): boolean {
+  return role === 'foster_family' || role === 'volunteer'
 }

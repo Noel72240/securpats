@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { PETSITTER_VIP_PLAN } from '@/lib/stripe/petsitter-vip'
+import { apiUrl } from '@/lib/platform'
 
 export default function PetSitterSubscriptionSuccessPage() {
   const [searchParams] = useSearchParams()
@@ -21,7 +22,7 @@ export default function PetSitterSubscriptionSuccessPage() {
       return
     }
 
-    fetch('/api/stripe/verify-session', {
+    fetch(apiUrl('/api/stripe/verify-session'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId }),

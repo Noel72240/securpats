@@ -1,4 +1,5 @@
 import { getSupabaseSafe } from '@/lib/supabase/client'
+import { apiUrl } from '@/lib/platform'
 
 export type ReferentNotify = {
   firstName: string
@@ -52,13 +53,13 @@ export async function notifyReferentsEmergency(data: {
   }
 
   try {
-    const response = await fetch('/api/emergency/notify-referents', {
+    const response = await fetch(apiUrl('/api/emergency/alert'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ action: 'notify-referents', ...data }),
     })
 
     const text = await response.text()

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import {
-  SHOP_CATEGORIES,
+  categoryLabel,
+  animalTargetLabel,
   formatShopPrice,
   getProductBySlug,
 } from '@/lib/shop/catalog'
@@ -46,7 +47,8 @@ export default function ShopProductPage() {
     )
   }
 
-  const categoryLabel = SHOP_CATEGORIES.find(c => c.id === product.category)?.label
+  const catLabel = categoryLabel(product.category)
+  const animalLabel = animalTargetLabel(product.animalTarget)
 
   const handleAddToCart = () => {
     const err = addItem(product.id, {
@@ -97,12 +99,9 @@ export default function ShopProductPage() {
               </Card>
 
               <div>
-                {categoryLabel && (
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 mb-2">
-                    {categoryLabel}
-                  </p>
-                )}
-                <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3">{product.name}</h1>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 mb-2">
+                  {catLabel} · {animalLabel}
+                </p>                <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3">{product.name}</h1>
                 <p className="text-3xl font-extrabold text-brand-700 mb-6">
                   {formatShopPrice(product.priceCents)}
                 </p>

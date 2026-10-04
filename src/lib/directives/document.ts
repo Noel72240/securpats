@@ -1,8 +1,6 @@
 import { jsPDF } from 'jspdf'
 import type { AdvanceDirectives } from './types'
 
-const LOGO_ICON_URL = '/logo-securpats-icon.png'
-
 type DirectivesLike =
   | AdvanceDirectives
   | (Omit<AdvanceDirectives, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -26,22 +24,6 @@ const BRAND = {
   card: [248, 250, 252] as [number, number, number],
 }
 
-async function fetchAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    const blob = await res.blob()
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(String(reader.result))
-      reader.onerror = () => reject(reader.error)
-      reader.readAsDataURL(blob)
-    })
-  } catch {
-    return null
-  }
-}
-
 function formatSignedAt(iso: string | null): string {
   return (iso ? new Date(iso) : new Date()).toLocaleString('fr-FR')
 }
@@ -63,7 +45,7 @@ export async function buildDirectivesPdf(options: DirectivesDocOptions): Promise
   blob: Blob
   fileName: string
 }> {
-  const logoData = await fetchAsDataUrl(LOGO_ICON_URL)
+  const logoData: string | null = null
   // Du plus grand au plus petit : on veut le rendu le plus grand qui tient sur 1 page.
   // L’espace restant est ensuite réparti pour occuper toute la hauteur A4.
   const candidates = [1.4, 1.28, 1.16, 1.08, 1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.52]

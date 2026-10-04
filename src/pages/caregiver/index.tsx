@@ -4,34 +4,52 @@ import CaregiverDashboard from './CaregiverDashboard'
 import CaregiverProfilePage from './CaregiverProfilePage'
 import CaregiverAvailabilityPage from './CaregiverAvailabilityPage'
 
+/** Espace unifié bénévole / famille d'accueil */
+export function AidantRegisterPage() {
+  return <CaregiverRegisterPage />
+}
+export function AidantLoginPage() {
+  return <CaregiverLoginPage />
+}
+export function AidantDashboard() {
+  return <CaregiverDashboard />
+}
+export function AidantProfilePage() {
+  return <CaregiverProfilePage />
+}
+export function AidantAvailabilityPage() {
+  return <CaregiverAvailabilityPage />
+}
+
+/** Redirections / anciennes routes */
 export function FosterRegisterPage() {
-  return <CaregiverRegisterPage kind="foster_family" />
+  return <CaregiverRegisterPage />
 }
 export function FosterLoginPage() {
-  return <CaregiverLoginPage kind="foster_family" />
+  return <CaregiverLoginPage />
 }
 export function FosterDashboard() {
-  return <CaregiverDashboard kind="foster_family" />
+  return <CaregiverDashboard />
 }
 export function FosterProfilePage() {
-  return <CaregiverProfilePage kind="foster_family" />
+  return <CaregiverProfilePage />
 }
 export function FosterAvailabilityPage() {
-  return <CaregiverAvailabilityPage kind="foster_family" />
+  return <CaregiverAvailabilityPage />
 }
 
 export function VolunteerRegisterPage() {
-  return <CaregiverRegisterPage kind="volunteer" />
+  return <CaregiverRegisterPage />
 }
 export function VolunteerLoginPage() {
-  return <CaregiverLoginPage kind="volunteer" />
+  return <CaregiverLoginPage />
 }
 export function VolunteerDashboard() {
-  return <CaregiverDashboard kind="volunteer" />
+  return <CaregiverDashboard />
 }
 export function VolunteerProfilePage() {
-  return <CaregiverProfilePage kind="volunteer" />
+  return <CaregiverProfilePage />
 }
 export function VolunteerAvailabilityPage() {
-  return <CaregiverAvailabilityPage kind="volunteer" />
+  return <CaregiverAvailabilityPage />
 }

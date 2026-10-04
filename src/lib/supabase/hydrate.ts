@@ -19,13 +19,19 @@ type Setters = {
   setPetSitterProfile: Dispatch<SetStateAction<import('@/types').PetSitterProfile | null>>
   setCaregiverProfile: Dispatch<SetStateAction<import('@/types').CaregiverProfile | null>>
   setAllPetsitterProfiles: Dispatch<SetStateAction<import('@/types').PetSitterProfile[]>>
+  setAllCaregiverProfiles: Dispatch<SetStateAction<import('@/types').CaregiverProfile[]>>
   setAllSubscriptions: Dispatch<SetStateAction<import('@/types').Subscription[]>>
 }
 
 export async function hydrateUserData(user: User, setters: Setters) {
   if (user.role === 'admin') {
     const data = await loadAdminData()
-    setters.setRegisteredUsers(data.allUsers.filter(u => u.role !== 'admin'))
+    // Ne pas écraser avec une liste vide en cas d’erreur réseau / API
+    if (!data.profilesError || data.allUsers.length > 0) {
+      setters.setRegisteredUsers(data.allUsers.filter(u => u.role !== 'admin'))
+    } else {
+      console.error('[hydrateUserData] admin profiles failed:', data.profilesError)
+    }
     setters.setPets(data.pets)
     setters.setReferents(data.referents)
     setters.setDocuments(data.documents)
@@ -33,6 +39,7 @@ export async function hydrateUserData(user: User, setters: Setters) {
     setters.setSiteSettings(data.siteSettings)
     setters.setInvoices(data.invoices)
     setters.setAllPetsitterProfiles(data.petsitterProfiles)
+    setters.setAllCaregiverProfiles(data.caregiverProfiles)
     setters.setAllSubscriptions(data.subscriptions)
     return
   }
@@ -85,5 +92,6 @@ export function clearUserData(setters: Setters) {
   setters.setPetSitterProfile(null)
   setters.setCaregiverProfile(null)
   setters.setAllPetsitterProfiles([])
+  setters.setAllCaregiverProfiles([])
   setters.setAllSubscriptions([])
 }

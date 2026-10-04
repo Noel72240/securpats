@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyCors } from '../../server/lib/cors.js'
 import { verifyRequestUser } from '../../server/lib/verify-auth.js'
 import { getSupabaseAdmin, upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
 
@@ -16,6 +17,7 @@ function addYears(dateStr: string, years: number): string {
 
 /** Active l'abonnement si des factures payées existent sans subscription active (rattrapage). */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useApp } from '@/contexts/AppContext'
 import { SUBSCRIPTION_PLANS, type OwnerSubscriptionPlan } from '@/lib/stripe/plans'
+import { apiUrl } from '@/lib/platform'
 
 export default function SubscriptionSuccessPage() {
   const [searchParams] = useSearchParams()
@@ -22,7 +23,7 @@ export default function SubscriptionSuccessPage() {
       return
     }
 
-    fetch('/api/stripe/verify-session', {
+    fetch(apiUrl('/api/stripe/verify-session'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId }),

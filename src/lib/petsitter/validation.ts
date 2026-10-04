@@ -4,12 +4,20 @@ const ALLOWED_ID_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
+  'image/heic',
+  'image/heif',
   'application/pdf',
 ])
 
+const ALLOWED_EXT = /\.(jpe?g|png|webp|pdf|heic|heif)$/i
+
 export function validatePetsitterIdFile(file: File): string | null {
   if (!file) return 'La pièce d\'identité est obligatoire.'
-  if (!ALLOWED_ID_TYPES.has(file.type)) {
+  const name = file.name || ''
+  const typeOk = !file.type || ALLOWED_ID_TYPES.has(file.type)
+  const extOk = ALLOWED_EXT.test(name)
+  // Mobile : file.type souvent vide — on se fie alors à l’extension
+  if (!typeOk && !extOk) {
     return 'Format non accepté. Utilisez JPG, PNG, WEBP ou PDF.'
   }
   if (file.size > MAX_ID_FILE_BYTES) {

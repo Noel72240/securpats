@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, Loader2, Shield, ArrowLeft } from 'lucide-react'
-import { PublicLayout } from '@/components/layout/PublicLayout'
+import { AuthShell } from '@/components/layout/AuthShell'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -53,7 +53,7 @@ export default function PetSitterLoginPage() {
   }
 
   return (
-    <PublicLayout>
+    <AuthShell>
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-b from-blue-50/80 to-slate-50">
         <div className="max-w-md mx-auto px-4">
           <Link
@@ -124,6 +124,6 @@ export default function PetSitterLoginPage() {
           </Card>
         </div>
       </section>
-    </PublicLayout>
+    </AuthShell>
   )
 }

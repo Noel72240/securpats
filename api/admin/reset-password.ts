@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyCors } from '../../server/lib/cors.js'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
 import { verifyAdmin } from '../../server/lib/verify-admin.js'
@@ -13,6 +14,7 @@ function generateTempPassword(): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

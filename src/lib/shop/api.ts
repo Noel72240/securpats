@@ -1,5 +1,10 @@
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
-import type { ShopCategoryId, ShopProduct } from './types'
+import type { ShopAnimalTargetId, ShopCategoryId, ShopProduct } from './types'
+import {
+  normalizeShopAnimalTargetId,
+  normalizeShopCategoryId,
+} from './types'
+import { isValidParcelSizeId, type ParcelSizeId } from './mondial-relay'
 
 type ShopRow = {
   id: string
@@ -9,13 +14,19 @@ type ShopRow = {
   description: string
   price_cents: number
   category: string
+  animal_target?: string | null
   image_url: string
   image_alt: string
   highlights: string[] | null
   sizes_enabled: boolean
   sizes: string[] | null
+  parcel_size?: string | null
   active: boolean
   sort_order: number
+}
+
+function parcelFromRow(value: string | null | undefined): ParcelSizeId {
+  return isValidParcelSizeId(value) ? value : 'petit'
 }
 
 export function shopProductFromRow(row: ShopRow): ShopProduct {
@@ -26,12 +37,14 @@ export function shopProductFromRow(row: ShopRow): ShopProduct {
     shortDescription: row.short_description,
     description: row.description,
     priceCents: row.price_cents,
-    category: row.category as ShopCategoryId,
+    category: normalizeShopCategoryId(row.category),
+    animalTarget: normalizeShopAnimalTargetId(row.animal_target),
     imageUrl: row.image_url,
     imageAlt: row.image_alt || row.name,
     highlights: row.highlights ?? [],
     sizesEnabled: row.sizes_enabled,
     sizes: row.sizes ?? [],
+    parcelSize: parcelFromRow(row.parcel_size),
     active: row.active,
     sortOrder: row.sort_order,
   }
@@ -45,12 +58,14 @@ export function shopProductToRow(product: Partial<ShopProduct> & { id: string; s
     short_description: product.shortDescription ?? '',
     description: product.description ?? '',
     price_cents: product.priceCents,
-    category: product.category ?? 'kits',
+    category: normalizeShopCategoryId(product.category as ShopCategoryId | string | undefined),
+    animal_target: normalizeShopAnimalTargetId(product.animalTarget as ShopAnimalTargetId | string | undefined),
     image_url: product.imageUrl ?? '',
     image_alt: product.imageAlt ?? product.name,
     highlights: product.highlights ?? [],
     sizes_enabled: product.sizesEnabled ?? false,
     sizes: product.sizesEnabled ? (product.sizes ?? []) : [],
+    parcel_size: isValidParcelSizeId(product.parcelSize) ? product.parcelSize : 'petit',
     active: product.active ?? true,
     sort_order: product.sortOrder ?? 100,
     updated_at: new Date().toISOString(),

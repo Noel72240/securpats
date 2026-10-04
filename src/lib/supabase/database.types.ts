@@ -40,6 +40,11 @@ export type Database = {
           marketing_opt_in: boolean | null
           qr_token: string | null
           must_change_password: boolean
+          id_document_path: string | null
+          proof_of_address_path: string | null
+          identity_verified: boolean
+          identity_verified_at: string | null
+          last_availability_reminder_at: string | null
           created_at: string
         },
         {
@@ -58,6 +63,11 @@ export type Database = {
           marketing_opt_in?: boolean | null
           qr_token?: string | null
           must_change_password?: boolean
+          id_document_path?: string | null
+          proof_of_address_path?: string | null
+          identity_verified?: boolean
+          identity_verified_at?: string | null
+          last_availability_reminder_at?: string | null
           created_at?: string
         }
       >
@@ -238,6 +248,8 @@ export type Database = {
           address: string
           id_document_path: string | null
           proof_of_address_path: string | null
+          criminal_record_path: string | null
+          has_acaced: boolean | null
           available_days: string[]
           available_hours: string
           service_area: string
@@ -256,6 +268,8 @@ export type Database = {
           address?: string
           id_document_path?: string | null
           proof_of_address_path?: string | null
+          criminal_record_path?: string | null
+          has_acaced?: boolean | null
           available_days?: string[]
           available_hours?: string
           service_area?: string
@@ -269,34 +283,82 @@ export type Database = {
         {
           id: string
           user_id: string
-          kind: 'foster_family' | 'volunteer'
+          kind: 'foster_family' | 'volunteer' | 'both'
           photo: string | null
           bio: string
           phone: string
           email: string
           address: string
           department_code: string | null
+          birth_date: string | null
+          postal_code: string
+          city: string
+          engagement_types: string[]
+          intervention_radius_km: number | null
+          can_travel: boolean | null
+          has_vehicle: boolean | null
+          questionnaire: Json
+          id_document_path: string | null
+          proof_of_address_path: string | null
+          criminal_record_path: string | null
+          insurance_path: string | null
+          housing_photo_paths: string[]
+          outdoor_photo_paths: string[]
+          own_animals_photo_paths: string[]
+          about_me: string
+          motivation: string
+          important_notes: string
+          info_accuracy_at: string | null
+          charter_accepted_at: string | null
+          contact_authorized_at: string | null
+          confidentiality_accepted_at: string | null
           available_days: string[]
           available_hours: string
           service_area: string
           verified: boolean
+          verified_at: string | null
+          verification_notes: string
           created_at: string
           updated_at: string
         },
         {
           id?: string
           user_id: string
-          kind: 'foster_family' | 'volunteer'
+          kind: 'foster_family' | 'volunteer' | 'both'
           photo?: string | null
           bio?: string
           phone?: string
           email?: string
           address?: string
           department_code?: string | null
+          birth_date?: string | null
+          postal_code?: string
+          city?: string
+          engagement_types?: string[]
+          intervention_radius_km?: number | null
+          can_travel?: boolean | null
+          has_vehicle?: boolean | null
+          questionnaire?: Json
+          id_document_path?: string | null
+          proof_of_address_path?: string | null
+          criminal_record_path?: string | null
+          insurance_path?: string | null
+          housing_photo_paths?: string[]
+          outdoor_photo_paths?: string[]
+          own_animals_photo_paths?: string[]
+          about_me?: string
+          motivation?: string
+          important_notes?: string
+          info_accuracy_at?: string | null
+          charter_accepted_at?: string | null
+          contact_authorized_at?: string | null
+          confidentiality_accepted_at?: string | null
           available_days?: string[]
           available_hours?: string
           service_area?: string
           verified?: boolean
+          verified_at?: string | null
+          verification_notes?: string
           created_at?: string
           updated_at?: string
         }
@@ -338,11 +400,13 @@ export type Database = {
           description: string
           price_cents: number
           category: string
+          animal_target: string
           image_url: string
           image_alt: string
           highlights: string[]
           sizes_enabled: boolean
           sizes: string[]
+          parcel_size: string
           active: boolean
           sort_order: number
           created_at: string
@@ -356,11 +420,13 @@ export type Database = {
           description?: string
           price_cents: number
           category?: string
+          animal_target?: string
           image_url?: string
           image_alt?: string
           highlights?: string[]
           sizes_enabled?: boolean
           sizes?: string[]
+          parcel_size?: string
           active?: boolean
           sort_order?: number
           created_at?: string

@@ -8,22 +8,31 @@ import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import {
   SHOP_CATEGORIES,
+  SHOP_ANIMAL_TARGETS,
   formatShopPrice,
   getShopProductsCache,
+  categoryLabel,
+  animalTargetLabel,
   type ShopCategoryId,
+  type ShopAnimalTargetId,
 } from '@/lib/shop/catalog'
 import { useShopCart } from '@/lib/shop/cart'
 import { useI18n } from '@/i18n/LanguageContext'
 
 export default function ShopPage() {
   const [category, setCategory] = useState<ShopCategoryId | 'all'>('all')
+  const [animal, setAnimal] = useState<ShopAnimalTargetId | 'all'>('all')
   const { itemCount, catalogReady } = useShopCart()
   const { t } = useI18n()
 
   const products = useMemo(() => {
     const catalog = getShopProductsCache()
-    return category === 'all' ? catalog : catalog.filter(p => p.category === category)
-  }, [category, catalogReady])
+    return catalog.filter(p => {
+      if (category !== 'all' && p.category !== category) return false
+      if (animal !== 'all' && p.animalTarget !== animal) return false
+      return true
+    })
+  }, [category, animal, catalogReady])
 
   return (
     <PublicLayout>
@@ -75,34 +84,66 @@ export default function ShopPage() {
 
         <section className="py-10 lg:py-14">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap gap-2 mb-8">
-              <button
-                type="button"
-                onClick={() => setCategory('all')}
-                className={cn(
-                  'px-4 py-2 rounded-full text-sm font-semibold transition-colors',
-                  category === 'all'
-                    ? 'bg-brand-600 text-white shadow-sm'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-200 hover:text-brand-700',
-                )}
-              >
-                {t('shop.all')}
-              </button>
-              {SHOP_CATEGORIES.map(cat => (
+            <div className="space-y-4 mb-8">
+              <div className="flex flex-wrap gap-2">
                 <button
-                  key={cat.id}
                   type="button"
-                  onClick={() => setCategory(cat.id)}
+                  onClick={() => setCategory('all')}
                   className={cn(
                     'px-4 py-2 rounded-full text-sm font-semibold transition-colors',
-                    category === cat.id
+                    category === 'all'
                       ? 'bg-brand-600 text-white shadow-sm'
                       : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-200 hover:text-brand-700',
                   )}
                 >
-                  {cat.label}
+                  {t('shop.all')}
                 </button>
-              ))}
+                {SHOP_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(cat.id)}
+                    className={cn(
+                      'px-4 py-2 rounded-full text-sm font-semibold transition-colors',
+                      category === cat.id
+                        ? 'bg-brand-600 text-white shadow-sm'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-200 hover:text-brand-700',
+                    )}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 mr-1">Animal</span>
+                <button
+                  type="button"
+                  onClick={() => setAnimal('all')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-semibold transition-colors',
+                    animal === 'all'
+                      ? 'bg-slate-800 text-white'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300',
+                  )}
+                >
+                  Tous
+                </button>
+                {SHOP_ANIMAL_TARGETS.map(a => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setAnimal(a.id)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs font-semibold transition-colors',
+                      animal === a.id
+                        ? 'bg-slate-800 text-white'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300',
+                    )}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {!catalogReady ? (
@@ -128,7 +169,7 @@ export default function ShopPage() {
                       </div>
                       <div className="p-5">
                         <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 mb-1">
-                          {SHOP_CATEGORIES.find(c => c.id === product.category)?.label}
+                          {categoryLabel(product.category)} · {animalTargetLabel(product.animalTarget)}
                         </p>
                         <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-brand-700 transition-colors">
                           {product.name}

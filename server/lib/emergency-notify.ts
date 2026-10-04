@@ -29,13 +29,26 @@ export function normalizeFrenchPhone(phone: string): string | null {
   return null
 }
 
-export async function sendEmail(to: string, subject: string, html: string) {
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  opts?: { replyTo?: string },
+) {
   const apiKey = process.env.RESEND_API_KEY
   const rawFrom = (process.env.RESEND_FROM_EMAIL || 'contact@securpats.fr').trim()
-  if (!apiKey) return { sent: false, error: 'RESEND_API_KEY non configurée' }
+  if (!apiKey) return { sent: false, error: 'RESEND_API_KEY non configurée', to: null as string | null }
+
+  const recipient = to.trim().toLowerCase()
+  if (!recipient || !recipient.includes('@')) {
+    return { sent: false, error: 'Destinataire email invalide', to: recipient || null }
+  }
 
   // Accepte "email@domaine.fr" ou "Nom <email@domaine.fr>"
   const from = rawFrom.includes('<') ? rawFrom : `SécurPats <${rawFrom}>`
+  const replyTo = (opts?.replyTo || process.env.RESEND_REPLY_TO || '').trim() || undefined
+
+  console.info('[sendEmail] sending', { to: recipient, from: rawFrom, subject })
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -45,18 +58,24 @@ export async function sendEmail(to: string, subject: string, html: string) {
     },
     body: JSON.stringify({
       from,
-      to: [to],
+      to: [recipient],
       subject,
       html,
+      ...(replyTo ? { reply_to: replyTo } : {}),
     }),
   })
 
   if (!res.ok) {
     const body = await res.text()
-    console.error('[sendEmail] Resend error:', res.status, body)
-    return { sent: false, error: body || res.statusText }
+    console.error('[sendEmail] Resend error:', res.status, body, { to: recipient })
+    let error = body || res.statusText
+    if (/only send testing emails to your own email/i.test(body)) {
+      error =
+        'Resend n’autorise l’envoi qu’à l’email du compte Resend. Vérifiez le domaine securpats.fr sur resend.com/domains et utilisez RESEND_FROM_EMAIL avec ce domaine.'
+    }
+    return { sent: false, error, to: recipient }
   }
-  return { sent: true, error: null as string | null }
+  return { sent: true, error: null as string | null, to: recipient }
 }
 
 export async function sendSms(to: string, body: string) {
