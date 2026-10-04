@@ -45,6 +45,7 @@ type Draft = {
   sizesEnabled: boolean
   sizes: string[]
   parcelSize: ParcelSizeId
+  stockQty: string
   active: boolean
   sortOrder: string
   isNew: boolean
@@ -66,6 +67,7 @@ function emptyDraft(): Draft {
     sizesEnabled: false,
     sizes: ['S', 'M', 'L'],
     parcelSize: 'petit',
+    stockQty: '100',
     active: true,
     sortOrder: '100',
     isNew: true,
@@ -88,6 +90,7 @@ function productToDraft(p: ShopProduct): Draft {
     sizesEnabled: p.sizesEnabled,
     sizes: p.sizes.length ? p.sizes : ['S', 'M', 'L'],
     parcelSize: p.parcelSize || 'petit',
+    stockQty: String(typeof p.stockQty === 'number' ? p.stockQty : 0),
     active: p.active,
     sortOrder: String(p.sortOrder),
     isNew: false,
@@ -192,6 +195,11 @@ export default function AdminShopPage() {
       setError('Activez au moins une taille, ou désactivez les tailles.')
       return
     }
+    const stockQty = Math.floor(Number(String(draft.stockQty).replace(',', '.')))
+    if (!Number.isFinite(stockQty) || stockQty < 0) {
+      setError('Stock invalide (nombre entier ≥ 0).')
+      return
+    }
 
     const id = (draft.id || slugifyProductName(draft.name)).trim()
     const slug = (draft.slug || id).trim()
@@ -210,6 +218,7 @@ export default function AdminShopPage() {
       sizesEnabled: draft.sizesEnabled,
       sizes: draft.sizesEnabled ? draft.sizes : [],
       parcelSize: draft.parcelSize,
+      stockQty,
       active: draft.active,
       sortOrder: Number(draft.sortOrder) || 100,
     }
@@ -222,9 +231,11 @@ export default function AdminShopPage() {
       setError(
         err.includes('animal_target')
           ? 'Colonne manquante : exécutez supabase/migrations/031_shop_categories_animal.sql dans Supabase SQL Editor.'
-          : err.includes('parcel_size')
-            ? 'Colonne manquante : exécutez supabase/migrations/030_shop_parcel_size.sql dans Supabase SQL Editor.'
-            : err,
+          : err.includes('stock_qty') || err.includes('shop_checkout_intents') || err.includes('decrement_shop_stock')
+            ? 'Colonne / fonction stock manquante : exécutez supabase/migrations/032_shop_stock.sql dans Supabase SQL Editor.'
+            : err.includes('parcel_size')
+              ? 'Colonne manquante : exécutez supabase/migrations/030_shop_parcel_size.sql dans Supabase SQL Editor.'
+              : err,
       )
       return
     }
@@ -310,6 +321,13 @@ export default function AdminShopPage() {
                   <h3 className="font-semibold text-slate-900 leading-snug">{p.name}</h3>
                   <p className="text-lg font-bold text-brand-700">{formatShopPrice(p.priceCents)}</p>
                   <p className="text-xs text-slate-500">
+                    Stock :{' '}
+                    <span className={p.stockQty <= 0 ? 'text-red-600 font-semibold' : 'font-semibold text-slate-700'}>
+                      {p.stockQty}
+                    </span>
+                    {p.stockQty <= 0 ? ' — rupture' : ''}
+                  </p>
+                  <p className="text-xs text-slate-500">
                     Colis : {PARCEL_SIZES.find(s => s.id === p.parcelSize)?.label ?? 'Petit'} ·{' '}
                     {formatShopPrice(PARCEL_SIZES.find(s => s.id === (p.parcelSize || 'petit'))?.priceCents ?? 390)}
                   </p>
@@ -379,6 +397,14 @@ export default function AdminShopPage() {
                 onChange={e => patchDraft({ priceEuros: e.target.value })}
                 placeholder="19,90"
               />
+              <Input
+                label="Stock disponible *"
+                value={draft.stockQty}
+                onChange={e => patchDraft({ stockQty: e.target.value })}
+                placeholder="ex. 4"
+              />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
               <Input
                 label="Ordre d’affichage"
                 value={draft.sortOrder}

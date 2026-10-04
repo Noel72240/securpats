@@ -82,6 +82,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((productId: string, options?: { quantity?: number; size?: string }): string | null => {
     const product = getProductById(productId)
     if (!product || !product.active) return 'Produit indisponible'
+    if (product.stockQty <= 0) return 'Produit en rupture de stock'
     if (product.sizesEnabled) {
       if (!options?.size || !product.sizes.includes(options.size)) {
         return 'Choisissez une taille'
@@ -89,25 +90,44 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     }
     const size = product.sizesEnabled ? options?.size : undefined
     const delta = Math.min(Math.max(Math.floor(options?.quantity ?? 1) || 1, 1), MAX_QUANTITY)
+    let error: string | null = null
     setItems(prev => {
       const existing = prev.find(line => line.productId === productId && (line.size || '') === (size || ''))
-      if (!existing) return [...prev, { productId, size, quantity: delta }]
+      const alreadyForProduct = prev
+        .filter(line => line.productId === productId)
+        .reduce((sum, line) => sum + line.quantity, 0)
+      const room = Math.max(0, product.stockQty - alreadyForProduct)
+      if (room <= 0) {
+        error = `Stock insuffisant (disponible : ${product.stockQty})`
+        return prev
+      }
+      const addQty = Math.min(delta, room, MAX_QUANTITY)
+      if (!existing) return [...prev, { productId, size, quantity: addQty }]
       return prev.map(line =>
         lineKey(line.productId, line.size) === lineKey(productId, size)
-          ? { ...line, quantity: Math.min(line.quantity + delta, MAX_QUANTITY) }
+          ? { ...line, quantity: Math.min(line.quantity + addQty, MAX_QUANTITY) }
           : line,
       )
     })
-    return null
+    return error
   }, [])
 
   const setQuantity = useCallback((productId: string, quantity: number, size?: string) => {
-    const qty = Math.min(Math.max(Math.floor(quantity) || 0, 0), MAX_QUANTITY)
+    const product = getProductById(productId)
+    const maxStock = product?.stockQty ?? MAX_QUANTITY
+    const qty = Math.min(Math.max(Math.floor(quantity) || 0, 0), MAX_QUANTITY, Math.max(0, maxStock))
     setItems(prev => {
       if (qty <= 0) return prev.filter(line => !(line.productId === productId && (line.size || '') === (size || '')))
+      const otherForProduct = prev
+        .filter(line => line.productId === productId && (line.size || '') !== (size || ''))
+        .reduce((sum, line) => sum + line.quantity, 0)
+      const capped = Math.min(qty, Math.max(0, maxStock - otherForProduct))
+      if (capped <= 0) {
+        return prev.filter(line => !(line.productId === productId && (line.size || '') === (size || '')))
+      }
       return prev.map(line =>
         line.productId === productId && (line.size || '') === (size || '')
-          ? { ...line, quantity: qty }
+          ? { ...line, quantity: capped }
           : line,
       )
     })

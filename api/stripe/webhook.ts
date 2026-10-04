@@ -4,6 +4,7 @@ import { insertOwnerInvoice, upsertOwnerSubscription, PLAN_PRICES } from '../../
 import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } from '../../server/lib/stripe-helpers.js'
 import { getStripeClient } from '../../server/lib/stripe-client.js'
 import { stripeGet } from '../../server/lib/stripe-api.js'
+import { applyShopStockForPaidSession } from '../../server/lib/shop-stock.js'
 
 export const config = {
   api: { bodyParser: false },
@@ -37,6 +38,16 @@ function formatDate(ts: number) {
 }
 
 async function syncCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (session.metadata?.source === 'shop') {
+    if (session.payment_status === 'paid' || session.status === 'complete') {
+      const stock = await applyShopStockForPaidSession(session.id)
+      if (!stock.ok) {
+        console.error('[Stripe webhook] shop stock', session.id, stock.error)
+      }
+    }
+    return
+  }
+
   const userId = session.metadata?.userId
   if (!userId) return
 

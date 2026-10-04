@@ -49,6 +49,8 @@ export default function ShopProductPage() {
 
   const catLabel = categoryLabel(product.category)
   const animalLabel = animalTargetLabel(product.animalTarget)
+  const outOfStock = product.stockQty <= 0
+  const maxQty = Math.min(20, Math.max(1, product.stockQty))
 
   const handleAddToCart = () => {
     const err = addItem(product.id, {
@@ -101,9 +103,13 @@ export default function ShopProductPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 mb-2">
                   {catLabel} · {animalLabel}
-                </p>                <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3">{product.name}</h1>
-                <p className="text-3xl font-extrabold text-brand-700 mb-6">
+                </p>
+                <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3">{product.name}</h1>
+                <p className="text-3xl font-extrabold text-brand-700 mb-2">
                   {formatShopPrice(product.priceCents)}
+                </p>
+                <p className={`text-sm font-medium mb-6 ${outOfStock ? 'text-red-600' : 'text-slate-500'}`}>
+                  {outOfStock ? 'Rupture de stock' : `${product.stockQty} en stock`}
                 </p>
                 <p className="text-slate-600 leading-relaxed mb-6">{product.description}</p>
 
@@ -142,28 +148,35 @@ export default function ShopProductPage() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-4">
-                  <div className="inline-flex items-center rounded-xl border border-slate-200 overflow-hidden">
-                    <button
-                      type="button"
-                      aria-label="Diminuer la quantité"
-                      className="p-3 hover:bg-brand-50 text-slate-600"
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="w-12 text-center font-semibold text-slate-900">{quantity}</span>
-                    <button
-                      type="button"
-                      aria-label="Augmenter la quantité"
-                      className="p-3 hover:bg-brand-50 text-slate-600"
-                      onClick={() => setQuantity(q => Math.min(20, q + 1))}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {!outOfStock && (
+                    <div className="inline-flex items-center rounded-xl border border-slate-200 overflow-hidden">
+                      <button
+                        type="button"
+                        aria-label="Diminuer la quantité"
+                        className="p-3 hover:bg-brand-50 text-slate-600"
+                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="w-12 text-center font-semibold text-slate-900">{quantity}</span>
+                      <button
+                        type="button"
+                        aria-label="Augmenter la quantité"
+                        className="p-3 hover:bg-brand-50 text-slate-600"
+                        onClick={() => setQuantity(q => Math.min(maxQty, q + 1))}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
 
-                  <Button size="lg" icon={ShoppingCart} onClick={handleAddToCart}>
-                    Ajouter au panier
+                  <Button
+                    size="lg"
+                    icon={ShoppingCart}
+                    onClick={handleAddToCart}
+                    disabled={outOfStock}
+                  >
+                    {outOfStock ? 'Indisponible' : 'Ajouter au panier'}
                   </Button>
 
                   <Link to="/boutique/panier">

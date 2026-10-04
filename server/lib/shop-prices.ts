@@ -14,6 +14,7 @@ export type ShopPriceRow = {
   sizes_enabled: boolean
   sizes: string[] | null
   parcel_size?: string | null
+  stock_qty?: number | null
 }
 
 export type ResolvedShopLine = {
@@ -50,11 +51,11 @@ export async function resolveShopLinePrices(
 
   const { data, error } = await supabase
     .from('shop_products')
-    .select('id, name, price_cents, active, sizes_enabled, sizes, parcel_size')
+    .select('id, name, price_cents, active, sizes_enabled, sizes, parcel_size, stock_qty')
     .in('id', ids)
 
   if (error) {
-    // Colonne parcel_size absente (migration 030) → retry sans
+    // Colonnes absentes (migrations) → retry sans stock / parcel
     const retry = await supabase
       .from('shop_products')
       .select('id, name, price_cents, active, sizes_enabled, sizes')
@@ -111,6 +112,14 @@ export async function resolveShopLinePrices(
 
   const byId = new Map((data as ShopPriceRow[]).map(r => [r.id, r]))
   const lines: ResolvedShopLine[] = []
+  // Somme des quantités demandées par produit (toutes tailles)
+  const requestedByProduct = new Map<string, number>()
+
+  for (const item of items) {
+    const qty = Math.min(Math.max(Number(item.quantity) || 0, 0), 20)
+    if (!qty || !item.productId) continue
+    requestedByProduct.set(item.productId, (requestedByProduct.get(item.productId) || 0) + qty)
+  }
 
   for (const item of items) {
     const qty = Math.min(Math.max(Number(item.quantity) || 0, 0), 20)
@@ -123,6 +132,19 @@ export async function resolveShopLinePrices(
       const allowed = product.sizes ?? []
       if (!item.size || !allowed.includes(item.size)) {
         return { ok: false, error: `Taille requise pour ${product.name}` }
+      }
+    }
+    const stock = typeof product.stock_qty === 'number' ? product.stock_qty : null
+    if (stock !== null) {
+      const needed = requestedByProduct.get(product.id) || qty
+      if (stock <= 0) {
+        return { ok: false, error: `Rupture de stock : ${product.name}` }
+      }
+      if (needed > stock) {
+        return {
+          ok: false,
+          error: `Stock insuffisant pour « ${product.name} » (disponible : ${stock})`,
+        }
       }
     }
     const parcelSize: ParcelSizeId = isValidParcelSizeId(product.parcel_size) ? product.parcel_size : 'petit'

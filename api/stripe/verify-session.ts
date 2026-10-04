@@ -3,6 +3,7 @@ import { applyCors } from '../../server/lib/cors.js'
 import { getSubscriptionPeriodEnd } from '../../server/lib/stripe-helpers.js'
 import { stripeGet } from '../../server/lib/stripe-api.js'
 import { upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
+import { applyShopStockForPaidSession } from '../../server/lib/shop-stock.js'
 
 type Plan = keyof typeof PLAN_PRICES
 
@@ -27,7 +28,7 @@ type StripeSubscription = {
 type CheckoutSessionResponse = {
   payment_status: string
   status: string | null
-  metadata?: { plan?: string; userId?: string }
+  metadata?: { plan?: string; userId?: string; source?: string }
   customer: string | { id?: string } | null
   subscription: string | StripeSubscription | null
 }
@@ -54,6 +55,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (session.payment_status !== 'paid' && session.status !== 'complete') {
       return res.status(400).json({ error: 'Paiement non confirmé' })
+    }
+
+    // Boutique : filet de sécurité si le webhook n’a pas encore appliqué le stock
+    if (session.metadata?.source === 'shop') {
+      await applyShopStockForPaidSession(sessionId)
+      return res.status(200).json({ ok: true, source: 'shop' })
     }
 
     const plan = planFromMetadata(session.metadata?.plan)

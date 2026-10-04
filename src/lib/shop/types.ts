@@ -32,6 +32,8 @@ export type ShopProduct = {
   category: ShopCategoryId
   /** Animal(s) concerné(s) — indépendant de la catégorie. */
   animalTarget: ShopAnimalTargetId
+  /** Quantité en stock (décrémentée à chaque vente). */
+  stockQty: number
   imageUrl: string
   imageAlt: string
   highlights: string[]

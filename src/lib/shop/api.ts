@@ -21,6 +21,7 @@ type ShopRow = {
   sizes_enabled: boolean
   sizes: string[] | null
   parcel_size?: string | null
+  stock_qty?: number | null
   active: boolean
   sort_order: number
 }
@@ -45,6 +46,9 @@ export function shopProductFromRow(row: ShopRow): ShopProduct {
     sizesEnabled: row.sizes_enabled,
     sizes: row.sizes ?? [],
     parcelSize: parcelFromRow(row.parcel_size),
+    stockQty: typeof row.stock_qty === 'number' && Number.isFinite(row.stock_qty)
+      ? Math.max(0, Math.floor(row.stock_qty))
+      : 0,
     active: row.active,
     sortOrder: row.sort_order,
   }
@@ -66,6 +70,9 @@ export function shopProductToRow(product: Partial<ShopProduct> & { id: string; s
     sizes_enabled: product.sizesEnabled ?? false,
     sizes: product.sizesEnabled ? (product.sizes ?? []) : [],
     parcel_size: isValidParcelSizeId(product.parcelSize) ? product.parcelSize : 'petit',
+    stock_qty: typeof product.stockQty === 'number'
+      ? Math.max(0, Math.floor(product.stockQty))
+      : 0,
     active: product.active ?? true,
     sort_order: product.sortOrder ?? 100,
     updated_at: new Date().toISOString(),

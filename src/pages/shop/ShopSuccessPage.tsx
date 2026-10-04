@@ -1,18 +1,35 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CheckCircle, ShoppingBag } from 'lucide-react'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { PageSEO } from '@/components/seo/PageSEO'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useShopCart } from '@/lib/shop/cart'
+import { apiUrl } from '@/lib/platform'
 
 export default function ShopSuccessPage() {
-  const { clearCart } = useShopCart()
+  const { clearCart, reloadCatalog } = useShopCart()
+  const [params] = useSearchParams()
+  const sessionId = params.get('session_id')
 
   useEffect(() => {
     clearCart()
-  }, [clearCart])
+    void (async () => {
+      if (sessionId) {
+        try {
+          await fetch(apiUrl('/api/stripe/verify-session'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          })
+        } catch {
+          // Le webhook Stripe reste la source principale
+        }
+      }
+      await reloadCatalog()
+    })()
+  }, [clearCart, reloadCatalog, sessionId])
 
   return (
     <PublicLayout>

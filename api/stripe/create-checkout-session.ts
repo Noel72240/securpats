@@ -4,6 +4,7 @@ import { verifyRequestUser } from '../../server/lib/verify-auth.js'
 import { stripePostForm } from '../../server/lib/stripe-api.js'
 import { arePaymentsBlockedOnServer } from '../../server/lib/site-settings.js'
 import { resolveShopLinePrices, shippingCentsForParcel } from '../../server/lib/shop-prices.js'
+import { saveShopCheckoutIntent } from '../../server/lib/shop-stock.js'
 import {
   getParcelSize,
   isRelaySearchConfigured,
@@ -124,6 +125,20 @@ async function createShopSession(
   }
 
   const session = await stripePostForm<CheckoutSessionResponse>('/checkout/sessions', fields)
+
+  const intent = await saveShopCheckoutIntent({
+    stripeSessionId: session.id,
+    customerEmail: customerEmail || undefined,
+    items: resolved.lines.map(line => ({
+      id: line.productId,
+      q: line.quantity,
+      s: line.size || undefined,
+    })),
+  })
+  if (!intent.ok) {
+    console.error('[shop checkout intent]', intent.error)
+  }
+
   return res.status(200).json({ sessionId: session.id, url: session.url })
 }
 
