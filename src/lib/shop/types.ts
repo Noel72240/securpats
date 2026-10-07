@@ -5,6 +5,7 @@ export type ShopCategoryId =
   | 'jeux-occupation'
   | 'confort-accessoires'
   | 'kits-securpats'
+  | 'produits-numeriques'
 
 /** Anciennes catégories (migration / données legacy). */
 const LEGACY_CATEGORY_MAP: Record<string, ShopCategoryId> = {
@@ -52,6 +53,7 @@ export const SHOP_CATEGORIES: { id: ShopCategoryId; label: string }[] = [
   { id: 'jeux-occupation', label: 'Jeux & occupation' },
   { id: 'confort-accessoires', label: 'Confort & accessoires' },
   { id: 'kits-securpats', label: 'Kits SecurPats' },
+  { id: 'produits-numeriques', label: 'Produits numériques' },
 ]
 
 export const SHOP_ANIMAL_TARGETS: { id: ShopAnimalTargetId; label: string }[] = [
