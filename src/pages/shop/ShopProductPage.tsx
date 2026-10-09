@@ -110,12 +110,13 @@ export default function ShopProductPage() {
                 <p className="text-3xl font-extrabold text-brand-700 mb-2">
                   {formatShopPrice(product.priceCents)}
                 </p>
-                {tracksStock && (
+                {tracksStock ? (
                   <p className={`text-sm font-medium mb-6 ${outOfStock ? 'text-red-600' : 'text-slate-500'}`}>
                     {outOfStock ? 'Rupture de stock' : `${product.stockQty} en stock`}
                   </p>
+                ) : (
+                  <p className="text-sm font-medium text-brand-700 mb-6">Téléchargement numérique</p>
                 )}
-                {!tracksStock && <div className="mb-6" />}
 
                 <p className="text-slate-600 leading-relaxed mb-6">{product.description}</p>
 
