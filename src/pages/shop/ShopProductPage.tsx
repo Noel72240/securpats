@@ -11,6 +11,7 @@ import {
   animalTargetLabel,
   formatShopPrice,
   getProductBySlug,
+  shopProductTracksStock,
 } from '@/lib/shop/catalog'
 import { useShopCart } from '@/lib/shop/cart'
 
@@ -49,8 +50,9 @@ export default function ShopProductPage() {
 
   const catLabel = categoryLabel(product.category)
   const animalLabel = animalTargetLabel(product.animalTarget)
-  const outOfStock = product.stockQty <= 0
-  const maxQty = Math.min(20, Math.max(1, product.stockQty))
+  const tracksStock = shopProductTracksStock(product.category)
+  const outOfStock = tracksStock && product.stockQty <= 0
+  const maxQty = tracksStock ? Math.min(20, Math.max(1, product.stockQty)) : 20
 
   const handleAddToCart = () => {
     const err = addItem(product.id, {
@@ -108,9 +110,13 @@ export default function ShopProductPage() {
                 <p className="text-3xl font-extrabold text-brand-700 mb-2">
                   {formatShopPrice(product.priceCents)}
                 </p>
-                <p className={`text-sm font-medium mb-6 ${outOfStock ? 'text-red-600' : 'text-slate-500'}`}>
-                  {outOfStock ? 'Rupture de stock' : `${product.stockQty} en stock`}
-                </p>
+                {tracksStock && (
+                  <p className={`text-sm font-medium mb-6 ${outOfStock ? 'text-red-600' : 'text-slate-500'}`}>
+                    {outOfStock ? 'Rupture de stock' : `${product.stockQty} en stock`}
+                  </p>
+                )}
+                {!tracksStock && <div className="mb-6" />}
+
                 <p className="text-slate-600 leading-relaxed mb-6">{product.description}</p>
 
                 {product.highlights.length > 0 && (

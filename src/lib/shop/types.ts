@@ -122,3 +122,15 @@ export function animalTargetLabel(id: string): string {
   const normalized = normalizeShopAnimalTargetId(id)
   return SHOP_ANIMAL_TARGETS.find(a => a.id === normalized)?.label ?? id
 }
+
+/** Produits numériques : pas de stock (quantité illimitée). */
+export function isDigitalShopCategory(category: string | null | undefined): boolean {
+  return normalizeShopCategoryId(category) === 'produits-numeriques'
+}
+
+export function shopProductTracksStock(category: string | null | undefined): boolean {
+  return !isDigitalShopCategory(category)
+}
+
+/** Valeur stock stockée en base pour les produits numériques (jamais affichée). */
+export const DIGITAL_PRODUCT_STOCK_QTY = 999999

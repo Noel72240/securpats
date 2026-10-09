@@ -14,6 +14,9 @@ export {
   animalTargetLabel,
   normalizeShopCategoryId,
   normalizeShopAnimalTargetId,
+  isDigitalShopCategory,
+  shopProductTracksStock,
+  DIGITAL_PRODUCT_STOCK_QTY,
 } from './types'
 
 export {

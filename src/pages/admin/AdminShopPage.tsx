@@ -16,10 +16,12 @@ import {
   SHOP_CATEGORIES,
   SHOP_ANIMAL_TARGETS,
   DEFAULT_SIZE_OPTIONS,
+  DIGITAL_PRODUCT_STOCK_QTY,
   formatShopPrice,
   slugifyProductName,
   categoryLabel,
   animalTargetLabel,
+  shopProductTracksStock,
   loadShopCatalog,
   PARCEL_SIZES,
   type ShopCategoryId,
@@ -195,10 +197,14 @@ export default function AdminShopPage() {
       setError('Activez au moins une taille, ou désactivez les tailles.')
       return
     }
-    const stockQty = Math.floor(Number(String(draft.stockQty).replace(',', '.')))
-    if (!Number.isFinite(stockQty) || stockQty < 0) {
-      setError('Stock invalide (nombre entier ≥ 0).')
-      return
+    const tracksStock = shopProductTracksStock(draft.category)
+    let stockQty = DIGITAL_PRODUCT_STOCK_QTY
+    if (tracksStock) {
+      stockQty = Math.floor(Number(String(draft.stockQty).replace(',', '.')))
+      if (!Number.isFinite(stockQty) || stockQty < 0) {
+        setError('Stock invalide (nombre entier ≥ 0).')
+        return
+      }
     }
 
     const id = (draft.id || slugifyProductName(draft.name)).trim()
@@ -320,13 +326,17 @@ export default function AdminShopPage() {
                   </p>
                   <h3 className="font-semibold text-slate-900 leading-snug">{p.name}</h3>
                   <p className="text-lg font-bold text-brand-700">{formatShopPrice(p.priceCents)}</p>
-                  <p className="text-xs text-slate-500">
-                    Stock :{' '}
-                    <span className={p.stockQty <= 0 ? 'text-red-600 font-semibold' : 'font-semibold text-slate-700'}>
-                      {p.stockQty}
-                    </span>
-                    {p.stockQty <= 0 ? ' — rupture' : ''}
-                  </p>
+                  {shopProductTracksStock(p.category) ? (
+                    <p className="text-xs text-slate-500">
+                      Stock :{' '}
+                      <span className={p.stockQty <= 0 ? 'text-red-600 font-semibold' : 'font-semibold text-slate-700'}>
+                        {p.stockQty}
+                      </span>
+                      {p.stockQty <= 0 ? ' — rupture' : ''}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">Stock : illimité (numérique)</p>
+                  )}
                   <p className="text-xs text-slate-500">
                     Colis : {PARCEL_SIZES.find(s => s.id === p.parcelSize)?.label ?? 'Petit'} ·{' '}
                     {formatShopPrice(PARCEL_SIZES.find(s => s.id === (p.parcelSize || 'petit'))?.priceCents ?? 390)}
@@ -397,12 +407,19 @@ export default function AdminShopPage() {
                 onChange={e => patchDraft({ priceEuros: e.target.value })}
                 placeholder="19,90"
               />
-              <Input
-                label="Stock disponible *"
-                value={draft.stockQty}
-                onChange={e => patchDraft({ stockQty: e.target.value })}
-                placeholder="ex. 4"
-              />
+              {shopProductTracksStock(draft.category) ? (
+                <Input
+                  label="Stock disponible *"
+                  value={draft.stockQty}
+                  onChange={e => patchDraft({ stockQty: e.target.value })}
+                  placeholder="ex. 4"
+                />
+              ) : (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <p className="font-medium text-slate-800">Produit numérique</p>
+                  <p className="text-xs mt-1">Pas de stock / quantité limitée pour cette catégorie.</p>
+                </div>
+              )}
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <Input

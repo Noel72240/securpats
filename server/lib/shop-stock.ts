@@ -60,7 +60,19 @@ export async function applyShopStockForPaidSession(stripeSessionId: string): Pro
     byProduct.set(id, (byProduct.get(id) || 0) + q)
   }
 
+  const productIds = [...byProduct.keys()]
+  const { data: productRows } = await supabase
+    .from('shop_products')
+    .select('id, category')
+    .in('id', productIds)
+  const categoryById = new Map(
+    ((productRows ?? []) as { id: string; category?: string | null }[]).map(p => [p.id, p.category ?? '']),
+  )
+
   for (const [productId, qty] of byProduct) {
+    // Produits numériques : pas de décrément de stock
+    if (categoryById.get(productId) === 'produits-numeriques') continue
+
     const { data: ok, error: rpcErr } = await supabase.rpc('decrement_shop_stock', {
       p_product_id: productId,
       p_qty: qty,

@@ -15,6 +15,11 @@ export type ShopPriceRow = {
   sizes: string[] | null
   parcel_size?: string | null
   stock_qty?: number | null
+  category?: string | null
+}
+
+function isDigitalCategory(category: string | null | undefined): boolean {
+  return category === 'produits-numeriques'
 }
 
 export type ResolvedShopLine = {
@@ -51,7 +56,7 @@ export async function resolveShopLinePrices(
 
   const { data, error } = await supabase
     .from('shop_products')
-    .select('id, name, price_cents, active, sizes_enabled, sizes, parcel_size, stock_qty')
+    .select('id, name, price_cents, active, sizes_enabled, sizes, parcel_size, stock_qty, category')
     .in('id', ids)
 
   if (error) {
@@ -134,16 +139,19 @@ export async function resolveShopLinePrices(
         return { ok: false, error: `Taille requise pour ${product.name}` }
       }
     }
-    const stock = typeof product.stock_qty === 'number' ? product.stock_qty : null
-    if (stock !== null) {
-      const needed = requestedByProduct.get(product.id) || qty
-      if (stock <= 0) {
-        return { ok: false, error: `Rupture de stock : ${product.name}` }
-      }
-      if (needed > stock) {
-        return {
-          ok: false,
-          error: `Stock insuffisant pour « ${product.name} » (disponible : ${stock})`,
+    // Pas de stock pour les produits numériques
+    if (!isDigitalCategory(product.category)) {
+      const stock = typeof product.stock_qty === 'number' ? product.stock_qty : null
+      if (stock !== null) {
+        const needed = requestedByProduct.get(product.id) || qty
+        if (stock <= 0) {
+          return { ok: false, error: `Rupture de stock : ${product.name}` }
+        }
+        if (needed > stock) {
+          return {
+            ok: false,
+            error: `Stock insuffisant pour « ${product.name} » (disponible : ${stock})`,
+          }
         }
       }
     }

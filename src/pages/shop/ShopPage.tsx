@@ -13,6 +13,7 @@ import {
   getShopProductsCache,
   categoryLabel,
   animalTargetLabel,
+  shopProductTracksStock,
   type ShopCategoryId,
   type ShopAnimalTargetId,
 } from '@/lib/shop/catalog'
@@ -166,7 +167,7 @@ export default function ShopPage() {
                         ) : (
                           <div className="w-full h-full bg-slate-100" />
                         )}
-                        {product.stockQty <= 0 && (
+                        {shopProductTracksStock(product.category) && product.stockQty <= 0 && (
                           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-semibold">
                             Rupture
                           </span>
@@ -184,9 +185,13 @@ export default function ShopPage() {
                           <span className="text-xl font-extrabold text-slate-900">
                             {formatShopPrice(product.priceCents)}
                           </span>
-                          <span className={`text-xs font-semibold ${product.stockQty <= 0 ? 'text-red-600' : 'text-slate-500'}`}>
-                            {product.stockQty <= 0 ? 'Rupture' : `${product.stockQty} dispo.`}
-                          </span>
+                          {shopProductTracksStock(product.category) ? (
+                            <span className={`text-xs font-semibold ${product.stockQty <= 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                              {product.stockQty <= 0 ? 'Rupture' : `${product.stockQty} dispo.`}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-brand-600">{t('shop.viewProduct')} →</span>
+                          )}
                         </div>
                       </div>
                     </Card>

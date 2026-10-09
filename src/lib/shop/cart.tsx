@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { getProductById, loadShopCatalog } from '@/lib/shop/catalog'
+import { getProductById, loadShopCatalog, shopProductTracksStock } from '@/lib/shop/catalog'
 
 export type ShopCartLine = {
   productId: string
@@ -82,7 +82,8 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((productId: string, options?: { quantity?: number; size?: string }): string | null => {
     const product = getProductById(productId)
     if (!product || !product.active) return 'Produit indisponible'
-    if (product.stockQty <= 0) return 'Produit en rupture de stock'
+    const tracksStock = shopProductTracksStock(product.category)
+    if (tracksStock && product.stockQty <= 0) return 'Produit en rupture de stock'
     if (product.sizesEnabled) {
       if (!options?.size || !product.sizes.includes(options.size)) {
         return 'Choisissez une taille'
@@ -93,6 +94,14 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     let error: string | null = null
     setItems(prev => {
       const existing = prev.find(line => line.productId === productId && (line.size || '') === (size || ''))
+      if (!tracksStock) {
+        if (!existing) return [...prev, { productId, size, quantity: delta }]
+        return prev.map(line =>
+          lineKey(line.productId, line.size) === lineKey(productId, size)
+            ? { ...line, quantity: Math.min(line.quantity + delta, MAX_QUANTITY) }
+            : line,
+        )
+      }
       const alreadyForProduct = prev
         .filter(line => line.productId === productId)
         .reduce((sum, line) => sum + line.quantity, 0)
@@ -114,10 +123,18 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
 
   const setQuantity = useCallback((productId: string, quantity: number, size?: string) => {
     const product = getProductById(productId)
-    const maxStock = product?.stockQty ?? MAX_QUANTITY
+    const tracksStock = product ? shopProductTracksStock(product.category) : true
+    const maxStock = tracksStock ? (product?.stockQty ?? MAX_QUANTITY) : MAX_QUANTITY
     const qty = Math.min(Math.max(Math.floor(quantity) || 0, 0), MAX_QUANTITY, Math.max(0, maxStock))
     setItems(prev => {
       if (qty <= 0) return prev.filter(line => !(line.productId === productId && (line.size || '') === (size || '')))
+      if (!tracksStock) {
+        return prev.map(line =>
+          line.productId === productId && (line.size || '') === (size || '')
+            ? { ...line, quantity: qty }
+            : line,
+        )
+      }
       const otherForProduct = prev
         .filter(line => line.productId === productId && (line.size || '') !== (size || ''))
         .reduce((sum, line) => sum + line.quantity, 0)
@@ -132,7 +149,6 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       )
     })
   }, [])
-
   const removeItem = useCallback((productId: string, size?: string) => {
     setItems(prev => prev.filter(line => !(line.productId === productId && (line.size || '') === (size || ''))))
   }, [])
