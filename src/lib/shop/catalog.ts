@@ -16,6 +16,7 @@ export {
   normalizeShopAnimalTargetId,
   isDigitalShopCategory,
   shopProductTracksStock,
+  shopProductRequiresShipping,
   DIGITAL_PRODUCT_STOCK_QTY,
 } from './types'
 

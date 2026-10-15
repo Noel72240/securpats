@@ -11,6 +11,7 @@ import {
   formatShopPrice,
   getProductById,
   remainingForFreeShippingCents,
+  shopProductRequiresShipping,
   SHOP_FREE_SHIPPING_FROM_CENTS,
 } from '@/lib/shop/catalog'
 import {
@@ -38,16 +39,35 @@ export default function ShopCartPage() {
   const [relayLoading, setRelayLoading] = useState(false)
   const [relayHint, setRelayHint] = useState('')
 
-  const parcelSize = useMemo(
-    () => maxParcelSize(items.map(line => getProductById(line.productId)?.parcelSize)),
+  const requiresShipping = useMemo(
+    () =>
+      items.some(line => {
+        const product = getProductById(line.productId)
+        return product ? shopProductRequiresShipping(product.category) : false
+      }),
     [items],
   )
-  const selectedParcel = getParcelSize(parcelSize)
+
+  const parcelSize = useMemo(
+    () =>
+      maxParcelSize(
+        items
+          .map(line => getProductById(line.productId))
+          .filter((p): p is NonNullable<typeof p> => !!p && shopProductRequiresShipping(p.category))
+          .map(p => p.parcelSize),
+      ),
+    [items],
+  )
+  const selectedParcel = requiresShipping ? getParcelSize(parcelSize) : undefined
 
   const paymentsBlocked = arePaymentsBlocked(siteSettings)
-  const shippingCents = shippingCentsForParcel(subtotalCents, parcelSize, SHOP_FREE_SHIPPING_FROM_CENTS)
-  const totalCents = orderTotalWithParcel(subtotalCents, parcelSize, SHOP_FREE_SHIPPING_FROM_CENTS)
-  const remainingFree = remainingForFreeShippingCents(subtotalCents)
+  const shippingCents = requiresShipping
+    ? shippingCentsForParcel(subtotalCents, parcelSize, SHOP_FREE_SHIPPING_FROM_CENTS)
+    : 0
+  const totalCents = requiresShipping
+    ? orderTotalWithParcel(subtotalCents, parcelSize, SHOP_FREE_SHIPPING_FROM_CENTS)
+    : subtotalCents
+  const remainingFree = requiresShipping ? remainingForFreeShippingCents(subtotalCents) : 0
 
   useEffect(() => {
     setSelectedRelay(null)
@@ -84,7 +104,7 @@ export default function ShopCartPage() {
       setError('Les paiements sont temporairement suspendus. Réessayez ultérieurement.')
       return
     }
-    if (relayConfigured && !selectedRelay) {
+    if (requiresShipping && relayConfigured && !selectedRelay) {
       setError('Sélectionnez un Point Relais Mondial Relay pour continuer.')
       return
     }
@@ -226,101 +246,110 @@ export default function ShopCartPage() {
                     )
                   })}
 
-                  <Card padding="lg">
-                    <h2 className="text-lg font-bold text-slate-900 mb-1">Livraison Mondial Relay</h2>
-                    <p className="text-sm text-slate-600 mb-3">
-                      Choisissez un Point Relais® près de chez vous. Les frais de port sont calculés
-                      selon les produits (taille de colis définie par SécurPats).
-                    </p>
-
-                    {selectedParcel && (
-                      <div className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2.5 mb-4 text-sm">
-                        <span className="font-semibold text-brand-900">{selectedParcel.label}</span>
-                        <span className="text-brand-800">
-                          {' '}
-                          — {formatShopPrice(selectedParcel.priceCents)}
-                          {shippingCents === 0 ? ' (offerte sur cette commande)' : ''}
-                        </span>
-                        <p className="text-xs text-brand-700/80 mt-0.5">{selectedParcel.description}</p>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <label className="flex-1">
-                        <span className="text-sm font-medium text-slate-700">Code postal</span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={5}
-                          value={postalCode}
-                          onChange={e => setPostalCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                          placeholder="75010"
-                          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-                        />
-                      </label>
-                      <div className="sm:self-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          loading={relayLoading}
-                          disabled={postalCode.length < 4}
-                          onClick={() => void handleSearchRelay()}
-                          icon={MapPin}
-                        >
-                          Chercher un Point Relais
-                        </Button>
-                      </div>
-                    </div>
-
-                    {relayHint && (
-                      <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
-                        {relayHint}
+                  {requiresShipping ? (
+                    <Card padding="lg">
+                      <h2 className="text-lg font-bold text-slate-900 mb-1">Livraison Mondial Relay</h2>
+                      <p className="text-sm text-slate-600 mb-3">
+                        Choisissez un Point Relais® près de chez vous. Les frais de port sont calculés
+                        selon les produits physiques (taille de colis définie par SécurPats).
                       </p>
-                    )}
 
-                    {relayPoints.length > 0 && (
-                      <ul className="mt-4 space-y-2 max-h-64 overflow-y-auto">
-                        {relayPoints.map(point => {
-                          const active = selectedRelay?.id === point.id
-                          return (
-                            <li key={point.id}>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedRelay(point)}
-                                className={`w-full text-left rounded-xl border px-3 py-2.5 transition-colors ${
-                                  active
-                                    ? 'border-brand-500 bg-brand-50'
-                                    : 'border-slate-200 hover:border-brand-300'
-                                }`}
-                              >
-                                <div className="flex justify-between gap-2">
-                                  <span className="font-medium text-slate-900 text-sm">{point.name}</span>
-                                  {point.distanceKm != null && (
-                                    <span className="text-xs text-slate-500 shrink-0">{point.distanceKm} km</span>
+                      {selectedParcel && (
+                        <div className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2.5 mb-4 text-sm">
+                          <span className="font-semibold text-brand-900">{selectedParcel.label}</span>
+                          <span className="text-brand-800">
+                            {' '}
+                            — {formatShopPrice(selectedParcel.priceCents)}
+                            {shippingCents === 0 ? ' (offerte sur cette commande)' : ''}
+                          </span>
+                          <p className="text-xs text-brand-700/80 mt-0.5">{selectedParcel.description}</p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <label className="flex-1">
+                          <span className="text-sm font-medium text-slate-700">Code postal</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={5}
+                            value={postalCode}
+                            onChange={e => setPostalCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                            placeholder="75010"
+                            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+                          />
+                        </label>
+                        <div className="sm:self-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            loading={relayLoading}
+                            disabled={postalCode.length < 4}
+                            onClick={() => void handleSearchRelay()}
+                            icon={MapPin}
+                          >
+                            Chercher un Point Relais
+                          </Button>
+                        </div>
+                      </div>
+
+                      {relayHint && (
+                        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
+                          {relayHint}
+                        </p>
+                      )}
+
+                      {relayPoints.length > 0 && (
+                        <ul className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+                          {relayPoints.map(point => {
+                            const active = selectedRelay?.id === point.id
+                            return (
+                              <li key={point.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedRelay(point)}
+                                  className={`w-full text-left rounded-xl border px-3 py-2.5 transition-colors ${
+                                    active
+                                      ? 'border-brand-500 bg-brand-50'
+                                      : 'border-slate-200 hover:border-brand-300'
+                                  }`}
+                                >
+                                  <div className="flex justify-between gap-2">
+                                    <span className="font-medium text-slate-900 text-sm">{point.name}</span>
+                                    {point.distanceKm != null && (
+                                      <span className="text-xs text-slate-500 shrink-0">{point.distanceKm} km</span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-slate-600 mt-0.5">
+                                    {point.address}
+                                    {point.address ? ' · ' : ''}
+                                    {point.postalCode} {point.city}
+                                  </p>
+                                  {point.hours && (
+                                    <p className="text-[11px] text-slate-500 mt-1">{point.hours}</p>
                                   )}
-                                </div>
-                                <p className="text-xs text-slate-600 mt-0.5">
-                                  {point.address}
-                                  {point.address ? ' · ' : ''}
-                                  {point.postalCode} {point.city}
-                                </p>
-                                {point.hours && (
-                                  <p className="text-[11px] text-slate-500 mt-1">{point.hours}</p>
-                                )}
-                              </button>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    )}
+                                </button>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
 
-                    {selectedRelay && (
-                      <p className="text-sm text-brand-800 bg-brand-50 rounded-lg px-3 py-2 mt-3">
-                        Point choisi : <strong>{selectedRelay.name}</strong> ({selectedRelay.postalCode}{' '}
-                        {selectedRelay.city})
+                      {selectedRelay && (
+                        <p className="text-sm text-brand-800 bg-brand-50 rounded-lg px-3 py-2 mt-3">
+                          Point choisi : <strong>{selectedRelay.name}</strong> ({selectedRelay.postalCode}{' '}
+                          {selectedRelay.city})
+                        </p>
+                      )}
+                    </Card>
+                  ) : (
+                    <Card padding="lg">
+                      <h2 className="text-lg font-bold text-slate-900 mb-1">Livraison</h2>
+                      <p className="text-sm text-slate-600">
+                        Panier 100 % numérique : aucun colis ni Point Relais. Accès après paiement.
                       </p>
-                    )}
-                  </Card>
+                    </Card>
+                  )}
                 </div>
 
                 <div>
@@ -332,9 +361,17 @@ export default function ShopCartPage() {
                         <dd className="font-medium text-slate-900">{formatShopPrice(subtotalCents)}</dd>
                       </div>
                       <div className="flex justify-between text-slate-600">
-                        <dt>Livraison{selectedParcel ? ` · ${selectedParcel.label}` : ''}</dt>
+                        <dt>
+                          {requiresShipping
+                            ? `Livraison${selectedParcel ? ` · ${selectedParcel.label}` : ''}`
+                            : 'Livraison'}
+                        </dt>
                         <dd className="font-medium text-slate-900">
-                          {shippingCents === 0 ? 'Offerte' : formatShopPrice(shippingCents)}
+                          {!requiresShipping
+                            ? 'Aucune (numérique)'
+                            : shippingCents === 0
+                              ? 'Offerte'
+                              : formatShopPrice(shippingCents)}
                         </dd>
                       </div>
                       <div className="flex justify-between text-base font-bold text-slate-900 pt-3 border-t border-slate-100">
@@ -343,7 +380,7 @@ export default function ShopCartPage() {
                       </div>
                     </dl>
 
-                    {remainingFree > 0 && (
+                    {requiresShipping && remainingFree > 0 && (
                       <p className="text-xs text-brand-700 bg-brand-50 rounded-lg px-3 py-2 mt-4">
                         Plus que {formatShopPrice(remainingFree)} pour la livraison offerte
                         (dès {formatShopPrice(SHOP_FREE_SHIPPING_FROM_CENTS)}).

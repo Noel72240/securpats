@@ -132,5 +132,10 @@ export function shopProductTracksStock(category: string | null | undefined): boo
   return !isDigitalShopCategory(category)
 }
 
+/** Produits physiques uniquement : colis Mondial Relay + livraison. */
+export function shopProductRequiresShipping(category: string | null | undefined): boolean {
+  return !isDigitalShopCategory(category)
+}
+
 /** Valeur stock stockée en base pour les produits numériques (jamais affichée). */
 export const DIGITAL_PRODUCT_STOCK_QTY = 999999

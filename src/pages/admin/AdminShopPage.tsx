@@ -22,6 +22,7 @@ import {
   categoryLabel,
   animalTargetLabel,
   shopProductTracksStock,
+  shopProductRequiresShipping,
   loadShopCatalog,
   PARCEL_SIZES,
   type ShopCategoryId,
@@ -337,10 +338,14 @@ export default function AdminShopPage() {
                   ) : (
                     <p className="text-xs text-slate-500">Stock : illimité (numérique)</p>
                   )}
-                  <p className="text-xs text-slate-500">
-                    Colis : {PARCEL_SIZES.find(s => s.id === p.parcelSize)?.label ?? 'Petit'} ·{' '}
-                    {formatShopPrice(PARCEL_SIZES.find(s => s.id === (p.parcelSize || 'petit'))?.priceCents ?? 390)}
-                  </p>
+                  {shopProductRequiresShipping(p.category) ? (
+                    <p className="text-xs text-slate-500">
+                      Colis : {PARCEL_SIZES.find(s => s.id === p.parcelSize)?.label ?? 'Petit'} ·{' '}
+                      {formatShopPrice(PARCEL_SIZES.find(s => s.id === (p.parcelSize || 'petit'))?.priceCents ?? 390)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">Livraison : aucune (numérique)</p>
+                  )}
                   {p.sizesEnabled && (
                     <p className="text-xs text-slate-500">Tailles : {p.sizes.join(', ')}</p>
                   )}
@@ -492,34 +497,41 @@ export default function AdminShopPage() {
               />
             </div>
 
-            <div className="space-y-3 p-4 rounded-xl bg-amber-50/80 border border-amber-100">
-              <p className="font-semibold text-slate-900 text-sm">Taille de colis Mondial Relay *</p>
-              <p className="text-xs text-slate-600">
-                Fixée ici pour éviter la fraude aux frais d’envoi. Au panier, le client paie la taille
-                la plus grande parmi les articles commandés.
-              </p>
-              <div className="grid sm:grid-cols-3 gap-2">
-                {PARCEL_SIZES.map(size => {
-                  const on = draft.parcelSize === size.id
-                  return (
-                    <button
-                      key={size.id}
-                      type="button"
-                      onClick={() => patchDraft({ parcelSize: size.id })}
-                      className={`text-left rounded-xl border px-3 py-2.5 transition-colors ${
-                        on
-                          ? 'border-brand-500 bg-white ring-2 ring-brand-500/30'
-                          : 'border-slate-200 bg-white hover:border-brand-300'
-                      }`}
-                    >
-                      <div className="font-semibold text-slate-900 text-sm">{size.label}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{size.description}</div>
-                      <div className="text-sm font-bold text-brand-700 mt-1">{formatShopPrice(size.priceCents)}</div>
-                    </button>
-                  )
-                })}
+            {shopProductRequiresShipping(draft.category) ? (
+              <div className="space-y-3 p-4 rounded-xl bg-amber-50/80 border border-amber-100">
+                <p className="font-semibold text-slate-900 text-sm">Taille de colis Mondial Relay *</p>
+                <p className="text-xs text-slate-600">
+                  Fixée ici pour éviter la fraude aux frais d’envoi. Au panier, le client paie la taille
+                  la plus grande parmi les articles commandés.
+                </p>
+                <div className="grid sm:grid-cols-3 gap-2">
+                  {PARCEL_SIZES.map(size => {
+                    const on = draft.parcelSize === size.id
+                    return (
+                      <button
+                        key={size.id}
+                        type="button"
+                        onClick={() => patchDraft({ parcelSize: size.id })}
+                        className={`text-left rounded-xl border px-3 py-2.5 transition-colors ${
+                          on
+                            ? 'border-brand-500 bg-white ring-2 ring-brand-500/30'
+                            : 'border-slate-200 bg-white hover:border-brand-300'
+                        }`}
+                      >
+                        <div className="font-semibold text-slate-900 text-sm">{size.label}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{size.description}</div>
+                        <div className="text-sm font-bold text-brand-700 mt-1">{formatShopPrice(size.priceCents)}</div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="font-medium text-slate-800">Produit numérique</p>
+                <p className="text-xs mt-1">Pas de colis ni de livraison Mondial Relay pour cette catégorie.</p>
+              </div>
+            )}
 
             <div className="space-y-3 p-4 rounded-xl bg-brand-50/60 border border-brand-100">
               <label className="flex items-center gap-3 cursor-pointer">

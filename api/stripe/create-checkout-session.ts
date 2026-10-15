@@ -53,23 +53,25 @@ async function createShopSession(
     return res.status(400).json({ error: 'Panier vide' })
   }
 
-  if (isRelaySearchConfigured()) {
+  const resolved = await resolveShopLinePrices(items)
+  if (!resolved.ok) {
+    return res.status(400).json({ error: resolved.error })
+  }
+
+  const requiresShipping = resolved.requiresShipping
+
+  if (requiresShipping && isRelaySearchConfigured()) {
     const relayId = typeof relayPoint?.id === 'string' ? relayPoint.id.trim() : ''
     if (!relayId) {
       return res.status(400).json({ error: 'Sélectionnez un Point Relais Mondial Relay' })
     }
   }
 
-  const resolved = await resolveShopLinePrices(items)
-  if (!resolved.ok) {
-    return res.status(400).json({ error: resolved.error })
-  }
-
-  // Taille colis = max des produits (admin) — jamais confiance au client
+  // Taille colis = max des produits physiques (admin) — jamais confiance au client
   const parcelSizeId: ParcelSizeId = resolved.parcelSize
   const parcel = getParcelSize(parcelSizeId)!
 
-  const hasRelay = typeof relayPoint?.id === 'string' && relayPoint.id.trim().length > 0
+  const hasRelay = requiresShipping && typeof relayPoint?.id === 'string' && relayPoint.id.trim().length > 0
 
   const fields: Record<string, string> = {
     mode: 'payment',
@@ -77,26 +79,30 @@ async function createShopSession(
     success_url: `${appUrl}/boutique/succes?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/boutique/panier?canceled=1`,
     'metadata[source]': 'shop',
-    'metadata[shipping_carrier]': 'mondial_relay',
-    'metadata[parcel_size]': parcelSizeId,
-    'metadata[mr_action]': parcel.mrAction,
+    'metadata[delivery]': requiresShipping ? 'mondial_relay' : 'digital',
     allow_promotion_codes: 'true',
     billing_address_collection: 'required',
     locale: 'fr',
   }
 
-  if (!hasRelay) {
-    fields['shipping_address_collection[allowed_countries][0]'] = 'FR'
-    fields['shipping_address_collection[allowed_countries][1]'] = 'BE'
-    fields['shipping_address_collection[allowed_countries][2]'] = 'LU'
-    fields['shipping_address_collection[allowed_countries][3]'] = 'CH'
-  } else {
-    fields['metadata[mr_relay_id]'] = relayPoint!.id!.trim()
-    if (relayPoint?.name) fields['metadata[mr_relay_name]'] = String(relayPoint.name).slice(0, 80)
-    if (relayPoint?.city) fields['metadata[mr_relay_city]'] = String(relayPoint.city).slice(0, 40)
-    if (relayPoint?.postalCode) fields['metadata[mr_relay_cp]'] = String(relayPoint.postalCode).slice(0, 10)
-    if (relayPoint?.address) fields['metadata[mr_relay_address]'] = String(relayPoint.address).slice(0, 120)
-    if (relayPoint?.country) fields['metadata[mr_relay_country]'] = String(relayPoint.country).slice(0, 2)
+  if (requiresShipping) {
+    fields['metadata[shipping_carrier]'] = 'mondial_relay'
+    fields['metadata[parcel_size]'] = parcelSizeId
+    fields['metadata[mr_action]'] = parcel.mrAction
+
+    if (!hasRelay) {
+      fields['shipping_address_collection[allowed_countries][0]'] = 'FR'
+      fields['shipping_address_collection[allowed_countries][1]'] = 'BE'
+      fields['shipping_address_collection[allowed_countries][2]'] = 'LU'
+      fields['shipping_address_collection[allowed_countries][3]'] = 'CH'
+    } else {
+      fields['metadata[mr_relay_id]'] = relayPoint!.id!.trim()
+      if (relayPoint?.name) fields['metadata[mr_relay_name]'] = String(relayPoint.name).slice(0, 80)
+      if (relayPoint?.city) fields['metadata[mr_relay_city]'] = String(relayPoint.city).slice(0, 40)
+      if (relayPoint?.postalCode) fields['metadata[mr_relay_cp]'] = String(relayPoint.postalCode).slice(0, 10)
+      if (relayPoint?.address) fields['metadata[mr_relay_address]'] = String(relayPoint.address).slice(0, 120)
+      if (relayPoint?.country) fields['metadata[mr_relay_country]'] = String(relayPoint.country).slice(0, 2)
+    }
   }
 
   if (customerEmail) fields.customer_email = customerEmail
@@ -113,17 +119,18 @@ async function createShopSession(
     lineIndex++
   }
 
-  const shipping = shippingCentsForParcel(subtotal, parcelSizeId)
-  if (shipping > 0) {
-    const shippingLabel = hasRelay
-      ? `Livraison Mondial Relay — ${parcel.label}`
-      : `Livraison Mondial Relay — ${parcel.label} (Point Relais à confirmer)`
-    fields[`line_items[${lineIndex}][price_data][currency]`] = 'eur'
-    fields[`line_items[${lineIndex}][price_data][unit_amount]`] = String(shipping)
-    fields[`line_items[${lineIndex}][price_data][product_data][name]`] = shippingLabel
-    fields[`line_items[${lineIndex}][quantity]`] = '1'
+  if (requiresShipping) {
+    const shipping = shippingCentsForParcel(subtotal, parcelSizeId)
+    if (shipping > 0) {
+      const shippingLabel = hasRelay
+        ? `Livraison Mondial Relay — ${parcel.label}`
+        : `Livraison Mondial Relay — ${parcel.label} (Point Relais à confirmer)`
+      fields[`line_items[${lineIndex}][price_data][currency]`] = 'eur'
+      fields[`line_items[${lineIndex}][price_data][unit_amount]`] = String(shipping)
+      fields[`line_items[${lineIndex}][price_data][product_data][name]`] = shippingLabel
+      fields[`line_items[${lineIndex}][quantity]`] = '1'
+    }
   }
-
   const session = await stripePostForm<CheckoutSessionResponse>('/checkout/sessions', fields)
 
   const intent = await saveShopCheckoutIntent({

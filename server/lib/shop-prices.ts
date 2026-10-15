@@ -29,6 +29,7 @@ export type ResolvedShopLine = {
   quantity: number
   size?: string
   parcelSize: ParcelSizeId
+  digital: boolean
 }
 
 export function shippingCentsForSubtotal(subtotalCents: number): number {
@@ -43,7 +44,7 @@ export { shippingCentsForParcel, maxParcelSize }
 export async function resolveShopLinePrices(
   items: { productId: string; quantity: number; size?: string }[],
 ): Promise<
-  | { ok: true; lines: ResolvedShopLine[]; parcelSize: ParcelSizeId }
+  | { ok: true; lines: ResolvedShopLine[]; parcelSize: ParcelSizeId; requiresShipping: boolean }
   | { ok: false; error: string }
 > {
   const supabase = getSupabaseAdmin()
@@ -81,10 +82,16 @@ export async function resolveShopLinePrices(
           quantity: qty,
           size: item.size,
           parcelSize: 'petit',
+          digital: false,
         })
       }
       if (lines.length === 0) return { ok: false, error: 'Aucun article valide' }
-      return { ok: true, lines, parcelSize: maxParcelSize(lines.map(l => l.parcelSize)) }
+      return {
+        ok: true,
+        lines,
+        parcelSize: maxParcelSize(lines.map(l => l.parcelSize)),
+        requiresShipping: true,
+      }
     }
 
     const byId = new Map((retry.data as ShopPriceRow[]).map(r => [r.id, r]))
@@ -109,10 +116,17 @@ export async function resolveShopLinePrices(
         quantity: qty,
         size: item.size,
         parcelSize: 'petit',
+        digital: isDigitalCategory(product.category),
       })
     }
     if (lines.length === 0) return { ok: false, error: 'Aucun article valide' }
-    return { ok: true, lines, parcelSize: maxParcelSize(lines.map(l => l.parcelSize)) }
+    const physical = lines.filter(l => !l.digital)
+    return {
+      ok: true,
+      lines,
+      parcelSize: physical.length ? maxParcelSize(physical.map(l => l.parcelSize)) : 'petit',
+      requiresShipping: physical.length > 0,
+    }
   }
 
   const byId = new Map((data as ShopPriceRow[]).map(r => [r.id, r]))
@@ -155,7 +169,12 @@ export async function resolveShopLinePrices(
         }
       }
     }
-    const parcelSize: ParcelSizeId = isValidParcelSizeId(product.parcel_size) ? product.parcel_size : 'petit'
+    const digital = isDigitalCategory(product.category)
+    const parcelSize: ParcelSizeId = digital
+      ? 'petit'
+      : isValidParcelSizeId(product.parcel_size)
+        ? product.parcel_size
+        : 'petit'
     lines.push({
       productId: product.id,
       name: item.size && product.sizes_enabled ? `${product.name} — Taille ${item.size}` : product.name,
@@ -163,9 +182,16 @@ export async function resolveShopLinePrices(
       quantity: qty,
       size: item.size,
       parcelSize,
+      digital,
     })
   }
 
   if (lines.length === 0) return { ok: false, error: 'Aucun article valide' }
-  return { ok: true, lines, parcelSize: maxParcelSize(lines.map(l => l.parcelSize)) }
+  const physical = lines.filter(l => !l.digital)
+  return {
+    ok: true,
+    lines,
+    parcelSize: physical.length ? maxParcelSize(physical.map(l => l.parcelSize)) : 'petit',
+    requiresShipping: physical.length > 0,
+  }
 }
