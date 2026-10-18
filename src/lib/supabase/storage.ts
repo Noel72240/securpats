@@ -6,6 +6,7 @@ export const STORAGE_BUCKETS = {
   pets: 'pet-photos',
   petsitter: 'petsitter-docs',
   site: 'site-assets',
+  shopDigital: 'shop-digital',
 } as const
 
 export type StorageBucket = typeof STORAGE_BUCKETS[keyof typeof STORAGE_BUCKETS]

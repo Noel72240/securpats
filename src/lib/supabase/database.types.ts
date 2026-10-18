@@ -408,6 +408,7 @@ export type Database = {
           sizes: string[]
           parcel_size: string
           stock_qty: number
+          digital_file_path: string
           active: boolean
           sort_order: number
           created_at: string
@@ -429,6 +430,7 @@ export type Database = {
           sizes?: string[]
           parcel_size?: string
           stock_qty?: number
+          digital_file_path?: string
           active?: boolean
           sort_order?: number
           created_at?: string

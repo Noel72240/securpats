@@ -23,6 +23,15 @@ export async function uploadShopProductImage(file: File) {
   return uploadSiteAssetFile('shop', file)
 }
 
+/** PDF ebook privé (bucket shop-digital, admin uniquement). */
+export async function uploadShopDigitalPdf(productId: string, file: File) {
+  const path = `${productId}/${safeFileName(file.name)}`
+  const { path: stored, error } = await uploadFile(STORAGE_BUCKETS.shopDigital, path, file, {
+    upsert: true,
+  })
+  return { path: stored, error }
+}
+
 export async function uploadActuCoverImage(file: File) {
   return uploadSiteAssetFile('actu', file)
 }

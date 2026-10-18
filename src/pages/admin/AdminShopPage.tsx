@@ -30,8 +30,9 @@ import {
   type ShopProduct,
   type ParcelSizeId,
 } from '@/lib/shop/catalog'
-import { uploadShopProductImage } from '@/lib/supabase/uploads'
+import { uploadShopProductImage, uploadShopDigitalPdf } from '@/lib/supabase/uploads'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { isDigitalShopCategory } from '@/lib/shop/types'
 
 type Draft = {
   id: string
@@ -49,6 +50,7 @@ type Draft = {
   sizes: string[]
   parcelSize: ParcelSizeId
   stockQty: string
+  digitalFilePath: string
   active: boolean
   sortOrder: string
   isNew: boolean
@@ -71,6 +73,7 @@ function emptyDraft(): Draft {
     sizes: ['S', 'M', 'L'],
     parcelSize: 'petit',
     stockQty: '100',
+    digitalFilePath: '',
     active: true,
     sortOrder: '100',
     isNew: true,
@@ -94,6 +97,7 @@ function productToDraft(p: ShopProduct): Draft {
     sizes: p.sizes.length ? p.sizes : ['S', 'M', 'L'],
     parcelSize: p.parcelSize || 'petit',
     stockQty: String(typeof p.stockQty === 'number' ? p.stockQty : 0),
+    digitalFilePath: p.digitalFilePath || '',
     active: p.active,
     sortOrder: String(p.sortOrder),
     isNew: false,
@@ -114,8 +118,10 @@ export default function AdminShopPage() {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingPdf, setUploadingPdf] = useState(false)
   const [query, setQuery] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -183,6 +189,38 @@ export default function AdminShopPage() {
     patchDraft({ imageUrl: publicUrl, imageAlt: draft.imageAlt || draft.name })
   }
 
+  const onUploadPdf = async (file: File | null) => {
+    if (!file || !draft) return
+    if (!isSupabaseConfigured()) {
+      setError('Upload PDF nécessite Supabase.')
+      return
+    }
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setError('Le fichier doit être un PDF.')
+      return
+    }
+    const productId = (draft.id || slugifyProductName(draft.name || 'ebook')).trim()
+    if (!productId) {
+      setError('Indiquez d’abord un titre de produit.')
+      return
+    }
+    if (draft.isNew && !draft.id) {
+      patchDraft({ id: productId, slug: productId })
+    }
+    setUploadingPdf(true)
+    const { path, error: upErr } = await uploadShopDigitalPdf(productId, file)
+    setUploadingPdf(false)
+    if (upErr || !path) {
+      setError(
+        upErr?.includes('Bucket not found') || upErr?.includes('shop-digital')
+          ? 'Bucket privé manquant : exécutez supabase/migrations/033_shop_digital_downloads.sql'
+          : upErr || 'Échec upload PDF',
+      )
+      return
+    }
+    patchDraft({ digitalFilePath: path })
+  }
+
   const save = async () => {
     if (!draft) return
     const cents = parsePriceToCents(draft.priceEuros)
@@ -199,6 +237,7 @@ export default function AdminShopPage() {
       return
     }
     const tracksStock = shopProductTracksStock(draft.category)
+    const isDigital = isDigitalShopCategory(draft.category)
     let stockQty = DIGITAL_PRODUCT_STOCK_QTY
     if (tracksStock) {
       stockQty = Math.floor(Number(String(draft.stockQty).replace(',', '.')))
@@ -206,6 +245,10 @@ export default function AdminShopPage() {
         setError('Stock invalide (nombre entier ≥ 0).')
         return
       }
+    }
+    if (isDigital && !draft.digitalFilePath.trim()) {
+      setError('Pour un produit numérique, uploadez le fichier PDF (ebook).')
+      return
     }
 
     const id = (draft.id || slugifyProductName(draft.name)).trim()
@@ -222,10 +265,11 @@ export default function AdminShopPage() {
       imageUrl: draft.imageUrl.trim(),
       imageAlt: (draft.imageAlt || draft.name).trim(),
       highlights: draft.highlightsText.split('\n').map(s => s.trim()).filter(Boolean),
-      sizesEnabled: draft.sizesEnabled,
-      sizes: draft.sizesEnabled ? draft.sizes : [],
+      sizesEnabled: isDigital ? false : draft.sizesEnabled,
+      sizes: isDigital || !draft.sizesEnabled ? [] : draft.sizes,
       parcelSize: draft.parcelSize,
       stockQty,
+      digitalFilePath: isDigital ? draft.digitalFilePath.trim() : '',
       active: draft.active,
       sortOrder: Number(draft.sortOrder) || 100,
     }
@@ -236,13 +280,15 @@ export default function AdminShopPage() {
     setSaving(false)
     if (err) {
       setError(
-        err.includes('animal_target')
-          ? 'Colonne manquante : exécutez supabase/migrations/031_shop_categories_animal.sql dans Supabase SQL Editor.'
-          : err.includes('stock_qty') || err.includes('shop_checkout_intents') || err.includes('decrement_shop_stock')
-            ? 'Colonne / fonction stock manquante : exécutez supabase/migrations/032_shop_stock.sql dans Supabase SQL Editor.'
-            : err.includes('parcel_size')
-              ? 'Colonne manquante : exécutez supabase/migrations/030_shop_parcel_size.sql dans Supabase SQL Editor.'
-              : err,
+        err.includes('digital_file_path') || err.includes('shop_digital')
+          ? 'Migration ebook manquante : exécutez supabase/migrations/033_shop_digital_downloads.sql dans Supabase SQL Editor.'
+          : err.includes('animal_target')
+            ? 'Colonne manquante : exécutez supabase/migrations/031_shop_categories_animal.sql dans Supabase SQL Editor.'
+            : err.includes('stock_qty') || err.includes('shop_checkout_intents') || err.includes('decrement_shop_stock')
+              ? 'Colonne / fonction stock manquante : exécutez supabase/migrations/032_shop_stock.sql dans Supabase SQL Editor.'
+              : err.includes('parcel_size')
+                ? 'Colonne manquante : exécutez supabase/migrations/030_shop_parcel_size.sql dans Supabase SQL Editor.'
+                : err,
       )
       return
     }
@@ -319,6 +365,11 @@ export default function AdminShopPage() {
                   <div className="absolute top-2 left-2 flex gap-1">
                     <Badge variant={p.active ? 'success' : 'default'}>{p.active ? 'En ligne' : 'Masqué'}</Badge>
                     {p.sizesEnabled && <Badge variant="info">Tailles</Badge>}
+                    {isDigitalShopCategory(p.category) && (
+                      <Badge variant={p.digitalFilePath ? 'info' : 'default'}>
+                        {p.digitalFilePath ? 'PDF' : 'PDF manquant'}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="p-4 flex-1 flex flex-col gap-2">
@@ -496,6 +547,50 @@ export default function AdminShopPage() {
                 placeholder="https://…"
               />
             </div>
+
+            {isDigitalShopCategory(draft.category) && (
+              <div className="space-y-3 p-4 rounded-xl bg-teal-50/80 border border-teal-100">
+                <p className="font-semibold text-slate-900 text-sm">Fichier ebook (PDF) *</p>
+                <p className="text-xs text-slate-600">
+                  Stocké en privé. Après paiement, l’acheteur reçoit un lien personnel temporaire par e-mail.
+                </p>
+                {draft.digitalFilePath ? (
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm">
+                    <span className="truncate text-slate-700 font-medium">{draft.digitalFilePath.split('/').pop()}</span>
+                    <button
+                      type="button"
+                      className="text-xs text-red-600 shrink-0"
+                      onClick={() => patchDraft({ digitalFilePath: '' })}
+                    >
+                      Retirer
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-800">Aucun PDF — obligatoire pour vendre ce produit.</p>
+                )}
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  disabled={uploadingPdf}
+                  onChange={e => {
+                    void onUploadPdf(e.target.files?.[0] ?? null)
+                    e.target.value = ''
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  icon={Upload}
+                  disabled={uploadingPdf}
+                  onClick={() => pdfInputRef.current?.click()}
+                >
+                  {uploadingPdf ? 'Upload PDF…' : 'Uploader le PDF'}
+                </Button>
+              </div>
+            )}
 
             {shopProductRequiresShipping(draft.category) ? (
               <div className="space-y-3 p-4 rounded-xl bg-amber-50/80 border border-amber-100">

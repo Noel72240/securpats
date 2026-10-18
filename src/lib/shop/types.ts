@@ -35,6 +35,8 @@ export type ShopProduct = {
   animalTarget: ShopAnimalTargetId
   /** Quantité en stock (décrémentée à chaque vente). */
   stockQty: number
+  /** Chemin fichier privé (bucket shop-digital) pour ebooks / PDF. */
+  digitalFilePath: string
   imageUrl: string
   imageAlt: string
   highlights: string[]

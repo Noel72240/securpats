@@ -22,6 +22,7 @@ type ShopRow = {
   sizes: string[] | null
   parcel_size?: string | null
   stock_qty?: number | null
+  digital_file_path?: string | null
   active: boolean
   sort_order: number
 }
@@ -49,6 +50,7 @@ export function shopProductFromRow(row: ShopRow): ShopProduct {
     stockQty: typeof row.stock_qty === 'number' && Number.isFinite(row.stock_qty)
       ? Math.max(0, Math.floor(row.stock_qty))
       : 0,
+    digitalFilePath: row.digital_file_path?.trim() || '',
     active: row.active,
     sortOrder: row.sort_order,
   }
@@ -73,6 +75,7 @@ export function shopProductToRow(product: Partial<ShopProduct> & { id: string; s
     stock_qty: typeof product.stockQty === 'number'
       ? Math.max(0, Math.floor(product.stockQty))
       : 0,
+    digital_file_path: product.digitalFilePath?.trim() || '',
     active: product.active ?? true,
     sort_order: product.sortOrder ?? 100,
     updated_at: new Date().toISOString(),

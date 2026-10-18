@@ -21,6 +21,7 @@ import ShopPage from '@/pages/shop/ShopPage'
 import ShopProductPage from '@/pages/shop/ShopProductPage'
 import ShopCartPage from '@/pages/shop/ShopCartPage'
 import ShopSuccessPage from '@/pages/shop/ShopSuccessPage'
+import ShopDigitalDownloadPage from '@/pages/shop/ShopDigitalDownloadPage'
 import { CGUPage, PrivacyPage, RGPDPage, MentionsLegalesPage, CookiesPage } from '@/pages/public/LegalPages'
 import PrivacyDataPage from '@/pages/owner/PrivacyDataPage'
 import OwnerProfilePage from '@/pages/owner/OwnerProfilePage'
@@ -205,6 +206,7 @@ function AppRoutes() {
       <Route path="/boutique" element={<ShopPage />} />
       <Route path="/boutique/panier" element={<ShopCartPage />} />
       <Route path="/boutique/succes" element={<ShopSuccessPage />} />
+      <Route path="/boutique/telecharger/:token" element={<ShopDigitalDownloadPage />} />
       <Route path="/boutique/:slug" element={<ShopProductPage />} />
       <Route path="/actu" element={<ActuPage />} />
       <Route path="/actu/:slug" element={<ActuArticlePage />} />

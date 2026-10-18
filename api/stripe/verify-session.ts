@@ -4,6 +4,10 @@ import { getSubscriptionPeriodEnd } from '../../server/lib/stripe-helpers.js'
 import { stripeGet } from '../../server/lib/stripe-api.js'
 import { upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
 import { applyShopStockForPaidSession } from '../../server/lib/shop-stock.js'
+import {
+  fulfillShopDigitalPurchases,
+  listDigitalDownloadsForSession,
+} from '../../server/lib/shop-digital.js'
 
 type Plan = keyof typeof PLAN_PRICES
 
@@ -30,6 +34,8 @@ type CheckoutSessionResponse = {
   status: string | null
   metadata?: { plan?: string; userId?: string; source?: string }
   customer: string | { id?: string } | null
+  customer_email?: string | null
+  customer_details?: { email?: string | null } | null
   subscription: string | StripeSubscription | null
 }
 
@@ -57,10 +63,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Paiement non confirmé' })
     }
 
-    // Boutique : filet de sécurité si le webhook n’a pas encore appliqué le stock
+    // Boutique : stock + ebooks (filet si le webhook n’a pas encore tourné)
     if (session.metadata?.source === 'shop') {
       await applyShopStockForPaidSession(sessionId)
-      return res.status(200).json({ ok: true, source: 'shop' })
+      const email = session.customer_details?.email || session.customer_email || null
+      await fulfillShopDigitalPurchases({
+        stripeSessionId: sessionId,
+        customerEmail: email,
+      })
+      const { downloads } = await listDigitalDownloadsForSession(sessionId)
+      return res.status(200).json({ ok: true, source: 'shop', downloads })
     }
 
     const plan = planFromMetadata(session.metadata?.plan)

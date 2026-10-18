@@ -5,6 +5,7 @@ import { getInvoicePlanMetadata, getInvoiceUserId, getSubscriptionPeriodEnd } fr
 import { getStripeClient } from '../../server/lib/stripe-client.js'
 import { stripeGet } from '../../server/lib/stripe-api.js'
 import { applyShopStockForPaidSession } from '../../server/lib/shop-stock.js'
+import { fulfillShopDigitalPurchases } from '../../server/lib/shop-digital.js'
 
 export const config = {
   api: { bodyParser: false },
@@ -43,6 +44,17 @@ async function syncCheckoutCompleted(session: Stripe.Checkout.Session) {
       const stock = await applyShopStockForPaidSession(session.id)
       if (!stock.ok) {
         console.error('[Stripe webhook] shop stock', session.id, stock.error)
+      }
+      const email =
+        session.customer_details?.email ||
+        session.customer_email ||
+        null
+      const digital = await fulfillShopDigitalPurchases({
+        stripeSessionId: session.id,
+        customerEmail: email,
+      })
+      if (digital.error) {
+        console.error('[Stripe webhook] shop digital', session.id, digital.error)
       }
     }
     return
