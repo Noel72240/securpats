@@ -53,6 +53,10 @@ async function createShopSession(
     return res.status(400).json({ error: 'Panier vide' })
   }
 
+  if (!customerEmail || !customerEmail.includes('@')) {
+    return res.status(400).json({ error: 'E-mail obligatoire pour recevoir la facture et vos téléchargements' })
+  }
+
   const resolved = await resolveShopLinePrices(items)
   if (!resolved.ok) {
     return res.status(400).json({ error: resolved.error })
@@ -83,8 +87,15 @@ async function createShopSession(
     allow_promotion_codes: 'true',
     billing_address_collection: 'required',
     locale: 'fr',
+    customer_email: customerEmail,
+    // Facture Stripe automatique + e-mail au client
+    'invoice_creation[enabled]': 'true',
+    'invoice_creation[invoice_data][description]': 'Commande boutique SécurPats',
+    'invoice_creation[invoice_data][footer]': 'Merci pour votre commande — SécurPats',
+    'invoice_creation[invoice_data][metadata][source]': 'shop',
+    // Reçu de paiement (filet si la facture n’est pas encore envoyée)
+    'payment_intent_data[receipt_email]': customerEmail,
   }
-
   if (requiresShipping) {
     fields['metadata[shipping_carrier]'] = 'mondial_relay'
     fields['metadata[parcel_size]'] = parcelSizeId
@@ -104,8 +115,6 @@ async function createShopSession(
       if (relayPoint?.country) fields['metadata[mr_relay_country]'] = String(relayPoint.country).slice(0, 2)
     }
   }
-
-  if (customerEmail) fields.customer_email = customerEmail
 
   let lineIndex = 0
   let subtotal = 0

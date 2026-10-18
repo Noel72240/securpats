@@ -104,6 +104,10 @@ export default function ShopCartPage() {
       setError('Les paiements sont temporairement suspendus. Réessayez ultérieurement.')
       return
     }
+    if (!email.trim() || !email.includes('@')) {
+      setError('Indiquez votre e-mail pour recevoir la facture (et vos téléchargements).')
+      return
+    }
     if (requiresShipping && relayConfigured && !selectedRelay) {
       setError('Sélectionnez un Point Relais Mondial Relay pour continuer.')
       return
@@ -113,7 +117,7 @@ export default function ShopCartPage() {
     setError('')
     const result = await createShopCheckout({
       items,
-      customerEmail: email,
+      customerEmail: email.trim(),
       relayPoint: selectedRelay,
     })
     if (result.error) {
@@ -388,14 +392,18 @@ export default function ShopCartPage() {
                     )}
 
                     <label className="block mt-6">
-                      <span className="text-sm font-medium text-slate-700">E-mail (facultatif)</span>
+                      <span className="text-sm font-medium text-slate-700">E-mail *</span>
                       <input
                         type="email"
+                        required
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="vous@exemple.fr"
                         className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40"
                       />
+                      <span className="text-xs text-slate-500 mt-1 block">
+                        Obligatoire : facture Stripe automatique + ebook / confirmation.
+                      </span>
                     </label>
 
                     {error && (

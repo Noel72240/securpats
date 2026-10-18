@@ -61,10 +61,10 @@ export default function ShopSuccessPage() {
               <CheckCircle className="w-16 h-16 text-brand-500 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-slate-900 mb-2">Merci pour votre commande !</h1>
               <p className="text-slate-600 mb-6">
-                Votre paiement a été accepté.
+                Votre paiement a été accepté. La facture vous est envoyée par e-mail (Stripe).
                 {downloads.length > 0
-                  ? ' Votre produit numérique est prêt ci-dessous (et envoyé par e-mail).'
-                  : ' Un e-mail de confirmation vous sera envoyé.'}
+                  ? ' Votre produit numérique est prêt ci-dessous (lien aussi envoyé par e-mail).'
+                  : ''}
               </p>
 
               {loadingDigital && (
