@@ -5,7 +5,9 @@ import { stripeGet } from '../../server/lib/stripe-api.js'
 import { upsertOwnerSubscription, PLAN_PRICES } from '../../server/lib/supabase-admin.js'
 import { applyShopStockForPaidSession } from '../../server/lib/shop-stock.js'
 import {
+  createDigitalSignedDownloadUrl,
   fulfillShopDigitalPurchases,
+  getDigitalDownloadMeta,
   listDigitalDownloadsForSession,
 } from '../../server/lib/shop-digital.js'
 
@@ -39,8 +41,58 @@ type CheckoutSessionResponse = {
   subscription: string | StripeSubscription | null
 }
 
+function readToken(req: VercelRequest): string {
+  if (typeof req.query.token === 'string') return req.query.token
+  if (typeof req.body?.token === 'string') return req.body.token
+  return ''
+}
+
+/** Ebook : métadonnées + URL signée (même fonction Vercel que verify-session). */
+async function handleDigitalDownload(req: VercelRequest, res: VercelResponse) {
+  const token = readToken(req)
+  if (!token) {
+    return res.status(400).json({ error: 'token requis' })
+  }
+
+  if (req.method === 'GET' && req.query.meta === '1') {
+    const meta = await getDigitalDownloadMeta(token)
+    if (meta.error && !meta.productName) {
+      return res.status(404).json({ error: meta.error })
+    }
+    return res.status(200).json(meta)
+  }
+
+  if (req.method === 'GET' || req.method === 'POST') {
+    const result = await createDigitalSignedDownloadUrl(token)
+    if (!result.url) {
+      return res.status(400).json({ error: result.error || 'Téléchargement impossible' })
+    }
+    if (req.query.redirect === '1') {
+      res.setHeader('Location', result.url)
+      return res.status(302).end()
+    }
+    return res.status(200).json({
+      url: result.url,
+      fileName: result.fileName,
+      productName: result.productName,
+    })
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' })
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return
+
+  const isDigital =
+    req.query.action === 'digital-download' ||
+    req.body?.action === 'digital-download' ||
+    !!readToken(req)
+
+  if (isDigital) {
+    return handleDigitalDownload(req, res)
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

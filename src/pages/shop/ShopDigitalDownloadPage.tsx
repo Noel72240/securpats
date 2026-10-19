@@ -24,7 +24,9 @@ export default function ShopDigitalDownloadPage() {
     }
     void (async () => {
       try {
-        const res = await fetch(apiUrl(`/api/stripe/digital-download?token=${encodeURIComponent(token)}&meta=1`))
+        const res = await fetch(
+          apiUrl(`/api/stripe/verify-session?action=digital-download&token=${encodeURIComponent(token)}&meta=1`),
+        )
         const data = await res.json().catch(() => ({}))
         if (!res.ok && !data.productName) {
           setError(data.error || 'Lien introuvable')
@@ -46,10 +48,10 @@ export default function ShopDigitalDownloadPage() {
     setDownloading(true)
     setError(null)
     try {
-      const res = await fetch(apiUrl('/api/stripe/digital-download'), {
+      const res = await fetch(apiUrl('/api/stripe/verify-session'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ action: 'digital-download', token }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.url) {
