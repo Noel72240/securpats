@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../../server/lib/cors.js'
+import { applyCors } from '../server/lib/cors.js'
 import {
   createDigitalSignedDownloadUrl,
   getDigitalDownloadMeta,
-} from '../../server/lib/shop-digital.js'
+} from '../server/lib/shop-digital.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return

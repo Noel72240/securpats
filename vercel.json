@@ -22,6 +22,7 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/api/emergency/notify-referents", "destination": "/api/emergency/alert" },
+    { "source": "/api/shop/digital-download", "destination": "/api/digital-download" },
     { "source": "/((?!api/).*)", "destination": "/" }
   ],
   "crons": [

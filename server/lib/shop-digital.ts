@@ -48,23 +48,60 @@ export async function fulfillShopDigitalPurchases(input: {
   const email =
     (input.customerEmail || intent?.customer_email || '').trim().toLowerCase() || null
 
-  const { data: products, error: prodErr } = await supabase
-    .from('shop_products')
-    .select('id, name, category, digital_file_path')
-    .in('id', productIds)
-
-  if (prodErr) return { downloads: [], error: prodErr.message }
-
-  const digitalProducts = ((products ?? []) as {
+  let products: {
     id: string
     name: string
     category?: string | null
     digital_file_path?: string | null
-  }[]).filter(
-    p => p.category === 'produits-numeriques' && (p.digital_file_path || '').trim().length > 0,
+  }[] = []
+
+  const withPath = await supabase
+    .from('shop_products')
+    .select('id, name, category, digital_file_path')
+    .in('id', productIds)
+
+  if (withPath.error) {
+    // Colonne digital_file_path absente → migration 033 non appliquée
+    const fallback = await supabase
+      .from('shop_products')
+      .select('id, name, category')
+      .in('id', productIds)
+    if (fallback.error) return { downloads: [], error: fallback.error.message }
+    products = (fallback.data ?? []) as typeof products
+    const wantsDigital = products.some(p => p.category === 'produits-numeriques')
+    if (wantsDigital) {
+      return {
+        downloads: [],
+        error:
+          'Migration ebook manquante (033_shop_digital_downloads.sql) : colonne digital_file_path / table shop_digital_downloads',
+      }
+    }
+    return { downloads: [] }
+  } else {
+    products = (withPath.data ?? []) as typeof products
+  }
+
+  const digitalCandidates = products.filter(p => p.category === 'produits-numeriques')
+  if (digitalCandidates.length === 0) return { downloads: [] }
+
+  const missingPdf = digitalCandidates.filter(p => !(p.digital_file_path || '').trim())
+  if (missingPdf.length > 0) {
+    console.error(
+      '[shop digital] PDF manquant pour',
+      missingPdf.map(p => p.id).join(', '),
+    )
+  }
+
+  const digitalProducts = digitalCandidates.filter(
+    p => (p.digital_file_path || '').trim().length > 0,
   )
 
-  if (digitalProducts.length === 0) return { downloads: [] }
+  if (digitalProducts.length === 0) {
+    return {
+      downloads: [],
+      error: 'Produit numérique sans fichier PDF en admin — aucun téléchargement créé',
+    }
+  }
 
   const expiresAt = new Date(Date.now() + LINK_TTL_DAYS * 86400000).toISOString()
   const downloads: ShopDigitalDownloadLink[] = []
@@ -221,18 +258,36 @@ export async function createDigitalSignedDownloadUrl(token: string): Promise<{
     }
   }
 
-  const { data: signed, error: signErr } = await supabase.storage
-    .from(DIGITAL_BUCKET)
-    .createSignedUrl(row.file_path, SIGNED_URL_TTL_SEC, {
-      download: row.file_path.split('/').pop() || 'ebook.pdf',
-    })
+  const fileName = row.file_path.split('/').pop() || 'ebook.pdf'
+  let signedUrl: string | null = null
+  let signErrMsg: string | null = null
 
-  if (signErr || !signed?.signedUrl) {
+  const signedWithName = await supabase.storage
+    .from(DIGITAL_BUCKET)
+    .createSignedUrl(row.file_path, SIGNED_URL_TTL_SEC, { download: fileName })
+
+  if (signedWithName.data?.signedUrl) {
+    signedUrl = signedWithName.data.signedUrl
+  } else {
+    const signedPlain = await supabase.storage
+      .from(DIGITAL_BUCKET)
+      .createSignedUrl(row.file_path, SIGNED_URL_TTL_SEC)
+    if (signedPlain.data?.signedUrl) {
+      signedUrl = signedPlain.data.signedUrl
+    } else {
+      signErrMsg =
+        signedWithName.error?.message ||
+        signedPlain.error?.message ||
+        'Impossible de générer le fichier'
+    }
+  }
+
+  if (!signedUrl) {
     return {
       url: null,
       fileName: null,
       productName: row.product_name,
-      error: signErr?.message || 'Impossible de générer le fichier',
+      error: signErrMsg || 'Impossible de générer le fichier',
     }
   }
 
@@ -242,8 +297,8 @@ export async function createDigitalSignedDownloadUrl(token: string): Promise<{
     .eq('token', token.trim())
 
   return {
-    url: signed.signedUrl,
-    fileName: row.file_path.split('/').pop() || 'ebook.pdf',
+    url: signedUrl,
+    fileName,
     productName: row.product_name,
     error: null,
   }

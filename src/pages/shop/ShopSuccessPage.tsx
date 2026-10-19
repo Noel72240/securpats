@@ -21,6 +21,7 @@ export default function ShopSuccessPage() {
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
   const [downloads, setDownloads] = useState<DigitalDownload[]>([])
+  const [digitalError, setDigitalError] = useState<string | null>(null)
   const [loadingDigital, setLoadingDigital] = useState(!!sessionId)
 
   useEffect(() => {
@@ -36,6 +37,9 @@ export default function ShopSuccessPage() {
           const data = await res.json().catch(() => ({}))
           if (Array.isArray(data.downloads)) {
             setDownloads(data.downloads as DigitalDownload[])
+          }
+          if (typeof data.digitalError === 'string' && data.digitalError) {
+            setDigitalError(data.digitalError)
           }
         } catch {
           // Le webhook Stripe reste la source principale
@@ -88,6 +92,12 @@ export default function ShopSuccessPage() {
                     </div>
                   ))}
                 </div>
+              )}
+
+              {!loadingDigital && downloads.length === 0 && digitalError && (
+                <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 mb-6 text-left">
+                  Téléchargement non préparé : {digitalError}. Contactez-nous avec votre e-mail de commande.
+                </p>
               )}
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">

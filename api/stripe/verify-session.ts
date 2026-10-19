@@ -67,12 +67,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (session.metadata?.source === 'shop') {
       await applyShopStockForPaidSession(sessionId)
       const email = session.customer_details?.email || session.customer_email || null
-      await fulfillShopDigitalPurchases({
+      const digital = await fulfillShopDigitalPurchases({
         stripeSessionId: sessionId,
         customerEmail: email,
       })
       const { downloads } = await listDigitalDownloadsForSession(sessionId)
-      return res.status(200).json({ ok: true, source: 'shop', downloads })
+      return res.status(200).json({
+        ok: true,
+        source: 'shop',
+        downloads,
+        digitalError: digital.error || null,
+      })
     }
 
     const plan = planFromMetadata(session.metadata?.plan)
