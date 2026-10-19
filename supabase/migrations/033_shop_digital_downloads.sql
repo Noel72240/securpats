@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS shop_digital_downloads (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMPTZ NOT NULL,
   download_count INTEGER NOT NULL DEFAULT 0,
-  max_downloads INTEGER NOT NULL DEFAULT 10,
+  max_downloads INTEGER NOT NULL DEFAULT 1,
   email_sent BOOLEAN NOT NULL DEFAULT FALSE,
   UNIQUE (stripe_session_id, product_id)
 );

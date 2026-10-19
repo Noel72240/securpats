@@ -4,7 +4,9 @@ import { sendEmail, escapeHtml } from './emergency-notify.js'
 
 const DIGITAL_BUCKET = 'shop-digital'
 const LINK_TTL_DAYS = 7
-const SIGNED_URL_TTL_SEC = 60 * 60 // 1 h
+/** Une seule utilisation du lien — URL signée courte pour limiter le partage. */
+const MAX_DOWNLOADS = 1
+const SIGNED_URL_TTL_SEC = 10 * 60 // 10 min
 
 export type ShopDigitalDownloadLink = {
   productId: string
@@ -133,7 +135,7 @@ export async function fulfillShopDigitalPurchases(input: {
         file_path: filePath,
         expires_at: expiresAt,
         download_count: 0,
-        max_downloads: 10,
+        max_downloads: MAX_DOWNLOADS,
         email_sent: false,
       })
       if (insertErr) {
@@ -173,7 +175,7 @@ export async function fulfillShopDigitalPurchases(input: {
           </a>
         </p>
         <p style="color:#64748b;font-size:14px">
-          Ce lien personnel est valable ${LINK_TTL_DAYS} jours et limité à 10 téléchargements.
+          Ce lien personnel est valable ${LINK_TTL_DAYS} jours et ne fonctionne qu’<strong>une seule fois</strong>.
           Ne le partagez pas : il est lié à votre commande.
         </p>
         <p style="color:#64748b;font-size:13px">Si le bouton ne fonctionne pas : ${escapeHtml(pageUrl)}</p>
@@ -249,12 +251,33 @@ export async function createDigitalSignedDownloadUrl(token: string): Promise<{
   if (new Date(row.expires_at).getTime() < Date.now()) {
     return { url: null, fileName: null, productName: row.product_name, error: 'Ce lien a expiré' }
   }
-  if ((row.download_count ?? 0) >= (row.max_downloads ?? 10)) {
+
+  const maxDownloads = Math.min(row.max_downloads ?? MAX_DOWNLOADS, MAX_DOWNLOADS)
+  if ((row.download_count ?? 0) >= maxDownloads) {
     return {
       url: null,
       fileName: null,
       productName: row.product_name,
-      error: 'Nombre maximal de téléchargements atteint',
+      error: 'Ce lien a déjà été utilisé (1 seul téléchargement autorisé)',
+    }
+  }
+
+  // Réserve le téléchargement de façon atomique (évite double clic / partage simultané)
+  const nextCount = (row.download_count ?? 0) + 1
+  const { data: claimed, error: claimErr } = await supabase
+    .from('shop_digital_downloads')
+    .update({ download_count: nextCount })
+    .eq('token', token.trim())
+    .eq('download_count', row.download_count ?? 0)
+    .select('token')
+    .maybeSingle()
+
+  if (claimErr || !claimed) {
+    return {
+      url: null,
+      fileName: null,
+      productName: row.product_name,
+      error: 'Ce lien a déjà été utilisé (1 seul téléchargement autorisé)',
     }
   }
 
@@ -283,6 +306,12 @@ export async function createDigitalSignedDownloadUrl(token: string): Promise<{
   }
 
   if (!signedUrl) {
+    // Remet le compteur si la génération a échoué
+    await supabase
+      .from('shop_digital_downloads')
+      .update({ download_count: row.download_count ?? 0 })
+      .eq('token', token.trim())
+      .eq('download_count', nextCount)
     return {
       url: null,
       fileName: null,
@@ -290,11 +319,6 @@ export async function createDigitalSignedDownloadUrl(token: string): Promise<{
       error: signErrMsg || 'Impossible de générer le fichier',
     }
   }
-
-  await supabase
-    .from('shop_digital_downloads')
-    .update({ download_count: (row.download_count ?? 0) + 1 })
-    .eq('token', token.trim())
 
   return {
     url: signedUrl,
@@ -330,11 +354,12 @@ export async function getDigitalDownloadMeta(token: string): Promise<{
       error: 'Ce lien a expiré',
     }
   }
-  const left = Math.max(0, (row.max_downloads ?? 10) - (row.download_count ?? 0))
+  const maxDownloads = Math.min(row.max_downloads ?? MAX_DOWNLOADS, MAX_DOWNLOADS)
+  const left = Math.max(0, maxDownloads - (row.download_count ?? 0))
   return {
     productName: row.product_name,
     expiresAt: row.expires_at,
     downloadsLeft: left,
-    error: left <= 0 ? 'Nombre maximal de téléchargements atteint' : null,
+    error: left <= 0 ? 'Ce lien a déjà été utilisé (1 seul téléchargement autorisé)' : null,
   }
 }

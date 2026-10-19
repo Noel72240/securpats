@@ -84,7 +84,7 @@ export default function ShopSuccessPage() {
                     >
                       <div>
                         <p className="font-semibold text-slate-900 text-sm">{d.productName}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Lien personnel — valable quelques jours</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Lien personnel — 1 seul téléchargement</p>
                       </div>
                       <Link to={`/boutique/telecharger/${d.token}`}>
                         <Button size="sm" icon={Download}>Télécharger</Button>

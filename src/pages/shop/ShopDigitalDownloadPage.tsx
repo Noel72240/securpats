@@ -99,9 +99,9 @@ export default function ShopDigitalDownloadPage() {
                 {expiresLabel && (
                   <p className="text-xs text-slate-500 mb-1">Valable jusqu’au {expiresLabel}</p>
                 )}
-                {downloadsLeft != null && (
+                {downloadsLeft != null && downloadsLeft > 0 && (
                   <p className="text-xs text-slate-500 mb-4">
-                    Téléchargements restants : {downloadsLeft}
+                    Téléchargement unique — une seule utilisation.
                   </p>
                 )}
 
@@ -124,7 +124,7 @@ export default function ShopDigitalDownloadPage() {
                 </Button>
 
                 <p className="text-[11px] text-slate-400 mt-4">
-                  Lien personnel — ne le partagez pas. Le fichier s’ouvre via un accès sécurisé temporaire.
+                  Lien personnel à usage unique — ne le partagez pas. Après un clic, le lien est invalidé.
                 </p>
 
                 <Link to="/boutique" className="inline-block mt-6 text-sm text-brand-700 font-medium">
