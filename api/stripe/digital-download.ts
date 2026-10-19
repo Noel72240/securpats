@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyCors } from '../server/lib/cors.js'
+import { applyCors } from '../../server/lib/cors.js'
 import {
   createDigitalSignedDownloadUrl,
   getDigitalDownloadMeta,
-} from '../server/lib/shop-digital.js'
+} from '../../server/lib/shop-digital.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return
@@ -19,7 +19,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'token requis' })
   }
 
-  // Métadonnées (page téléchargement)
   if (req.method === 'GET' && req.query.meta === '1') {
     const meta = await getDigitalDownloadMeta(token)
     if (meta.error && !meta.productName) {
@@ -28,13 +27,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(meta)
   }
 
-  // Téléchargement : URL signée
   if (req.method === 'GET' || req.method === 'POST') {
     const result = await createDigitalSignedDownloadUrl(token)
     if (!result.url) {
       return res.status(400).json({ error: result.error || 'Téléchargement impossible' })
     }
-    // Redirect direct si demandé
     if (req.query.redirect === '1') {
       res.setHeader('Location', result.url)
       return res.status(302).end()
