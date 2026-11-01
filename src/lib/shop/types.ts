@@ -1,5 +1,7 @@
 export type ShopCategoryId =
   | 'identification-securite'
+  | 'colliers'
+  | 'longes'
   | 'promenade-transport'
   | 'repas-hydratation'
   | 'jeux-occupation'
@@ -7,13 +9,13 @@ export type ShopCategoryId =
   | 'kits-securpats'
   | 'produits-numeriques'
 
-/** Anciennes catégories (migration / données legacy). */
+/** Anciennes / alias → id canonique. */
 const LEGACY_CATEGORY_MAP: Record<string, ShopCategoryId> = {
   plaques: 'identification-securite',
-  colliers: 'promenade-transport',
-  longes: 'promenade-transport',
   jouets: 'jeux-occupation',
   kits: 'kits-securpats',
+  longe: 'longes',
+  collier: 'colliers',
 }
 
 export type ShopAnimalTargetId =
@@ -48,8 +50,11 @@ export type ShopProduct = {
   sortOrder: number
 }
 
+/** Catégories affichées boutique + admin (filtre = catégorie produit). */
 export const SHOP_CATEGORIES: { id: ShopCategoryId; label: string }[] = [
   { id: 'identification-securite', label: 'Identification & sécurité' },
+  { id: 'colliers', label: 'Colliers' },
+  { id: 'longes', label: 'Longes' },
   { id: 'promenade-transport', label: 'Promenade & transport' },
   { id: 'repas-hydratation', label: 'Repas & hydratation' },
   { id: 'jeux-occupation', label: 'Jeux & occupation' },
@@ -123,6 +128,17 @@ export function categoryLabel(id: string): string {
 export function animalTargetLabel(id: string): string {
   const normalized = normalizeShopAnimalTargetId(id)
   return SHOP_ANIMAL_TARGETS.find(a => a.id === normalized)?.label ?? id
+}
+
+/** Produit visible pour un filtre animal ( « tous animaux » apparaît partout ). */
+export function shopProductMatchesAnimalFilter(
+  productAnimal: string | null | undefined,
+  filter: ShopAnimalTargetId | 'all',
+): boolean {
+  if (filter === 'all') return true
+  const target = normalizeShopAnimalTargetId(productAnimal)
+  if (target === 'tous') return true
+  return target === filter
 }
 
 /** Produits numériques : pas de stock (quantité illimitée). */

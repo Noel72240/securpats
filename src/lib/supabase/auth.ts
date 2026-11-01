@@ -1,4 +1,4 @@
-import { getSupabase, isSupabaseConfigured } from './client'
+import { getSupabase, getSupabaseReady, isSupabaseConfigured } from './client'
 import { profileToUser, userToProfileInsert } from './mappers'
 import { publicAppOrigin, apiUrl } from '@/lib/platform'
 import type { User, UserRole } from '@/types'
@@ -210,14 +210,26 @@ export async function signOut() {
 export async function getSessionUser() {
   if (!isSupabaseConfigured()) return { user: null, error: null }
 
-  const supabase = getSupabase()
+  const supabase = await getSupabaseReady()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user) return { user: null, error: null }
+
+  // Rafraîchir le token si bientôt expiré (app mise en veille)
+  const expiresAt = session.expires_at ?? 0
+  if (expiresAt * 1000 < Date.now() + 60_000) {
+    const { data: refreshed } = await supabase.auth.refreshSession()
+    if (!refreshed.session?.user) {
+      return { user: null, error: null }
+    }
+  }
+
+  const { data: { session: live } } = await supabase.auth.getSession()
+  const userId = live?.user?.id ?? session.user.id
 
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', userId)
     .single()
 
   if (error || !profile) return { user: null, error: error?.message ?? 'Profil introuvable' }
@@ -225,23 +237,46 @@ export async function getSessionUser() {
   return { user: profileToUser(profile), error: null }
 }
 
+/** Au retour au premier plan (Android) : prolonger la session. */
+export async function refreshSessionOnResume() {
+  if (!isSupabaseConfigured()) return
+  try {
+    const supabase = await getSupabaseReady()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await supabase.auth.refreshSession()
+  } catch (err) {
+    console.warn('[Supabase] refresh resume:', err)
+  }
+}
+
 export function onAuthStateChange(callback: (user: User | null) => void) {
   if (!isSupabaseConfigured()) return () => {}
 
   const supabase = getSupabase()
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
     // Ne pas utiliser async ici : deadlock avec getSession() (doc Supabase)
     setTimeout(async () => {
       if (!session?.user) {
-        callback(null)
+        // Ne déconnecter l’UI que sur vraie fin de session (pas un glitch réseau)
+        if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+          callback(null)
+        }
         return
       }
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single()
-      callback(profile ? profileToUser(profile) : null)
+      if (profile) {
+        callback(profileToUser(profile))
+        return
+      }
+      // Session OK mais profil temporairement inaccessible → ne pas forcer la déconnexion
+      if (error) {
+        console.warn('[Supabase] profil indisponible, session conservée:', error.message)
+      }
     }, 0)
   })
 

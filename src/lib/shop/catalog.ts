@@ -14,6 +14,7 @@ export {
   animalTargetLabel,
   normalizeShopCategoryId,
   normalizeShopAnimalTargetId,
+  shopProductMatchesAnimalFilter,
   isDigitalShopCategory,
   shopProductTracksStock,
   shopProductRequiresShipping,

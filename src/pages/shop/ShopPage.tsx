@@ -13,6 +13,8 @@ import {
   getShopProductsCache,
   categoryLabel,
   animalTargetLabel,
+  normalizeShopCategoryId,
+  shopProductMatchesAnimalFilter,
   shopProductTracksStock,
   type ShopCategoryId,
   type ShopAnimalTargetId,
@@ -29,8 +31,8 @@ export default function ShopPage() {
   const products = useMemo(() => {
     const catalog = getShopProductsCache()
     return catalog.filter(p => {
-      if (category !== 'all' && p.category !== category) return false
-      if (animal !== 'all' && p.animalTarget !== animal) return false
+      if (category !== 'all' && normalizeShopCategoryId(p.category) !== category) return false
+      if (!shopProductMatchesAnimalFilter(p.animalTarget, animal)) return false
       return true
     })
   }, [category, animal, catalogReady])
