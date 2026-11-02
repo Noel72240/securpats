@@ -1,52 +1,212 @@
-import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronDown, ArrowRight } from 'lucide-react'
 import { PublicLayout } from '@/components/layout/PublicLayout'
+import { PageSEO } from '@/components/seo/PageSEO'
+import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { useI18n } from '@/i18n/LanguageContext'
-import type { TranslationKey } from '@/i18n/LanguageContext'
-
-const faqKeys: { q: TranslationKey; a: TranslationKey }[] = [
-  { q: 'faq.q1', a: 'faq.a1' },
-  { q: 'faq.q2', a: 'faq.a2' },
-  { q: 'faq.q3', a: 'faq.a3' },
-  { q: 'faq.q4', a: 'faq.a4' },
-  { q: 'faq.q5', a: 'faq.a5' },
-]
+import { allFaqFlat, getFaqCopy } from '@/lib/faq/content'
 
 export default function FAQPage() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0)
-  const { t } = useI18n()
+  const { locale } = useI18n()
+  const copy = useMemo(() => getFaqCopy(locale === 'en' ? 'en' : 'fr'), [locale])
+  const [activeTheme, setActiveTheme] = useState(copy.themes[0]?.id ?? '')
+  const [openKey, setOpenKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    setActiveTheme(copy.themes[0]?.id ?? '')
+    setOpenKey(null)
+  }, [copy])
+
+  const theme = copy.themes.find(t => t.id === activeTheme) ?? copy.themes[0]
+  const seoFaqs = useMemo(() => allFaqFlat(locale === 'en' ? 'en' : 'fr'), [locale])
 
   return (
     <PublicLayout>
-      <section className="py-16 lg:py-24">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">{t('faq.title')}</h1>
-            <p className="text-lg text-slate-600">{t('faq.subtitle')}</p>
+      <PageSEO
+        title={copy.title}
+        description={copy.subtitle}
+        path="/faq"
+        keywords={[
+          'FAQ SécurPats',
+          'bien-être animal',
+          'abonnement SécurPats',
+          'QR Code urgence animal',
+          'hospitalisation animal',
+        ]}
+        faqs={seoFaqs}
+      />
+
+      <section className="relative overflow-hidden border-b border-brand-100/80 bg-gradient-to-br from-brand-50 via-white to-emerald-50/70">
+        <div className="pointer-events-none absolute -right-16 top-0 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute -left-10 bottom-0 h-56 w-56 rounded-full bg-emerald-200/30 blur-3xl" />
+        <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
+                FAQ
+              </p>
+              <h1 className="font-[family-name:var(--font-shop)] text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                {copy.title}
+              </h1>
+              <p className="mt-4 max-w-xl text-lg leading-relaxed text-slate-600">
+                {copy.subtitle}
+              </p>
+            </div>
+            <div className="flex justify-center lg:justify-end">
+              <img
+                src="/faq/questions.png"
+                alt=""
+                className="h-40 w-40 object-contain drop-shadow-md sm:h-48 sm:w-48"
+                width={192}
+                height={192}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-10 lg:py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {copy.themesNav}
+          </p>
+          <div className="mb-10 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {copy.themes.map(t => {
+              const selected = t.id === theme?.id
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTheme(t.id)
+                    setOpenKey(null)
+                  }}
+                  className={cn(
+                    'flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors',
+                    selected
+                      ? 'border-brand-500 bg-brand-600 text-white shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50/60',
+                  )}
+                >
+                  <img
+                    src={t.sticker}
+                    alt=""
+                    className="h-10 w-10 object-contain"
+                    width={40}
+                    height={40}
+                    loading="lazy"
+                  />
+                  <span className="max-w-[9.5rem] text-xs font-semibold leading-snug sm:max-w-[11rem] sm:text-sm">
+                    {t.title}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
-          <div className="space-y-3">
-            {faqKeys.map((item, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-                <button
-                  className="w-full flex items-center justify-between p-6 text-left"
-                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                >
-                  <span className="font-semibold text-slate-900 pr-4">{t(item.q)}</span>
-                  <ChevronDown className={cn(
-                    'w-5 h-5 text-slate-400 flex-shrink-0 transition-transform duration-200',
-                    openIndex === i && 'rotate-180'
-                  )} />
-                </button>
-                {openIndex === i && (
-                  <div className="px-6 pb-6 animate-fade-in">
-                    <p className="text-slate-600 leading-relaxed">{t(item.a)}</p>
+          {theme && (
+            <div className="grid gap-8 lg:grid-cols-[220px_1fr] lg:gap-12">
+              <aside className="hidden lg:block">
+                <div className="sticky top-28 rounded-3xl border border-slate-100 bg-white/80 p-5 text-center shadow-sm backdrop-blur">
+                  <img
+                    src={theme.sticker}
+                    alt=""
+                    className="mx-auto h-36 w-36 object-contain"
+                    width={144}
+                    height={144}
+                  />
+                  <p className="mt-3 text-sm font-bold text-slate-900">{theme.title}</p>
+                </div>
+              </aside>
+
+              <div>
+                <div className="mb-6 flex items-start gap-4 lg:hidden">
+                  <img
+                    src={theme.sticker}
+                    alt=""
+                    className="h-20 w-20 shrink-0 object-contain"
+                    width={80}
+                    height={80}
+                  />
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">{theme.title}</h2>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{theme.intro}</p>
                   </div>
-                )}
+                </div>
+
+                <div className="mb-6 hidden lg:block">
+                  <h2 className="text-3xl font-bold text-slate-900">{theme.title}</h2>
+                  <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">
+                    {theme.intro}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {theme.items.map((item, i) => {
+                    const key = `${theme.id}-${i}`
+                    const open = openKey === key
+                    return (
+                      <div
+                        key={key}
+                        className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
+                          onClick={() => setOpenKey(open ? null : key)}
+                          aria-expanded={open}
+                        >
+                          <span className="pr-2 font-semibold text-slate-900">{item.question}</span>
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 shrink-0 text-brand-600 transition-transform duration-200',
+                              open && 'rotate-180',
+                            )}
+                          />
+                        </button>
+                        {open && (
+                          <div className="border-t border-slate-50 px-5 pb-5 pt-3 sm:px-6">
+                            <p className="text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+                              {item.answer}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="border-t border-brand-100 bg-gradient-to-r from-brand-700 to-emerald-700 py-14 text-white">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 text-center sm:px-6 lg:flex-row lg:justify-between lg:text-left lg:px-8">
+          <div className="flex items-center gap-4">
+            <img
+              src="/faq/celebrate.png"
+              alt=""
+              className="hidden h-24 w-24 object-contain sm:block"
+              width={96}
+              height={96}
+            />
+            <div>
+              <h2 className="text-2xl font-bold sm:text-3xl">{copy.ctaTitle}</h2>
+              <p className="mt-2 max-w-xl text-sm text-brand-50/95 sm:text-base">{copy.ctaBody}</p>
+            </div>
           </div>
+          <Link to="/tarifs">
+            <Button
+              size="lg"
+              className="bg-white text-brand-800 hover:bg-brand-50"
+              icon={ArrowRight}
+            >
+              {copy.ctaButton}
+            </Button>
+          </Link>
         </div>
       </section>
     </PublicLayout>

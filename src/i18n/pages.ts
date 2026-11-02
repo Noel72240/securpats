@@ -21,8 +21,9 @@ export const pagesFr = {
       "Vos animaux bénéficient d'une prise en charge immédiate et organisée, même lorsque vous êtes dans l'impossibilité de vous en occuper.",
   },
   faq: {
-    title: 'Questions fréquentes',
-    subtitle: 'Tout ce que vous devez savoir sur SécurPats.',
+    title: 'FAQ SécurPats',
+    subtitle:
+      'Bien-être animal, urgences, abonnement : tout ce qu’il faut savoir pour protéger vos compagnons.',
     q1: 'Comment fonctionne le QR Code ?',
     a1: 'Chaque animal possède un QR Code unique. En le scannant, un secouriste, un vétérinaire ou toute personne de confiance accède instantanément à la fiche de secours essentielle : traitements, allergies, référents et coordonnées vétérinaires.',
     q2: 'Qui peut accéder aux informations ?',
@@ -223,8 +224,9 @@ export const pagesEn = {
       'Your pets get immediate, organized care — even when you are unable to look after them yourself.',
   },
   faq: {
-    title: 'Frequently asked questions',
-    subtitle: 'Everything you need to know about SécurPats.',
+    title: 'SécurPats FAQ',
+    subtitle:
+      'Animal welfare, emergencies, subscription: everything you need to protect your pets.',
     q1: 'How does the QR Code work?',
     a1: 'Each pet has a unique QR Code. Scanning it gives a rescuer, vet or trusted person instant access to the essential rescue profile: treatments, allergies, emergency contacts and vet details.',
     q2: 'Who can access the information?',
