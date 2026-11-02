@@ -1,5 +1,18 @@
 import { Play } from 'lucide-react'
 
+/** Embed YouTube avec son (mute=0). youtube.com est plus fiable que nocookie pour l’audio. */
+function youtubeEmbedSrc(videoId: string): string {
+  const id = videoId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20)
+  if (!id) return ''
+  const params = new URLSearchParams({
+    rel: '0',
+    modestbranding: '1',
+    playsinline: '1',
+    mute: '0',
+  })
+  return `https://www.youtube.com/embed/${id}?${params.toString()}`
+}
+
 /** Convertit une URL YouTube / Vimeo / mp4 en source lecture. */
 export function resolveHomeVideoEmbed(url: string): {
   kind: 'iframe' | 'video' | null
@@ -18,17 +31,25 @@ export function resolveHomeVideoEmbed(url: string): {
 
     if (host === 'youtu.be') {
       const id = u.pathname.replace(/^\//, '').split('/')[0]
-      if (id) return { kind: 'iframe', src: `https://www.youtube-nocookie.com/embed/${id}` }
+      const src = id ? youtubeEmbedSrc(id) : ''
+      if (src) return { kind: 'iframe', src }
     }
 
     if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
-      const id = u.searchParams.get('v') || u.pathname.split('/').filter(Boolean).pop()
-      if (id && id !== 'watch' && id !== 'embed') {
-        return { kind: 'iframe', src: `https://www.youtube-nocookie.com/embed/${id}` }
+      let id = u.searchParams.get('v') || ''
+      if (!id && u.pathname.includes('/embed/')) {
+        id = u.pathname.split('/').filter(Boolean).pop() || ''
       }
-      if (u.pathname.includes('/embed/')) {
-        return { kind: 'iframe', src: `https://www.youtube-nocookie.com${u.pathname}` }
+      if (!id && u.pathname.includes('/shorts/')) {
+        id = u.pathname.split('/').filter(Boolean).pop() || ''
       }
+      if (!id) {
+        const parts = u.pathname.split('/').filter(Boolean)
+        const last = parts[parts.length - 1] || ''
+        if (last && last !== 'watch' && last !== 'embed') id = last
+      }
+      const src = id ? youtubeEmbedSrc(id) : ''
+      if (src) return { kind: 'iframe', src }
     }
 
     if (host === 'vimeo.com' || host === 'player.vimeo.com') {
@@ -42,6 +63,16 @@ export function resolveHomeVideoEmbed(url: string): {
   }
 
   if (raw.startsWith('https://') || raw.startsWith('http://')) {
+    // Si une URL embed brutes contient mute=1, on le retire
+    try {
+      const u = new URL(raw)
+      if (u.searchParams.get('mute') === '1') {
+        u.searchParams.set('mute', '0')
+        return { kind: 'iframe', src: u.toString() }
+      }
+    } catch {
+      /* ignore */
+    }
     return { kind: 'iframe', src: raw }
   }
 
@@ -83,7 +114,6 @@ export function HomeVideoSection({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
             />
           ) : embed.kind === 'video' ? (
             <video
@@ -92,6 +122,7 @@ export function HomeVideoSection({
               controls
               playsInline
               preload="metadata"
+              muted={false}
             >
               Votre navigateur ne prend pas en charge la lecture vidéo.
             </video>
