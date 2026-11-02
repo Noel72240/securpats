@@ -30,7 +30,7 @@ const fr: FaqPageCopy = {
   themes: [
     {
       id: 'quest-ce-que',
-      sticker: '/faq/questions-v2.png',
+      sticker: '/faq/questions-v3.png',
       title: 'Qu’est-ce que SécurPats ?',
       intro:
         'SécurPats est la plateforme française qui prépare la prise en charge de vos animaux si vous êtes hospitalisé, accidenté ou indisponible.',
@@ -54,7 +54,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'bien-etre',
-      sticker: '/faq/joy-v2.png',
+      sticker: '/faq/joy-v3.png',
       title: 'Bien-être animal au quotidien',
       intro:
         'Le bien-être, c’est la continuité : repas, soins, rythme, et des humains qui savent quoi faire — surtout quand vous n’êtes plus là.',
@@ -78,7 +78,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'abonnement',
-      sticker: '/faq/cool-v2.png',
+      sticker: '/faq/cool-v3.png',
       title: 'Pourquoi prendre un abonnement ?',
       intro:
         'L’abonnement active la protection complète : fiches illimitées, référents, QR Code, documents et alertes. Sans abonnement, la préparation reste incomplète.',
@@ -107,7 +107,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'urgence',
-      sticker: '/faq/surprise-v2.png',
+      sticker: '/faq/surprise-v3.png',
       title: 'Urgences & imprévus',
       intro:
         'Hospitalisation, accident, voyage interrompu : la vie bascule vite. SécurPats est conçu pour ces secondes où tout doit être clair.',
@@ -131,7 +131,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'qr-code',
-      sticker: '/faq/search-v2.png',
+      sticker: '/faq/search-v3.png',
       title: 'QR Code & fiche de secours',
       intro:
         'Le QR Code est la porte d’entrée rapide vers l’essentiel : ce qu’il faut savoir pour soigner l’animal sans délai.',
@@ -155,7 +155,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'routines',
-      sticker: '/faq/sleep-v2.png',
+      sticker: '/faq/sleep-v3.png',
       title: 'Routines, soins & sérénité',
       intro:
         'Un animal stressé, c’est souvent un humain perdu. Des consignes claires = des nuits plus calmes pour tout le monde.',
@@ -179,7 +179,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'securite',
-      sticker: '/faq/shield-v2.png',
+      sticker: '/faq/shield-v3.png',
       title: 'Sécurité & confiance',
       intro:
         'Vos données concernent vos animaux et votre famille. Elles sont traitées avec le sérieux d’un service d’urgence.',
@@ -203,7 +203,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'famille',
-      sticker: '/faq/love-v2.png',
+      sticker: '/faq/love-v3.png',
       title: 'Famille, référents & lien',
       intro:
         'Protéger un animal, c’est aussi rassurer ceux qui vous aiment : chacun sait quoi faire, sans se disputer au pire moment.',
@@ -227,7 +227,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'fonctionnalites',
-      sticker: '/faq/gears-v2.png',
+      sticker: '/faq/gears-v3.png',
       title: 'Fonctionnalités du compte',
       intro:
         'Tout est pensé pour être simple : ajouter un animal, un document, un référent, puis générer le QR.',
@@ -251,7 +251,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'gestion-abo',
-      sticker: '/faq/refresh-v2.png',
+      sticker: '/faq/refresh-v3.png',
       title: 'Gérer ou changer d’abonnement',
       intro:
         'Vous restez maître du contrat : pause, changement d’offre, résiliation — depuis votre espace.',
@@ -275,7 +275,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'aide',
-      sticker: '/faq/support-v2.png',
+      sticker: '/faq/support-v3.png',
       title: 'Aide & contact',
       intro:
         'Une question technique ou humaine ? L’équipe SécurPats est là — fondée par Johanna Hayer, passionnée et professionnelle du soin.',
@@ -299,7 +299,7 @@ const fr: FaqPageCopy = {
     },
     {
       id: 'demarrer',
-      sticker: '/faq/celebrate-v2.png',
+      sticker: '/faq/celebrate-v3.png',
       title: 'Démarrer avec SécurPats',
       intro:
         'Quelques minutes suffisent pour poser les bases. Ensuite, vous avancerez fiche par fiche — en paix.',
@@ -336,7 +336,7 @@ const en: FaqPageCopy = {
   themes: [
   {
     id: 'quest-ce-que',
-    sticker: '/faq/questions-v2.png',
+    sticker: '/faq/questions-v3.png',
     title: 'What is SécurPats?',
     intro:
       'SécurPats is the French platform that prepares care for your pets if you are hospitalised, injured or unavailable.',
@@ -360,7 +360,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'bien-etre',
-    sticker: '/faq/joy-v2.png',
+    sticker: '/faq/joy-v3.png',
     title: 'Everyday animal welfare',
     intro:
       'Welfare means continuity: meals, care, routine, and humans who know what to do — especially when you cannot be there.',
@@ -384,7 +384,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'abonnement',
-    sticker: '/faq/cool-v2.png',
+    sticker: '/faq/cool-v3.png',
     title: 'Why subscribe?',
     intro:
       'The subscription unlocks full protection: unlimited pets, contacts, QR Code, documents and alerts.',
@@ -413,7 +413,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'urgence',
-    sticker: '/faq/surprise-v2.png',
+    sticker: '/faq/surprise-v3.png',
     title: 'Emergencies & the unexpected',
     intro: 'Hospitalisation, accident, interrupted travel: life flips fast. SécurPats is built for those seconds.',
     items: [
@@ -436,7 +436,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'qr-code',
-    sticker: '/faq/search-v2.png',
+    sticker: '/faq/search-v3.png',
     title: 'QR Code & rescue profile',
     intro: 'The QR Code is the fast door to essentials: what someone needs to care for the pet now.',
     items: [
@@ -459,7 +459,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'routines',
-    sticker: '/faq/sleep-v2.png',
+    sticker: '/faq/sleep-v3.png',
     title: 'Routines, care & peace of mind',
     intro: 'A stressed pet often means a lost human. Clear instructions = calmer nights for everyone.',
     items: [
@@ -482,7 +482,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'securite',
-    sticker: '/faq/shield-v2.png',
+    sticker: '/faq/shield-v3.png',
     title: 'Security & trust',
     intro: 'Your data covers your pets and family. We treat it like an emergency service should.',
     items: [
@@ -505,7 +505,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'famille',
-    sticker: '/faq/love-v2.png',
+    sticker: '/faq/love-v3.png',
     title: 'Family, contacts & bond',
     intro: 'Protecting a pet also reassures the people who love you: everyone knows what to do.',
     items: [
@@ -527,7 +527,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'fonctionnalites',
-    sticker: '/faq/gears-v2.png',
+    sticker: '/faq/gears-v3.png',
     title: 'Account features',
     intro: 'Built to be simple: add a pet, a document, a contact, then generate the QR.',
     items: [
@@ -549,7 +549,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'gestion-abo',
-    sticker: '/faq/refresh-v2.png',
+    sticker: '/faq/refresh-v3.png',
     title: 'Manage your subscription',
     intro: 'You stay in control: change plan or cancel from your space.',
     items: [
@@ -571,7 +571,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'aide',
-    sticker: '/faq/support-v2.png',
+    sticker: '/faq/support-v3.png',
     title: 'Help & contact',
     intro: 'Technical or human question? The SécurPats team is here — founded by Johanna Hayer.',
     items: [
@@ -591,7 +591,7 @@ const en: FaqPageCopy = {
   },
   {
     id: 'demarrer',
-    sticker: '/faq/celebrate-v2.png',
+    sticker: '/faq/celebrate-v3.png',
     title: 'Get started with SécurPats',
     intro: 'A few minutes are enough to lay the foundations. Then complete profiles at your pace.',
     items: [

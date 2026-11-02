@@ -56,11 +56,11 @@ export default function FAQPage() {
             </div>
             <div className="flex justify-center lg:justify-end">
               <img
-                src="/faq/questions-v2.png"
+                src="/faq/questions-v3.png"
                 alt=""
-                className="h-40 w-40 object-contain drop-shadow-md sm:h-48 sm:w-48"
-                width={192}
-                height={192}
+                className="h-52 w-52 object-contain drop-shadow-md sm:h-64 sm:w-64"
+                width={256}
+                height={256}
               />
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function FAQPage() {
                     setOpenKey(null)
                   }}
                   className={cn(
-                    'flex shrink-0 max-w-[11rem] flex-col items-center gap-1.5 rounded-2xl border px-2.5 py-2.5 text-center transition-colors sm:max-w-[12.5rem]',
+                    'flex shrink-0 max-w-[13rem] flex-col items-center gap-2 rounded-2xl border px-3 py-3 text-center transition-colors sm:max-w-[14rem]',
                     selected
                       ? 'border-brand-500 bg-brand-50 shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50/60',
@@ -93,14 +93,14 @@ export default function FAQPage() {
                   <img
                     src={t.sticker}
                     alt=""
-                    className="h-14 w-14 object-contain"
-                    width={56}
-                    height={56}
+                    className="h-20 w-20 object-contain sm:h-24 sm:w-24"
+                    width={96}
+                    height={96}
                     loading="lazy"
                   />
                   <span
                     className={cn(
-                      'text-[11px] font-semibold leading-snug sm:text-xs',
+                      'text-xs font-semibold leading-snug sm:text-sm',
                       selected ? 'text-brand-900' : 'text-slate-700',
                     )}
                   >
@@ -114,15 +114,15 @@ export default function FAQPage() {
           {theme && (
             <div className="grid gap-8 lg:grid-cols-[220px_1fr] lg:gap-12">
               <aside className="hidden lg:block">
-                <div className="sticky top-28 rounded-3xl border border-slate-100 bg-white/80 p-5 text-center shadow-sm backdrop-blur">
+                <div className="sticky top-28 rounded-3xl border border-slate-100 bg-white/80 p-6 text-center shadow-sm backdrop-blur">
                   <img
                     src={theme.sticker}
                     alt=""
-                    className="mx-auto h-36 w-36 object-contain"
-                    width={144}
-                    height={144}
+                    className="mx-auto h-48 w-48 object-contain"
+                    width={192}
+                    height={192}
                   />
-                  <p className="mt-3 text-sm font-bold text-slate-900">{theme.title}</p>
+                  <p className="mt-4 text-base font-bold text-slate-900">{theme.title}</p>
                 </div>
               </aside>
 
@@ -131,9 +131,9 @@ export default function FAQPage() {
                   <img
                     src={theme.sticker}
                     alt=""
-                    className="h-20 w-20 shrink-0 object-contain"
-                    width={80}
-                    height={80}
+                    className="h-28 w-28 shrink-0 object-contain"
+                    width={112}
+                    height={112}
                   />
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">{theme.title}</h2>
@@ -192,11 +192,11 @@ export default function FAQPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 text-center sm:px-6 lg:flex-row lg:justify-between lg:text-left lg:px-8">
           <div className="flex items-center gap-4">
             <img
-              src="/faq/celebrate-v2.png"
+              src="/faq/celebrate-v3.png"
               alt=""
-              className="hidden h-24 w-24 object-contain sm:block"
-              width={96}
-              height={96}
+              className="hidden h-32 w-32 object-contain sm:block"
+              width={128}
+              height={128}
             />
             <div>
               <h2 className="text-2xl font-bold sm:text-3xl">{copy.ctaTitle}</h2>

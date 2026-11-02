@@ -27,13 +27,13 @@ export function HomeFaqPanel() {
         <img
           src={theme.sticker}
           alt=""
-          className="h-16 w-16 object-contain sm:h-20 sm:w-20"
-          width={80}
-          height={80}
+          className="h-24 w-24 object-contain sm:h-28 sm:w-28"
+          width={112}
+          height={112}
         />
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-3 gap-2.5 sm:grid-cols-4">
         {copy.themes.map(t => {
           const on = t.id === theme.id
           return (
@@ -46,16 +46,16 @@ export function HomeFaqPanel() {
                 setOpenQ(0)
               }}
               className={cn(
-                'flex flex-col items-center rounded-2xl border px-1.5 py-2 transition-colors',
+                'flex flex-col items-center rounded-2xl border px-1.5 py-2.5 transition-colors',
                 on
                   ? 'border-brand-500 bg-brand-50'
                   : 'border-slate-100 bg-slate-50/80 hover:border-brand-200',
               )}
             >
-              <img src={t.sticker} alt="" className="h-11 w-11 object-contain" width={44} height={44} loading="lazy" />
+              <img src={t.sticker} alt="" className="h-16 w-16 object-contain sm:h-[4.5rem] sm:w-[4.5rem]" width={72} height={72} loading="lazy" />
               <span
                 className={cn(
-                  'mt-1 line-clamp-2 text-center text-[10px] font-semibold leading-tight',
+                  'mt-1.5 line-clamp-2 text-center text-[10px] font-semibold leading-tight sm:text-[11px]',
                   on ? 'text-brand-800' : 'text-slate-600',
                 )}
               >
