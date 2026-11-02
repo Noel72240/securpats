@@ -56,7 +56,7 @@ export default function FAQPage() {
             </div>
             <div className="flex justify-center lg:justify-end">
               <img
-                src="/faq/questions.png"
+                src="/faq/questions-v2.png"
                 alt=""
                 className="h-40 w-40 object-contain drop-shadow-md sm:h-48 sm:w-48"
                 width={192}
@@ -84,21 +84,26 @@ export default function FAQPage() {
                     setOpenKey(null)
                   }}
                   className={cn(
-                    'flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors',
+                    'flex shrink-0 max-w-[11rem] flex-col items-center gap-1.5 rounded-2xl border px-2.5 py-2.5 text-center transition-colors sm:max-w-[12.5rem]',
                     selected
-                      ? 'border-brand-500 bg-brand-600 text-white shadow-sm'
+                      ? 'border-brand-500 bg-brand-50 shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:bg-brand-50/60',
                   )}
                 >
                   <img
                     src={t.sticker}
                     alt=""
-                    className="h-10 w-10 object-contain"
-                    width={40}
-                    height={40}
+                    className="h-14 w-14 object-contain"
+                    width={56}
+                    height={56}
                     loading="lazy"
                   />
-                  <span className="max-w-[9.5rem] text-xs font-semibold leading-snug sm:max-w-[11rem] sm:text-sm">
+                  <span
+                    className={cn(
+                      'text-[11px] font-semibold leading-snug sm:text-xs',
+                      selected ? 'text-brand-900' : 'text-slate-700',
+                    )}
+                  >
                     {t.title}
                   </span>
                 </button>
@@ -187,7 +192,7 @@ export default function FAQPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 text-center sm:px-6 lg:flex-row lg:justify-between lg:text-left lg:px-8">
           <div className="flex items-center gap-4">
             <img
-              src="/faq/celebrate.png"
+              src="/faq/celebrate-v2.png"
               alt=""
               className="hidden h-24 w-24 object-contain sm:block"
               width={96}

@@ -15,6 +15,7 @@ import { EmergencyScenariosSection } from '@/components/home/EmergencyScenariosS
 import { AnimalParadeFrieze } from '@/components/home/AnimalParadeFrieze'
 import { HomeActuTeaser } from '@/components/home/HomeActuTeaser'
 import { SubscribePitchSection } from '@/components/home/SubscribePitchSection'
+import { HomeFaqPanel } from '@/components/home/HomeFaqPanel'
 import { useI18n } from '@/i18n/LanguageContext'
 
 export default function HomePage() {
@@ -104,6 +105,49 @@ export default function HomePage() {
 
       <AnimalParadeFrieze />
 
+      {/* FAQ à droite dès l’accueil */}
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-white via-brand-50/40 to-emerald-50/50 border-y border-brand-100/60">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+            <div className="lg:sticky lg:top-28">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 mb-3">
+                {locale === 'en' ? 'Animal welfare & subscription' : 'Bien-être animal & abonnement'}
+              </p>
+              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+                {t('home.whyTitle')}
+              </h2>
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                {t('home.whySubtitle')}
+              </p>
+              <div className="space-y-4">
+                {whyItems.map((item, i) => (
+                  <div key={i} className="flex gap-4 rounded-2xl border border-slate-100 bg-white/80 p-4">
+                    <div className="w-12 h-12 shrink-0 rounded-xl bg-brand-50 flex items-center justify-center">
+                      <item.icon className="w-6 h-6 text-brand-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 mb-1">{item.title}</h3>
+                      <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/faq">
+                  <Button variant="outline">{locale === 'en' ? 'Full FAQ' : 'Toute la FAQ'}</Button>
+                </Link>
+                <Link to="/tarifs">
+                  <Button icon={ArrowRight}>{locale === 'en' ? 'See plans' : 'Voir les abonnements'}</Button>
+                </Link>
+              </div>
+            </div>
+            <div>
+              <HomeFaqPanel />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <FounderPresentation />
 
       <HomeVideoSection
@@ -111,31 +155,6 @@ export default function HomePage() {
         title={videoTitle}
         videoUrl={home.videoUrl || ''}
       />
-
-      {/* Why */}
-      <section className="py-12 sm:py-20 lg:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-              {t('home.whyTitle')}
-            </h2>
-            <p className="text-lg text-slate-600">
-              {t('home.whySubtitle')}
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {whyItems.map((item, i) => (
-              <Card key={i} hover className="text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-50 flex items-center justify-center">
-                  <item.icon className="w-7 h-7 text-brand-600" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* How it works */}
       <section className="py-12 sm:py-20 lg:py-28 bg-slate-50">
