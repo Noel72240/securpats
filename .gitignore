@@ -14,7 +14,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
-!.env.capacitor
 
 # Android local
 android/.gradle
