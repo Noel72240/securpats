@@ -379,6 +379,165 @@ export const SEO_PAGES: SeoPage[] = [
     ],
     relatedPaths: ['/hospitalisation-animal', '/tarifs', '/fonctionnement'],
   },
+  {
+    path: '/aide-animaliere',
+    title: 'Aide animalière : qui s’occupe de votre animal en urgence ?',
+    metaDescription:
+      'Besoin d’aide animalière en cas d’hospitalisation ou d’imprévu ? SécurPats organise référents, alertes et fiches de soins pour chiens, chats et NAC. Dès 4,99 €/mois.',
+    keywords: [
+      'aide animalière',
+      'aide animale urgence',
+      'aide pour animal hospitalisation',
+      'service aide animalière France',
+      'qui s occupe de mon animal',
+      'SécurPats',
+    ],
+    navLabel: 'Aide animalière',
+    badge: 'Aide & solidarité animale',
+    h1: 'Aide animalière : une solution claire quand vous ne pouvez plus être là',
+    heroSubtitle:
+      'L’aide animalière ne devrait pas se décider dans la panique. SécurPats prépare à l’avance qui intervient, avec quelles consignes, pour votre chien, votre chat ou vos NAC.',
+    sections: [
+      {
+        h2: 'Qu’est-ce que l’aide animalière concrètement ?',
+        paragraphs: [
+          'L’aide animalière, c’est tout ce qui permet à un animal de continuer à être nourri, soigné, promené et rassuré quand son propriétaire est empêché : hospitalisation, accident, urgences familiales, voyage interrompu.',
+          'Sans organisation, cette aide repose sur des appels de dernière minute. Avec SécurPats, elle repose sur un plan : référents prioritaires, documents, QR Code et alertes automatiques.',
+        ],
+        bullets: [
+          'Contacts d’aide définis à l’avance',
+          'Consignes alimentaires et médicales centralisées',
+          'Alerte immédiate en situation d’urgence',
+          'Accès rapide via QR Code pour les secours',
+        ],
+      },
+      {
+        h2: 'Pourquoi anticiper l’aide animalière change tout',
+        paragraphs: [
+          'Les refuges et associations sont déjà sous pression. L’anticipation personnelle (référents + informations) évite souvent qu’un animal se retrouve sans solution pendant 48 h critiques.',
+          'SécurPats n’est pas un refuge : c’est le chaînon manquant entre vous, vos proches et une prise en charge humaine organisée.',
+        ],
+      },
+      {
+        h2: 'Comment SécurPats structure votre aide animalière',
+        paragraphs: [
+          'Vous créez les fiches de vos animaux, désignez jusqu’à 5 personnes de confiance, ajoutez carnet de santé et consignes, puis activez l’abonnement. Le jour J, l’aide part des bonnes infos — pas du stress.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'L’aide animalière SécurPats remplace-t-elle une association ?',
+        answer:
+          'Non. SécurPats organise l’alerte et l’information pour vos proches / pet-sitters. Les associations et refuges restent des acteurs essentiels ; nous réduisons les urgences mal préparées.',
+      },
+      {
+        question: 'Puis-je utiliser SécurPats pour plusieurs animaux ?',
+        answer:
+          'Oui. L’abonnement propriétaire inclut des fiches animaux illimitées, chacune avec ses consignes et son QR Code.',
+      },
+    ],
+    relatedPaths: ['/protection-animal-urgence', '/qui-garde-mon-animal', '/garde-animal-urgence'],
+  },
+  {
+    path: '/garde-chien-hospitalisation',
+    title: 'Garde de chien en hospitalisation : solution d’urgence SécurPats',
+    metaDescription:
+      'Qui garde mon chien si je suis hospitalisé ? SécurPats alerte vos proches, transmet soins et promenades, et sécurise la garde chien en urgence. Dès 4,99 €/mois.',
+    keywords: [
+      'garde chien hospitalisation',
+      'qui garde mon chien hospitalisé',
+      'garde chien urgence',
+      'chien seul hospitalisation',
+      'pet sitter chien urgence',
+      'SécurPats chien',
+    ],
+    navLabel: 'Garde chien',
+    badge: 'Chiens & hospitalisation',
+    h1: 'Garde de chien pendant une hospitalisation : préparez le relais avant la crise',
+    heroSubtitle:
+      'Un chien a besoin de sorties, de repas et parfois de traitements. Une hospitalisation imprévue ne laisse pas le temps d’improviser. SécurPats prépare la garde de votre chien avec vos référents.',
+    sections: [
+      {
+        h2: 'Le problème spécifique des chiens en urgence',
+        paragraphs: [
+          'Contrairement à certains chats plus autonomes sur de courtes durées, un chien nécessite des promenades régulières, une présence et souvent une routine stricte. Sans plan, voisins et famille sont sollicités dans l’urgence — avec des risques d’erreurs (dose, horaires, peurs).',
+        ],
+        bullets: [
+          'Horaires de promenade et consignes comportement',
+          'Alimentation et friandises autorisées',
+          'Traitements et vétérinaire habituels',
+          'Contacts prioritaires pour récupérer les clés',
+        ],
+      },
+      {
+        h2: 'La réponse SécurPats pour la garde chien',
+        paragraphs: [
+          'Vous enregistrez la fiche de votre chien, ses sorties, ses peurs, ses traitements. Vous désignez qui intervient en premier. En cas d’hospitalisation, l’alerte part avec les infos utiles pour agir vite et bien.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'SécurPats trouve-t-il un pet-sitter pour mon chien automatiquement ?',
+        answer:
+          'SécurPats alerte d’abord vos référents et peut mobiliser le réseau pet-sitters selon disponibilités. L’anticipation des contacts reste la clé.',
+      },
+      {
+        question: 'Puis-je préparer aussi un chat ou un NAC ?',
+        answer:
+          'Oui. La plateforme couvre chiens, chats et autres compagnons, avec une fiche dédiée par animal.',
+      },
+    ],
+    relatedPaths: ['/hospitalisation-animal', '/garde-animal-urgence', '/aide-animaliere'],
+  },
+  {
+    path: '/aide-animaux-urgence',
+    title: 'Aide aux animaux en urgence : alerte, consignes et prise en charge',
+    metaDescription:
+      'Aide aux animaux en urgence avec SécurPats : alertes référents, QR code secours, documents et organisation de la prise en charge. Protection claire dès 4,99 €/mois.',
+    keywords: [
+      'aide animaux urgence',
+      'urgence animaux compagnie',
+      'prise en charge animal urgence',
+      'alerte animal urgence',
+      'aide chat chien urgence',
+      'SécurPats urgence',
+    ],
+    navLabel: 'Aide urgence',
+    badge: 'Urgence animale',
+    h1: 'Aide aux animaux en urgence : une chaîne d’action prête avant le jour J',
+    heroSubtitle:
+      'Quand l’urgence frappe le propriétaire, l’animal a besoin d’une chaîne humaine informée. SécurPats alerte, informe et sécurise la continuité des soins.',
+    sections: [
+      {
+        h2: 'De l’alerte à la prise en charge',
+        paragraphs: [
+          'L’aide en urgence commence par l’information : qui prévenir, quoi transmettre, comment accéder aux consignes. SécurPats automatise cette première étape critique.',
+        ],
+        bullets: [
+          'Alerte email aux référents prioritaires',
+          'Fiche secours via QR Code',
+          'Documents centralisés',
+          'Carte d’urgence imprimable',
+        ],
+      },
+      {
+        h2: 'Pour les propriétaires responsables',
+        paragraphs: [
+          'Anticiper n’est pas pessimiste : c’est protecteur. Comme une assurance, SécurPats se configure une fois et reste prêt 24 h/24 pendant votre abonnement.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Que contient la fiche d’aide en urgence ?',
+        answer:
+          'Identité de l’animal, consignes de soins, allergies, alimentation, contacts référents et vétérinaire. Les documents détaillés restent dans l’espace sécurisé.',
+      },
+    ],
+    relatedPaths: ['/alerte-animal-urgence', '/protection-animal-urgence', '/aide-animaliere'],
+  },
   ...SCENARIO_SEO_PAGES,
 ]
 

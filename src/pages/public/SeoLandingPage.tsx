@@ -26,7 +26,7 @@ function SeoLandingPage({ page }: { page: SeoPage }) {
         path={page.path}
         keywords={page.keywords}
         faqs={page.faqs}
-        article
+        breadcrumbs={[{ name: page.navLabel, path: page.path }]}
       />
 
       {/* Hero SEO */}

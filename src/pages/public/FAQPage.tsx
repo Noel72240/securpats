@@ -31,11 +31,13 @@ export default function FAQPage() {
         keywords={[
           'FAQ SécurPats',
           'bien-être animal',
+          'aide animalière',
           'abonnement SécurPats',
           'QR Code urgence animal',
           'hospitalisation animal',
         ]}
         faqs={seoFaqs}
+        breadcrumbs={[{ name: 'FAQ', path: '/faq' }]}
       />
 
       <section className="relative overflow-hidden border-b border-brand-100/80 bg-gradient-to-br from-brand-50 via-white to-emerald-50/70">

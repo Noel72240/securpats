@@ -3,6 +3,7 @@ import {
 } from 'lucide-react'
 import { PublicLayout } from '@/components/layout/PublicLayout'
 import { Card } from '@/components/ui/Card'
+import { PageSEO } from '@/components/seo/PageSEO'
 import { useI18n } from '@/i18n/LanguageContext'
 import type { TranslationKey } from '@/i18n/LanguageContext'
 
@@ -20,6 +21,13 @@ export default function HowItWorksPage() {
 
   return (
     <PublicLayout>
+      <PageSEO
+        title="Comment fonctionne SécurPats — étapes de protection animale"
+        description="Découvrez le parcours SécurPats : compte, fiches animaux, référents, QR Code et alerte urgence. Protection claire en cas d’hospitalisation."
+        path="/fonctionnement"
+        keywords={['fonctionnement SécurPats', 'QR code animal urgence', 'comment protéger son animal', 'aide animalière']}
+        breadcrumbs={[{ name: 'Fonctionnement', path: '/fonctionnement' }]}
+      />
       <section className="py-16 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">

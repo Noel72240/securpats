@@ -54,6 +54,7 @@ export default function ShopSuccessPage() {
     <PublicLayout>
       <div className="font-[family-name:var(--font-shop)]">
         <PageSEO
+          noIndex
           title="Commande confirmée"
           description="Merci pour votre commande SécurPats. Vous recevrez un e-mail de confirmation."
           path="/boutique/succes"

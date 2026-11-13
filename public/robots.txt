@@ -1,4 +1,29 @@
 User-agent: *
 Allow: /
 
+# Espaces privés / techniques — ne pas indexer
+Disallow: /app
+Disallow: /app/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /pet-sitter/
+Disallow: /aidant/
+Disallow: /api/
+Disallow: /secours/
+Disallow: /famille/
+Disallow: /urgence/confirmer/
+Disallow: /boutique/panier
+Disallow: /boutique/succes
+Disallow: /boutique/telecharger/
+Disallow: /connexion
+Disallow: /mot-de-passe-oublie
+Disallow: /reinitialiser-mot-de-passe
+Disallow: /informations-legales
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://www.securpats.fr/sitemap.xml

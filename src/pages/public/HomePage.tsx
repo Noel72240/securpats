@@ -57,9 +57,16 @@ export default function HomePage() {
     <PublicLayout>
       <PageSEO
         title="Protection animale d'urgence — hospitalisation & alerte référents"
-        description="SécurPats protège vos animaux en cas d'hospitalisation ou d'urgence. Alertes automatiques, QR code secours, référents et fiches complètes. Dès 4,99 €/mois."
+        description="SécurPats protège vos animaux en cas d'hospitalisation ou d'urgence. Aide animalière organisée : alertes, QR code secours, référents et fiches. Dès 4,99 €/mois."
         path="/"
-        keywords={['protection animale urgence', 'hospitalisation animal', 'alerte référents chien chat', 'SécurPats']}
+        keywords={[
+          'SécurPats',
+          'aide animalière',
+          'protection animale urgence',
+          'hospitalisation animal',
+          'garde chien hospitalisation',
+          'alerte référents chien chat',
+        ]}
       />
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-brand-50 via-white to-emerald-50">

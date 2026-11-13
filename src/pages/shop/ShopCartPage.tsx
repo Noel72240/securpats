@@ -130,6 +130,7 @@ export default function ShopCartPage() {
     <PublicLayout>
       <div className="font-[family-name:var(--font-shop)]">
         <PageSEO
+          noIndex
           title="Panier boutique"
           description="Votre panier SécurPats — colliers, longes, plaques QR et accessoires pour animaux."
           path="/boutique/panier"

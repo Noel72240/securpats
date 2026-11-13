@@ -78,6 +78,7 @@ export default function ShopDigitalDownloadPage() {
   return (
     <PublicLayout>
       <PageSEO
+        noIndex
         title="Téléchargement"
         description="Téléchargez votre produit numérique SécurPats."
         path={`/boutique/telecharger/${token || ''}`}

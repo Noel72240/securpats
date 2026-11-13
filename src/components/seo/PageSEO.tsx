@@ -1,5 +1,11 @@
 import { useEffect } from 'react'
-import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE, ORGANIZATION_SCHEMA } from '@/lib/seo/constants'
+import {
+  SITE_URL,
+  SITE_NAME,
+  DEFAULT_OG_IMAGE,
+  ORGANIZATION_SCHEMA,
+  WEBSITE_SCHEMA,
+} from '@/lib/seo/constants'
 
 export type PageSEOProps = {
   title: string
@@ -8,6 +14,9 @@ export type PageSEOProps = {
   keywords?: string[]
   faqs?: Array<{ question: string; answer: string }>
   article?: boolean
+  /** Pages privées / panier / succès : ne pas indexer */
+  noIndex?: boolean
+  breadcrumbs?: Array<{ name: string; path: string }>
   articleMeta?: {
     publishedAt?: string | null
     modifiedAt?: string | null
@@ -47,7 +56,17 @@ function upsertJsonLd(id: string, data: object) {
   el.textContent = JSON.stringify(data)
 }
 
-export function PageSEO({ title, description, path, keywords, faqs, article, articleMeta }: PageSEOProps) {
+export function PageSEO({
+  title,
+  description,
+  path,
+  keywords,
+  faqs,
+  article,
+  noIndex,
+  breadcrumbs,
+  articleMeta,
+}: PageSEOProps) {
   useEffect(() => {
     const url = `${SITE_URL}${path}`
     const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`
@@ -56,8 +75,21 @@ export function PageSEO({ title, description, path, keywords, faqs, article, art
     document.title = fullTitle
     upsertMeta('description', description)
     if (keywords?.length) upsertMeta('keywords', keywords.join(', '))
-    upsertMeta('robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1')
+    upsertMeta(
+      'robots',
+      noIndex
+        ? 'noindex, nofollow'
+        : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+    )
     upsertLink('canonical', url)
+    let hreflang = document.querySelector('link[rel="alternate"][hreflang="fr"]') as HTMLLinkElement | null
+    if (!hreflang) {
+      hreflang = document.createElement('link')
+      hreflang.rel = 'alternate'
+      hreflang.hreflang = 'fr'
+      document.head.appendChild(hreflang)
+    }
+    hreflang.href = url
 
     upsertMeta('og:title', fullTitle, 'property')
     upsertMeta('og:description', description, 'property')
@@ -66,6 +98,7 @@ export function PageSEO({ title, description, path, keywords, faqs, article, art
     upsertMeta('og:site_name', SITE_NAME, 'property')
     upsertMeta('og:locale', 'fr_FR', 'property')
     upsertMeta('og:image', ogImage, 'property')
+    upsertMeta('og:image:alt', fullTitle, 'property')
 
     if (article && articleMeta?.publishedAt) {
       upsertMeta('article:published_time', articleMeta.publishedAt, 'property')
@@ -80,6 +113,25 @@ export function PageSEO({ title, description, path, keywords, faqs, article, art
     upsertMeta('twitter:image', ogImage)
 
     upsertJsonLd('securpats-org-schema', ORGANIZATION_SCHEMA)
+    upsertJsonLd('securpats-website-schema', WEBSITE_SCHEMA)
+
+    if (breadcrumbs?.length) {
+      upsertJsonLd('securpats-breadcrumb-schema', {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_URL },
+          ...breadcrumbs.map((b, i) => ({
+            '@type': 'ListItem',
+            position: i + 2,
+            name: b.name,
+            item: `${SITE_URL}${b.path}`,
+          })),
+        ],
+      })
+    } else {
+      document.getElementById('securpats-breadcrumb-schema')?.remove()
+    }
 
     if (article) {
       upsertJsonLd('securpats-page-schema', {
@@ -113,6 +165,10 @@ export function PageSEO({ title, description, path, keywords, faqs, article, art
         url,
         inLanguage: 'fr-FR',
         isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+        about: {
+          '@type': 'Thing',
+          name: 'Protection animale d\'urgence et aide animalière',
+        },
       })
     }
 
@@ -133,18 +189,38 @@ export function PageSEO({ title, description, path, keywords, faqs, article, art
     upsertJsonLd('securpats-service-schema', {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      name: 'Protection animale d\'urgence SécurPats',
+      name: 'Protection animale d\'urgence et aide animalière SécurPats',
+      serviceType: 'Aide animalière / protection animale d\'urgence',
       provider: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-      areaServed: 'France',
-      description: 'Alerte automatique des référents, fiche secours QR code et organisation de la prise en charge de votre animal en cas d\'hospitalisation ou d\'urgence.',
+      areaServed: {
+        '@type': 'Country',
+        name: 'France',
+      },
+      description:
+        'Alerte automatique des référents, fiche secours QR code et organisation de la prise en charge de votre animal en cas d\'hospitalisation, d\'accident ou d\'urgence. Alternative organisée à l\'improvisation pour la garde chien/chat.',
       offers: {
         '@type': 'Offer',
         price: '4.99',
         priceCurrency: 'EUR',
         url: `${SITE_URL}/tarifs`,
+        availability: 'https://schema.org/InStock',
       },
+      termsOfService: `${SITE_URL}/cgu`,
     })
-  }, [title, description, path, keywords, faqs, article, articleMeta?.publishedAt, articleMeta?.modifiedAt, articleMeta?.authorName, articleMeta?.imageUrl])
+  }, [
+    title,
+    description,
+    path,
+    keywords,
+    faqs,
+    article,
+    noIndex,
+    breadcrumbs,
+    articleMeta?.publishedAt,
+    articleMeta?.modifiedAt,
+    articleMeta?.authorName,
+    articleMeta?.imageUrl,
+  ])
 
   return null
 }

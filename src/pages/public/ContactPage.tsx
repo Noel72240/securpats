@@ -5,6 +5,7 @@ import { PublicLayout } from '@/components/layout/PublicLayout'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { PageSEO } from '@/components/seo/PageSEO'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { createContactMessage } from '@/lib/supabase/services'
 import { useApp } from '@/contexts/AppContext'
@@ -34,6 +35,13 @@ export default function ContactPage() {
 
   return (
     <PublicLayout>
+      <PageSEO
+        title="Contact SécurPats — assistance protection animale"
+        description="Contactez l’équipe SécurPats pour toute question sur la protection de vos animaux, l’abonnement ou le support technique."
+        path="/contact"
+        keywords={['contact SécurPats', 'aide SécurPats', 'support protection animal']}
+        breadcrumbs={[{ name: 'Contact', path: '/contact' }]}
+      />
       <section className="py-16 lg:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
