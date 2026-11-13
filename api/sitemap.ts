@@ -5,6 +5,7 @@ const SITE = 'https://www.securpats.fr'
 
 const STATIC_URLS: { loc: string; changefreq: string; priority: string }[] = [
   { loc: '/', changefreq: 'weekly', priority: '1.0' },
+  { loc: '/securpats', changefreq: 'weekly', priority: '1.0' },
   { loc: '/fonctionnement', changefreq: 'monthly', priority: '0.8' },
   { loc: '/tarifs', changefreq: 'monthly', priority: '0.8' },
   { loc: '/boutique', changefreq: 'weekly', priority: '0.85' },

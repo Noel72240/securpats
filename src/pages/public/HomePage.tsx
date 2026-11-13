@@ -56,11 +56,13 @@ export default function HomePage() {
   return (
     <PublicLayout>
       <PageSEO
-        title="Protection animale d'urgence — hospitalisation & alerte référents"
-        description="SécurPats protège vos animaux en cas d'hospitalisation ou d'urgence. Aide animalière organisée : alertes, QR code secours, référents et fiches. Dès 4,99 €/mois."
+        title="SécurPats — Protection animale d'urgence | securpats.fr (pas Sécur’Pass banque)"
+        description="SécurPats (securpats) : plateforme française de protection animale d'urgence et d'aide animalière. Alertes référents, QR code secours, chiens & chats. Site officiel securpats.fr — distinct de Sécur’Pass bancaire."
         path="/"
         keywords={[
           'SécurPats',
+          'securpats',
+          'SecurPats',
           'aide animalière',
           'protection animale urgence',
           'hospitalisation animal',

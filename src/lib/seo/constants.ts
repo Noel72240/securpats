@@ -8,6 +8,14 @@ export const ORGANIZATION_SCHEMA = {
   '@type': 'Organization',
   '@id': `${SITE_URL}/#organization`,
   name: SITE_NAME,
+  legalName: 'SécurPats',
+  alternateName: [
+    'SecurPats',
+    'Securpats',
+    'securpats',
+    'Sécur Pats',
+    'Secur Pats',
+  ],
   url: SITE_URL,
   logo: {
     '@type': 'ImageObject',
@@ -15,7 +23,16 @@ export const ORGANIZATION_SCHEMA = {
   },
   image: DEFAULT_OG_IMAGE,
   description:
-    "Service de protection animale d'urgence : alerte des référents, QR code secours et prise en charge des animaux en cas d'hospitalisation, d'accident ou d'absence imprévue. Aide animalière organisée pour chiens, chats et NAC.",
+    "SécurPats est la plateforme française de protection animale d'urgence et d'aide animalière : alertes référents, QR code secours, fiches animaux (chiens, chats, NAC) en cas d'hospitalisation ou d'absence imprévue.",
+  disambiguatingDescription:
+    "SécurPats (securpats.fr) protège les animaux de compagnie en urgence. Ce n'est pas Sécur'Pass / SecurPass, le service d'authentification bancaire des banques françaises.",
+  knowsAbout: [
+    'protection animale',
+    'aide animalière',
+    'garde animal hospitalisation',
+    'alerte référents',
+    'QR code secours animal',
+  ],
   areaServed: { '@type': 'Country', name: 'France' },
   email: 'contact@securpats.fr',
   contactPoint: {
@@ -26,6 +43,12 @@ export const ORGANIZATION_SCHEMA = {
   },
   foundingDate: '2026',
   slogan: 'Vos animaux toujours protégés, même en votre absence',
+  brand: {
+    '@type': 'Brand',
+    name: SITE_NAME,
+    alternateName: ['SecurPats', 'securpats'],
+    slogan: 'Protection animale d’urgence',
+  },
 }
 
 export const WEBSITE_SCHEMA = {
@@ -34,9 +57,9 @@ export const WEBSITE_SCHEMA = {
   '@id': `${SITE_URL}/#website`,
   url: SITE_URL,
   name: SITE_NAME,
-  alternateName: ['SecurPats', 'Sécur Pats', 'Securpats'],
+  alternateName: ['SecurPats', 'Sécur Pats', 'Securpats', 'securpats'],
   description:
-    "Plateforme française d'aide animalière et de protection en urgence : hospitalisation, garde animal, alertes référents.",
+    "Site officiel SécurPats — plateforme française d'aide animalière et de protection animale en urgence (pas le Sécur'Pass bancaire).",
   inLanguage: 'fr-FR',
   publisher: { '@id': `${SITE_URL}/#organization` },
   potentialAction: {

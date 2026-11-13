@@ -538,6 +538,72 @@ export const SEO_PAGES: SeoPage[] = [
     ],
     relatedPaths: ['/alerte-animal-urgence', '/protection-animal-urgence', '/aide-animaliere'],
   },
+  {
+    path: '/securpats',
+    title: 'SécurPats (securpats) — site officiel protection animale, pas Sécur’Pass banque',
+    metaDescription:
+      'SécurPats (aussi écrit SecurPats / securpats) est la plateforme française de protection animale d’urgence. Site officiel securpats.fr — à ne pas confondre avec Sécur’Pass bancaire.',
+    keywords: [
+      'SécurPats',
+      'securpats',
+      'SecurPats',
+      'SécurPats animal',
+      'SécurPats protection animale',
+      'securpats.fr',
+      'SécurPats pas Sécur Pass',
+      'aide animalière SécurPats',
+    ],
+    navLabel: 'SécurPats',
+    badge: 'Marque officielle',
+    h1: 'SécurPats : le site officiel de protection animale d’urgence',
+    heroSubtitle:
+      'Vous cherchez SécurPats / securpats ? Vous êtes au bon endroit. Nous protégeons chiens, chats et NAC quand leur propriétaire est hospitalisé ou indisponible — ce n’est pas le service bancaire Sécur’Pass.',
+    sections: [
+      {
+        h2: 'SécurPats n’est pas Sécur’Pass',
+        paragraphs: [
+          'Google confond parfois « securpats » avec « Sécur’Pass » (ou SecurPass), l’application d’authentification des banques (Caisse d’Épargne, Banque Populaire, etc.). Ce sont deux services totalement différents.',
+          'SécurPats (un seul mot, avec un « s » final, domaine securpats.fr) est une plateforme d’aide animalière : fiches animaux, référents d’urgence, QR Code secours et alertes automatiques.',
+        ],
+        bullets: [
+          'SécurPats = protection de vos animaux en urgence',
+          'Sécur’Pass / SecurPass = validation de paiements bancaires',
+          'Site officiel : https://www.securpats.fr',
+        ],
+      },
+      {
+        h2: 'Que fait SécurPats concrètement ?',
+        paragraphs: [
+          'En cas d’hospitalisation, d’accident ou d’absence imprévue, vos animaux ont besoin d’une personne informée tout de suite. SécurPats prépare ce relais à l’avance.',
+        ],
+        bullets: [
+          'Fiches santé et consignes pour chaque animal',
+          'Référents prioritaires alertés par email',
+          'QR Code et carte d’urgence pour les secours',
+          'Réseau pet-sitters / aidants selon disponibilités',
+        ],
+      },
+      {
+        h2: 'Comment nous trouver sur Google',
+        paragraphs: [
+          'Pour éviter la confusion avec la banque, tapez « SécurPats animal », « SécurPats chien » ou l’adresse exacte securpats.fr. Cliquez sur le résultat www.securpats.fr pour renforcer l’association marque ↔ protection animale.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'SécurPats et Sécur’Pass, c’est la même chose ?',
+        answer:
+          'Non. SécurPats (securpats.fr) protège vos animaux en cas d’urgence. Sécur’Pass est un outil bancaire pour valider des paiements. Aucun lien entre les deux.',
+      },
+      {
+        question: 'Comment s’écrit correctement SécurPats ?',
+        answer:
+          'SécurPats (ou SecurPats / securpats), en un seul mot, avec un « s » à la fin. Le site officiel est www.securpats.fr.',
+      },
+    ],
+    relatedPaths: ['/aide-animaliere', '/protection-animal-urgence', '/fonctionnement'],
+  },
   ...SCENARIO_SEO_PAGES,
 ]
 

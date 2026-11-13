@@ -16,10 +16,10 @@ const OG = `${SITE}/og-image.jpg`
 const STATIC_META = [
   {
     path: '/',
-    title: "SécurPats — Protection animale d'urgence | Hospitalisation & alertes",
+    title: "SécurPats — Protection animale d'urgence | securpats.fr (pas Sécur’Pass banque)",
     description:
-      "SécurPats protège vos animaux en cas d'hospitalisation ou d'urgence. Alertes automatiques, QR code secours, référents et fiches complètes. Dès 4,99 €/mois.",
-    keywords: ['SécurPats', 'protection animale urgence', 'hospitalisation animal', 'aide animalière', 'garde chien hospitalisation'],
+      "SécurPats (securpats) : plateforme française de protection animale d'urgence. Alertes, QR code secours, chiens & chats. Site officiel securpats.fr — distinct de Sécur’Pass bancaire.",
+    keywords: ['SécurPats', 'securpats', 'SecurPats', 'protection animale urgence', 'hospitalisation animal', 'aide animalière'],
   },
   {
     path: '/fonctionnement',
@@ -123,8 +123,9 @@ function injectMeta(html, { path, title, description, keywords }) {
         '@id': `${SITE}/#website`,
         url: SITE,
         name: 'SécurPats',
+        alternateName: ['SecurPats', 'Securpats', 'securpats'],
         description:
-          "Service français de protection animale d'urgence : alertes référents, QR code secours, fiches animaux.",
+          "Site officiel SécurPats — protection animale d'urgence (pas le Sécur'Pass bancaire).",
         inLanguage: 'fr-FR',
         publisher: { '@id': `${SITE}/#organization` },
       },
@@ -132,9 +133,14 @@ function injectMeta(html, { path, title, description, keywords }) {
         '@type': 'Organization',
         '@id': `${SITE}/#organization`,
         name: 'SécurPats',
+        alternateName: ['SecurPats', 'Securpats', 'securpats'],
         url: SITE,
         logo: OG,
         email: 'contact@securpats.fr',
+        description:
+          "Plateforme française de protection animale d'urgence et d'aide animalière.",
+        disambiguatingDescription:
+          "SécurPats (securpats.fr) protège les animaux. Ce n'est pas Sécur'Pass / SecurPass bancaire.",
         areaServed: 'FR',
       },
       {

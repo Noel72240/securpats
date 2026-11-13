@@ -50,6 +50,11 @@ const fr: FaqPageCopy = {
           answer:
             'Un carnet papier reste à la maison. SécurPats est accessible via QR Code, avec alertes automatiques aux référents et un réseau de pet-sitters. C’est un dispositif d’urgence opérationnel, pas seulement un dossier.',
         },
+        {
+          question: 'SécurPats, c’est la même chose que Sécur’Pass (banque) ?',
+          answer:
+            'Non. SécurPats (securpats.fr) est une plateforme de protection animale d’urgence. Sécur’Pass / SecurPass est un service d’authentification bancaire. Aucun lien. Si Google propose « Sécur’Pass », choisissez plutôt le résultat www.securpats.fr ou tapez « SécurPats animal ».',
+        },
       ],
     },
     {
@@ -355,6 +360,11 @@ const en: FaqPageCopy = {
         question: 'How is it different from a paper health booklet?',
         answer:
           'A booklet stays at home. SécurPats is reachable via QR Code, with automatic alerts and a pet-sitter network. It is an operational emergency setup, not just a file.',
+      },
+      {
+        question: 'Is SécurPats the same as Sécur’Pass (banking app)?',
+        answer:
+          'No. SécurPats (securpats.fr) is an animal-emergency protection platform. Sécur’Pass / SecurPass is a bank authentication service. Unrelated. If Google suggests Sécur’Pass, open www.securpats.fr or search “SécurPats animal”.',
       },
     ],
   },
